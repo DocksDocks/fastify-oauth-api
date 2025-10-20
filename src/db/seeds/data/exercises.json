@@ -1,0 +1,1682 @@
+[
+  {
+    "code": "BARBELL_BENCH_PRESS_FLAT",
+    "name": "Barbell Bench Press (Flat)",
+    "description": "Classic compound chest exercise using a barbell on flat bench",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Lie on flat bench with feet flat on floor\n2. Grip bar slightly wider than shoulders\n3. Lower bar to chest with control\n4. Press bar up explosively\n5. Keep elbows at 45-degree angle"
+  },
+  {
+    "code": "BARBELL_BENCH_PRESS_INCLINE",
+    "name": "Barbell Bench Press (Incline)",
+    "description": "Upper chest focused barbell press on incline bench",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Set bench to 30-45 degree incline\n2. Grip bar slightly wider than shoulders\n3. Lower bar to upper chest\n4. Press bar up explosively\n5. Keep shoulder blades retracted"
+  },
+  {
+    "code": "BARBELL_BENCH_PRESS_DECLINE",
+    "name": "Barbell Bench Press (Decline)",
+    "description": "Lower chest focused barbell press on decline bench",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Set bench to decline position, secure feet\n2. Grip bar slightly wider than shoulders\n3. Lower bar to lower chest\n4. Press bar up explosively"
+  },
+  {
+    "code": "BARBELL_BENCH_PRESS_CLOSE_GRIP",
+    "name": "Barbell Bench Press (Close Grip)",
+    "description": "Tricep-focused bench press with narrow grip",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Lie on bench, grip bar shoulder-width or narrower\n2. Keep elbows close to body\n3. Lower bar to chest\n4. Press up focusing on triceps"
+  },
+  {
+    "code": "BARBELL_BENCH_PRESS_PAUSE",
+    "name": "Barbell Bench Press (Pause)",
+    "description": "Bench press with pause at bottom for strength off chest",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Lower bar to chest as normal\n2. Pause for 2-3 seconds on chest\n3. Explode up without bouncing\n4. Builds strength off the chest"
+  },
+  {
+    "code": "DUMBBELL_BENCH_PRESS_FLAT",
+    "name": "Dumbbell Bench Press (Flat)",
+    "description": "Chest exercise using dumbbells for greater range of motion",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Lie on flat bench with dumbbells at chest level\n2. Press dumbbells up until arms extended\n3. Lower with control, elbows at 45 degrees\n4. Allow deeper stretch than barbell"
+  },
+  {
+    "code": "DUMBBELL_BENCH_PRESS_INCLINE",
+    "name": "Dumbbell Bench Press (Incline)",
+    "description": "Upper chest focused dumbbell press on incline bench",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Set bench to 30-45 degree incline\n2. Press dumbbells from chest\n3. Focus on upper chest contraction\n4. Control the descent"
+  },
+  {
+    "code": "DUMBBELL_BENCH_PRESS_DECLINE",
+    "name": "Dumbbell Bench Press (Decline)",
+    "description": "Lower chest focused dumbbell press",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Set bench to decline, secure feet\n2. Press dumbbells from lower chest\n3. Full range of motion\n4. Squeeze at top"
+  },
+  {
+    "code": "DUMBBELL_BENCH_PRESS_SINGLE_ARM",
+    "name": "Dumbbell Bench Press (Single Arm)",
+    "description": "Unilateral chest press for balance and core stability",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Lie on bench with one dumbbell\n2. Press single dumbbell while stabilizing core\n3. Keep hips square on bench\n4. Builds unilateral strength"
+  },
+  {
+    "code": "DUMBBELL_FLY_FLAT",
+    "name": "Dumbbell Fly (Flat)",
+    "description": "Isolation exercise for chest stretch and contraction",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Lie on bench with dumbbells above chest\n2. Lower dumbbells in arc motion\n3. Keep slight bend in elbows\n4. Squeeze chest at top"
+  },
+  {
+    "code": "DUMBBELL_FLY_INCLINE",
+    "name": "Dumbbell Fly (Incline)",
+    "description": "Upper chest isolation with incline angle",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Set bench to incline\n2. Arc motion targeting upper chest\n3. Deep stretch at bottom\n4. Control throughout"
+  },
+  {
+    "code": "CABLE_FLY_HIGH_TO_LOW",
+    "name": "Cable Fly (High to Low)",
+    "description": "Lower chest cable isolation",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Set cables high\n2. Pull down and across body\n3. Target lower chest fibers\n4. Constant tension"
+  },
+  {
+    "code": "CABLE_FLY_LOW_TO_HIGH",
+    "name": "Cable Fly (Low to High)",
+    "description": "Upper chest cable isolation",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Set cables low\n2. Pull up and across\n3. Target upper chest\n4. Squeeze at top"
+  },
+  {
+    "code": "CABLE_FLY_MIDDLE",
+    "name": "Cable Fly (Middle)",
+    "description": "Mid-chest cable isolation",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Set cables at chest height\n2. Bring handles together in front\n3. Squeeze chest hard\n4. Controlled release"
+  },
+  {
+    "code": "PUSH_UP_STANDARD",
+    "name": "Push-Up (Standard)",
+    "description": "Classic bodyweight chest exercise",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Start in plank position\n2. Lower body until chest nearly touches floor\n3. Push back up explosively\n4. Keep core tight and body straight"
+  },
+  {
+    "code": "PUSH_UP_WIDE",
+    "name": "Push-Up (Wide Grip)",
+    "description": "Wider hand placement for outer chest",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Place hands wider than shoulders\n2. Targets outer chest more\n3. Full range of motion\n4. Squeeze at top"
+  },
+  {
+    "code": "PUSH_UP_CLOSE",
+    "name": "Push-Up (Close Grip/Diamond)",
+    "description": "Close hand placement for triceps and inner chest",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Hands close together, forming diamond\n2. Keep elbows tucked\n3. Lower to chest\n4. Press up, focus triceps"
+  },
+  {
+    "code": "PUSH_UP_DECLINE",
+    "name": "Push-Up (Decline)",
+    "description": "Feet elevated for upper chest emphasis",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Place feet on elevated surface\n2. More difficult than standard\n3. Targets upper chest\n4. Full range of motion"
+  },
+  {
+    "code": "PUSH_UP_INCLINE",
+    "name": "Push-Up (Incline)",
+    "description": "Hands elevated for easier variation",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Hands on elevated surface\n2. Easier than standard\n3. Good for beginners\n4. Full extension"
+  },
+  {
+    "code": "PUSH_UP_EXPLOSIVE",
+    "name": "Push-Up (Explosive/Plyometric)",
+    "description": "Explosive push-up for power development",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Push up explosively so hands leave ground\n2. Clap at top (optional)\n3. Land softly, repeat\n4. Builds explosive power"
+  },
+  {
+    "code": "PUSH_UP_SINGLE_ARM",
+    "name": "Push-Up (Single Arm)",
+    "description": "Advanced unilateral push-up variation",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. One hand behind back or on hip\n2. Keep body straight\n3. Lower with control\n4. Very advanced movement"
+  },
+  {
+    "code": "CHEST_DIP",
+    "name": "Chest Dip",
+    "description": "Bodyweight exercise for lower chest and triceps",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dip Bars",
+    "videoUrl": null,
+    "instructions": "1. Support body on dip bars\n2. Lean forward slightly for chest emphasis\n3. Lower until upper arms parallel\n4. Press back up"
+  },
+  {
+    "code": "CHEST_DIP_WEIGHTED",
+    "name": "Chest Dip (Weighted)",
+    "description": "Weighted dips for advanced lifters",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Dip Bars, Weight Belt",
+    "videoUrl": null,
+    "instructions": "1. Add weight belt with plates\n2. Same form as bodyweight dips\n3. Control the descent\n4. Progressive overload"
+  },
+  {
+    "code": "MACHINE_CHEST_PRESS",
+    "name": "Machine Chest Press",
+    "description": "Chest press on machine for controlled movement",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Machine",
+    "videoUrl": null,
+    "instructions": "1. Adjust seat height\n2. Press handles forward\n3. Controlled return\n4. Good for beginners"
+  },
+  {
+    "code": "SMITH_MACHINE_BENCH_PRESS",
+    "name": "Smith Machine Bench Press",
+    "description": "Bench press on smith machine for guided movement",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Smith Machine",
+    "videoUrl": null,
+    "instructions": "1. Position bench under smith machine\n2. Guided vertical path\n3. Can use more weight safely\n4. Good for isolation"
+  },
+  {
+    "code": "PEC_DECK_FLY",
+    "name": "Pec Deck Fly",
+    "description": "Machine fly for chest isolation",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Machine",
+    "videoUrl": null,
+    "instructions": "1. Adjust seat and arm position\n2. Bring pads together\n3. Squeeze chest\n4. Controlled release"
+  },
+  {
+    "code": "CABLE_CROSSOVER",
+    "name": "Cable Crossover",
+    "description": "Standing cable chest exercise",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Stand between cable stacks\n2. Pull cables together in front\n3. Slight forward lean\n4. Constant tension"
+  },
+  {
+    "code": "SVEND_PRESS",
+    "name": "Svend Press",
+    "description": "Plate squeeze press for inner chest",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Plates",
+    "videoUrl": null,
+    "instructions": "1. Hold plates together at chest\n2. Squeeze plates hard\n3. Press forward\n4. Return to chest"
+  },
+  {
+    "code": "LANDMINE_PRESS",
+    "name": "Landmine Press",
+    "description": "Single-arm pressing movement using landmine",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Barbell, Landmine",
+    "videoUrl": null,
+    "instructions": "1. Hold end of barbell in landmine\n2. Press at angle\n3. Good for shoulder health\n4. Unilateral or bilateral"
+  },
+  {
+    "code": "FLOOR_PRESS",
+    "name": "Floor Press",
+    "description": "Partial range bench press on floor",
+    "category": "strength",
+    "muscleGroup": "chest",
+    "equipment": "Barbell or Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Lie on floor with bar or dumbbells\n2. Press until arms extended\n3. Triceps touch floor at bottom\n4. Good for lockout strength"
+  },
+  {
+    "code": "DEADLIFT_CONVENTIONAL",
+    "name": "Deadlift (Conventional)",
+    "description": "Traditional deadlift stance, compound posterior chain exercise",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Stand with feet hip-width apart\n2. Grip bar just outside legs\n3. Keep back straight, chest up\n4. Drive through heels to stand\n5. Lower bar with control"
+  },
+  {
+    "code": "DEADLIFT_SUMO",
+    "name": "Deadlift (Sumo)",
+    "description": "Wide stance deadlift emphasizing quads and hips",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Wide stance, toes pointed out\n2. Grip bar inside legs\n3. More upright torso\n4. Drive knees out\n5. Hip-dominant movement"
+  },
+  {
+    "code": "ROMANIAN_DEADLIFT",
+    "name": "Romanian Deadlift (RDL)",
+    "description": "Hip-hinge movement for hamstrings and glutes",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Start standing with bar at thighs\n2. Hinge at hips, push them back\n3. Lower bar to mid-shin\n4. Feel stretch in hamstrings\n5. Drive hips forward to stand"
+  },
+  {
+    "code": "ROMANIAN_DEADLIFT_SINGLE_LEG",
+    "name": "Romanian Deadlift (Single Leg)",
+    "description": "Unilateral RDL for balance and hamstring development",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Dumbbell or Barbell",
+    "videoUrl": null,
+    "instructions": "1. Balance on one leg\n2. Hinge at hip, extend other leg back\n3. Lower weight to ground\n4. Return to standing\n5. Challenges balance and stability"
+  },
+  {
+    "code": "STIFF_LEG_DEADLIFT",
+    "name": "Stiff Leg Deadlift",
+    "description": "Minimal knee bend deadlift for maximum hamstring stretch",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Stand with slight knee bend\n2. Hinge at hips keeping legs mostly straight\n3. Deep hamstring stretch\n4. Don't round back\n5. Return to standing"
+  },
+  {
+    "code": "DEFICIT_DEADLIFT",
+    "name": "Deficit Deadlift",
+    "description": "Deadlift from elevated platform for increased range",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell, Platform",
+    "videoUrl": null,
+    "instructions": "1. Stand on 1-4 inch platform\n2. Increased range of motion\n3. Builds strength off floor\n4. More challenging than conventional"
+  },
+  {
+    "code": "RACK_PULL",
+    "name": "Rack Pull",
+    "description": "Partial deadlift from elevated position",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell, Rack",
+    "videoUrl": null,
+    "instructions": "1. Set bar in rack at knee height\n2. Pull from shortened range\n3. Good for lockout strength\n4. Can use heavier weight"
+  },
+  {
+    "code": "TRAP_BAR_DEADLIFT",
+    "name": "Trap Bar Deadlift",
+    "description": "Deadlift using hexagonal trap bar",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Trap Bar",
+    "videoUrl": null,
+    "instructions": "1. Stand inside trap bar\n2. Grip handles at sides\n3. More quad-dominant\n4. Easier on lower back\n5. Great for athletes"
+  },
+  {
+    "code": "PULL_UP_STANDARD",
+    "name": "Pull-Up (Standard/Overhand)",
+    "description": "Classic bodyweight back exercise with overhand grip",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Pull-up Bar",
+    "videoUrl": null,
+    "instructions": "1. Hang from bar with overhand grip\n2. Pull body up until chin over bar\n3. Lower with control\n4. Full extension at bottom"
+  },
+  {
+    "code": "PULL_UP_WIDE",
+    "name": "Pull-Up (Wide Grip)",
+    "description": "Wider grip for lat emphasis",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Pull-up Bar",
+    "videoUrl": null,
+    "instructions": "1. Grip bar wider than shoulders\n2. Pull elbows down and back\n3. Emphasizes lats\n4. To upper chest"
+  },
+  {
+    "code": "PULL_UP_NARROW",
+    "name": "Pull-Up (Close Grip)",
+    "description": "Narrow grip pull-up variation",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Pull-up Bar",
+    "videoUrl": null,
+    "instructions": "1. Hands shoulder-width or closer\n2. More bicep involvement\n3. Pull to chest\n4. Full range"
+  },
+  {
+    "code": "PULL_UP_NEUTRAL",
+    "name": "Pull-Up (Neutral Grip)",
+    "description": "Parallel grip pull-up, shoulder-friendly",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Pull-up Bar",
+    "videoUrl": null,
+    "instructions": "1. Use parallel handles\n2. Palms facing each other\n3. Easier on shoulders\n4. Good bicep involvement"
+  },
+  {
+    "code": "PULL_UP_WEIGHTED",
+    "name": "Pull-Up (Weighted)",
+    "description": "Pull-ups with added weight for progression",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Pull-up Bar, Weight Belt",
+    "videoUrl": null,
+    "instructions": "1. Add weight belt with plates\n2. Same form as bodyweight\n3. Progressive overload\n4. Build strength"
+  },
+  {
+    "code": "CHIN_UP",
+    "name": "Chin-Up (Underhand)",
+    "description": "Underhand grip pull-up with more bicep involvement",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Pull-up Bar",
+    "videoUrl": null,
+    "instructions": "1. Grip bar underhand (supinated)\n2. Pull chin over bar\n3. More bicep activation\n4. Often easier than pull-ups"
+  },
+  {
+    "code": "BARBELL_ROW_BENT_OVER",
+    "name": "Barbell Row (Bent Over)",
+    "description": "Classic bent-over row for back thickness",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Hinge at hips with back straight\n2. Pull bar to lower chest/upper abs\n3. Squeeze shoulder blades together\n4. Control the descent"
+  },
+  {
+    "code": "BARBELL_ROW_UNDERHAND",
+    "name": "Barbell Row (Underhand Grip)",
+    "description": "Supinated grip row for different back activation",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Underhand grip on bar\n2. Pull to lower abdomen\n3. More lower lat emphasis\n4. Bicep involvement"
+  },
+  {
+    "code": "BARBELL_ROW_PENDLAY",
+    "name": "Pendlay Row",
+    "description": "Explosive row from floor with reset",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Start with bar on floor each rep\n2. Torso parallel to ground\n3. Explosive pull to chest\n4. Reset between reps"
+  },
+  {
+    "code": "DUMBBELL_ROW_SINGLE_ARM",
+    "name": "Dumbbell Row (Single Arm)",
+    "description": "Unilateral back exercise with support",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Place one knee and hand on bench\n2. Pull dumbbell to hip\n3. Keep elbow close to body\n4. Squeeze at top"
+  },
+  {
+    "code": "DUMBBELL_ROW_BENT_OVER",
+    "name": "Dumbbell Row (Bent Over, Both Arms)",
+    "description": "Bilateral dumbbell row in bent position",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Hinge at hips with dumbbells\n2. Pull both dumbbells to hips\n3. Keep back flat\n4. Squeeze shoulder blades"
+  },
+  {
+    "code": "CABLE_ROW_SEATED",
+    "name": "Cable Row (Seated)",
+    "description": "Seated cable row for mid-back",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Sit with feet on platform\n2. Pull handle to abdomen\n3. Squeeze shoulder blades\n4. Control return"
+  },
+  {
+    "code": "CABLE_ROW_SINGLE_ARM",
+    "name": "Cable Row (Single Arm)",
+    "description": "Unilateral cable row for balance",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Pull single handle to side\n2. Rotate torso slightly\n3. Full range of motion\n4. Control throughout"
+  },
+  {
+    "code": "T_BAR_ROW",
+    "name": "T-Bar Row",
+    "description": "Loaded barbell row with support",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "T-Bar Row Machine or Barbell",
+    "videoUrl": null,
+    "instructions": "1. Straddle T-bar or barbell\n2. Grip handles or bar\n3. Pull to chest\n4. Good for heavy weight"
+  },
+  {
+    "code": "CHEST_SUPPORTED_ROW",
+    "name": "Chest Supported Row",
+    "description": "Row with chest support for strict form",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Incline Bench, Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Lie chest-down on incline bench\n2. Row dumbbells to hips\n3. Eliminates lower back stress\n4. Strict form"
+  },
+  {
+    "code": "LAT_PULLDOWN_WIDE",
+    "name": "Lat Pulldown (Wide Grip)",
+    "description": "Wide grip cable pulldown for lat width",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Sit with thighs secured\n2. Grip bar wider than shoulders\n3. Pull bar to upper chest\n4. Squeeze lats at bottom"
+  },
+  {
+    "code": "LAT_PULLDOWN_NARROW",
+    "name": "Lat Pulldown (Close Grip)",
+    "description": "Narrow grip pulldown variation",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Use close-grip attachment\n2. Pull to upper chest\n3. More mid-back emphasis\n4. Squeeze at bottom"
+  },
+  {
+    "code": "LAT_PULLDOWN_NEUTRAL",
+    "name": "Lat Pulldown (Neutral Grip)",
+    "description": "Parallel grip pulldown",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Use parallel grip attachment\n2. Palms facing each other\n3. Pull to upper chest\n4. Shoulder-friendly"
+  },
+  {
+    "code": "LAT_PULLDOWN_SINGLE_ARM",
+    "name": "Lat Pulldown (Single Arm)",
+    "description": "Unilateral lat pulldown",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Pull with one arm at a time\n2. Can use more range\n3. Corrects imbalances\n4. Slightly rotate torso"
+  },
+  {
+    "code": "FACE_PULL",
+    "name": "Face Pull",
+    "description": "Cable exercise for rear delts and upper back",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Pull rope toward face\n2. Elbows high and wide\n3. Squeeze rear delts and traps\n4. Control return\n5. Excellent for posture"
+  },
+  {
+    "code": "SHRUG_BARBELL",
+    "name": "Shrug (Barbell)",
+    "description": "Trap development with barbell",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Hold bar at thighs\n2. Shrug shoulders straight up\n3. Don't roll shoulders\n4. Squeeze traps at top"
+  },
+  {
+    "code": "SHRUG_DUMBBELL",
+    "name": "Shrug (Dumbbell)",
+    "description": "Trap exercise with dumbbells",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Hold dumbbells at sides\n2. Shrug shoulders up\n3. Hold at top\n4. Lower with control"
+  },
+  {
+    "code": "DUMBBELL_PULLOVER",
+    "name": "Dumbbell Pullover",
+    "description": "Lat stretch and chest exercise",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Dumbbell",
+    "videoUrl": null,
+    "instructions": "1. Lie perpendicular on bench\n2. Hold dumbbell above chest\n3. Lower behind head in arc\n4. Pull back over chest"
+  },
+  {
+    "code": "INVERTED_ROW",
+    "name": "Inverted Row (Bodyweight Row)",
+    "description": "Bodyweight rowing exercise",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell in Rack or TRX",
+    "videoUrl": null,
+    "instructions": "1. Set bar at waist height\n2. Hang under bar\n3. Pull chest to bar\n4. Body stays straight"
+  },
+  {
+    "code": "MEADOWS_ROW",
+    "name": "Meadows Row",
+    "description": "Single-arm landmine row for thickness",
+    "category": "strength",
+    "muscleGroup": "back",
+    "equipment": "Barbell, Landmine",
+    "videoUrl": null,
+    "instructions": "1. Stagger stance at landmine\n2. Pull barbell to hip\n3. Excellent for thickness\n4. Named after John Meadows"
+  },
+  {
+    "code": "BARBELL_SQUAT_BACK",
+    "name": "Barbell Squat (Back Squat)",
+    "description": "King of leg exercises, bar on upper back",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell, Squat Rack",
+    "videoUrl": null,
+    "instructions": "1. Bar on upper traps/rear delts\n2. Feet shoulder-width apart\n3. Descend until thighs parallel or lower\n4. Drive through heels to stand\n5. Keep chest up and core tight"
+  },
+  {
+    "code": "BARBELL_SQUAT_FRONT",
+    "name": "Barbell Squat (Front Squat)",
+    "description": "Squat with bar on front delts, quad-focused",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell, Squat Rack",
+    "videoUrl": null,
+    "instructions": "1. Bar rests on front delts\n2. Elbows high\n3. More upright torso\n4. Quad-dominant\n5. Core stability"
+  },
+  {
+    "code": "BARBELL_SQUAT_BOX",
+    "name": "Box Squat",
+    "description": "Squat to box for depth consistency",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell, Squat Rack, Box",
+    "videoUrl": null,
+    "instructions": "1. Squat to box or bench\n2. Sit back, touch box\n3. Stand explosively\n4. Builds posterior chain"
+  },
+  {
+    "code": "BARBELL_SQUAT_PAUSE",
+    "name": "Pause Squat",
+    "description": "Squat with pause at bottom for strength",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell, Squat Rack",
+    "videoUrl": null,
+    "instructions": "1. Descend to parallel\n2. Pause for 2-3 seconds\n3. Explode up\n4. Eliminates bounce, builds strength"
+  },
+  {
+    "code": "GOBLET_SQUAT",
+    "name": "Goblet Squat",
+    "description": "Squat holding weight at chest",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Dumbbell or Kettlebell",
+    "videoUrl": null,
+    "instructions": "1. Hold dumbbell at chest\n2. Squat deep\n3. Good for beginners\n4. Teaches upright torso"
+  },
+  {
+    "code": "BULGARIAN_SPLIT_SQUAT",
+    "name": "Bulgarian Split Squat",
+    "description": "Single-leg squat with rear foot elevated",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Dumbbells, Bench",
+    "videoUrl": null,
+    "instructions": "1. Rear foot on bench behind\n2. Descend on front leg\n3. Drive through front heel\n4. Excellent for balance and strength"
+  },
+  {
+    "code": "PISTOL_SQUAT",
+    "name": "Pistol Squat (Single-Leg Squat)",
+    "description": "Advanced single-leg bodyweight squat",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Balance on one leg\n2. Extend other leg forward\n3. Squat on single leg\n4. Very advanced movement"
+  },
+  {
+    "code": "LEG_PRESS",
+    "name": "Leg Press",
+    "description": "Machine-based quad exercise",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Leg Press Machine",
+    "videoUrl": null,
+    "instructions": "1. Sit with back against pad\n2. Feet shoulder-width on platform\n3. Lower platform with control\n4. Press through heels"
+  },
+  {
+    "code": "LEG_PRESS_SINGLE_LEG",
+    "name": "Leg Press (Single Leg)",
+    "description": "Unilateral leg press variation",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Leg Press Machine",
+    "videoUrl": null,
+    "instructions": "1. Press with one leg\n2. Corrects imbalances\n3. Requires less total weight\n4. Focus on control"
+  },
+  {
+    "code": "HACK_SQUAT",
+    "name": "Hack Squat",
+    "description": "Machine squat with back support",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Hack Squat Machine",
+    "videoUrl": null,
+    "instructions": "1. Back against pad\n2. Squat in machine\n3. Quad-focused\n4. Less back stress"
+  },
+  {
+    "code": "LEG_EXTENSION",
+    "name": "Leg Extension",
+    "description": "Isolation exercise for quadriceps",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Leg Extension Machine",
+    "videoUrl": null,
+    "instructions": "1. Sit in machine\n2. Extend legs to straight\n3. Squeeze quads at top\n4. Control descent"
+  },
+  {
+    "code": "LEG_CURL_LYING",
+    "name": "Leg Curl (Lying)",
+    "description": "Hamstring isolation exercise, lying position",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Leg Curl Machine",
+    "videoUrl": null,
+    "instructions": "1. Lie face down on machine\n2. Curl heels toward glutes\n3. Squeeze hamstrings at top\n4. Control the descent"
+  },
+  {
+    "code": "LEG_CURL_SEATED",
+    "name": "Leg Curl (Seated)",
+    "description": "Seated hamstring curl variation",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Leg Curl Machine",
+    "videoUrl": null,
+    "instructions": "1. Sit in machine\n2. Curl legs down\n3. Different hamstring angle\n4. Control throughout"
+  },
+  {
+    "code": "LEG_CURL_SINGLE_LEG",
+    "name": "Leg Curl (Single Leg)",
+    "description": "Unilateral hamstring curl",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Leg Curl Machine",
+    "videoUrl": null,
+    "instructions": "1. One leg at a time\n2. Corrects imbalances\n3. Can focus more\n4. Full range"
+  },
+  {
+    "code": "LUNGE_FORWARD",
+    "name": "Lunge (Forward)",
+    "description": "Walking or stationary forward lunge",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Dumbbells or Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Step forward with one leg\n2. Lower back knee toward floor\n3. Front knee over ankle\n4. Push back to start or walk forward"
+  },
+  {
+    "code": "LUNGE_REVERSE",
+    "name": "Lunge (Reverse)",
+    "description": "Step backward lunge, knee-friendly",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Dumbbells or Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Step backward\n2. Lower to lunge position\n3. Easier on knees\n4. Return to standing"
+  },
+  {
+    "code": "LUNGE_WALKING",
+    "name": "Walking Lunge",
+    "description": "Forward lunges walking continuously",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Dumbbells or Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Alternate legs walking forward\n2. Continuous motion\n3. Good for conditioning\n4. Requires space"
+  },
+  {
+    "code": "LUNGE_LATERAL",
+    "name": "Lateral Lunge (Side Lunge)",
+    "description": "Side-to-side lunge for adductors",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Dumbbells or Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Step wide to side\n2. Bend lunging leg\n3. Keep other leg straight\n4. Targets inner thighs"
+  },
+  {
+    "code": "HIP_THRUST_BARBELL",
+    "name": "Hip Thrust (Barbell)",
+    "description": "Glute-focused exercise with barbell",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell, Bench",
+    "videoUrl": null,
+    "instructions": "1. Upper back on bench\n2. Bar across hips\n3. Drive hips up\n4. Squeeze glutes at top"
+  },
+  {
+    "code": "HIP_THRUST_SINGLE_LEG",
+    "name": "Hip Thrust (Single Leg)",
+    "description": "Unilateral hip thrust",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Bench",
+    "videoUrl": null,
+    "instructions": "1. One leg extended\n2. Thrust on single leg\n3. Advanced variation\n4. Core stability"
+  },
+  {
+    "code": "GLUTE_BRIDGE",
+    "name": "Glute Bridge",
+    "description": "Floor-based glute exercise",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Barbell or Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Lie on floor, knees bent\n2. Drive hips up\n3. Squeeze glutes\n4. Lower with control"
+  },
+  {
+    "code": "GLUTE_BRIDGE_SINGLE_LEG",
+    "name": "Glute Bridge (Single Leg)",
+    "description": "Unilateral glute bridge",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. One leg extended\n2. Bridge on single leg\n3. Challenges stability\n4. More glute activation"
+  },
+  {
+    "code": "CALF_RAISE_STANDING",
+    "name": "Calf Raise (Standing)",
+    "description": "Standing calf development",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Calf Raise Machine or Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Stand with balls of feet on platform\n2. Raise heels as high as possible\n3. Squeeze calves at top\n4. Lower with control, full stretch"
+  },
+  {
+    "code": "CALF_RAISE_SEATED",
+    "name": "Calf Raise (Seated)",
+    "description": "Seated calf raise for soleus",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Seated Calf Raise Machine",
+    "videoUrl": null,
+    "instructions": "1. Sit with weight on knees\n2. Raise heels up\n3. Targets soleus muscle\n4. Full range of motion"
+  },
+  {
+    "code": "CALF_RAISE_SINGLE_LEG",
+    "name": "Calf Raise (Single Leg)",
+    "description": "Unilateral calf raise",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Bodyweight or Dumbbell",
+    "videoUrl": null,
+    "instructions": "1. One leg on platform\n2. Raise heel\n3. Bodyweight or hold dumbbell\n4. Corrects imbalances"
+  },
+  {
+    "code": "STEP_UP",
+    "name": "Step-Up",
+    "description": "Unilateral leg exercise onto platform",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Box or Bench",
+    "videoUrl": null,
+    "instructions": "1. Step onto box with one leg\n2. Drive through heel\n3. Stand tall on box\n4. Step down with control"
+  },
+  {
+    "code": "SLED_PUSH",
+    "name": "Sled Push",
+    "description": "Weighted sled pushing for legs and conditioning",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Prowler Sled",
+    "videoUrl": null,
+    "instructions": "1. Load sled with weight\n2. Push with arms extended or low\n3. Drive through legs\n4. Great for conditioning"
+  },
+  {
+    "code": "SLED_PULL",
+    "name": "Sled Pull",
+    "description": "Pulling weighted sled",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Prowler Sled",
+    "videoUrl": null,
+    "instructions": "1. Attach rope to sled\n2. Pull sled toward you\n3. Can walk backward\n4. Full body workout"
+  },
+  {
+    "code": "OVERHEAD_PRESS_BARBELL",
+    "name": "Overhead Press (Barbell)",
+    "description": "Standing barbell shoulder press",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Bar at collar bone level\n2. Press bar overhead\n3. Lock out arms at top\n4. Keep core tight\n5. Can be standing or seated"
+  },
+  {
+    "code": "OVERHEAD_PRESS_DUMBBELL",
+    "name": "Overhead Press (Dumbbell)",
+    "description": "Dumbbell shoulder press",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Dumbbells at shoulder height\n2. Press dumbbells overhead\n3. Bring together at top\n4. Lower with control"
+  },
+  {
+    "code": "OVERHEAD_PRESS_SINGLE_ARM",
+    "name": "Overhead Press (Single Arm)",
+    "description": "Unilateral overhead press",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbell or Kettlebell",
+    "videoUrl": null,
+    "instructions": "1. Press one arm at a time\n2. Core stability challenge\n3. Corrects imbalances\n4. Can use more range"
+  },
+  {
+    "code": "ARNOLD_PRESS",
+    "name": "Arnold Press",
+    "description": "Dumbbell press with rotation, named after Arnold Schwarzenegger",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Start with palms facing you\n2. Press and rotate palms forward\n3. Full shoulder rotation\n4. Named after Arnold"
+  },
+  {
+    "code": "PUSH_PRESS",
+    "name": "Push Press",
+    "description": "Explosive overhead press with leg drive",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Slight knee dip\n2. Drive up explosively\n3. Press bar overhead\n4. Use more weight than strict press"
+  },
+  {
+    "code": "LATERAL_RAISE_DUMBBELL",
+    "name": "Lateral Raise (Dumbbell)",
+    "description": "Side delt isolation with dumbbells",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Dumbbells at sides\n2. Raise arms laterally to shoulder height\n3. Slight bend in elbows\n4. Control the descent"
+  },
+  {
+    "code": "LATERAL_RAISE_CABLE",
+    "name": "Lateral Raise (Cable)",
+    "description": "Constant tension lateral raise",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Low cable position\n2. Raise arm laterally\n3. Constant tension\n4. Can lean away for stretch"
+  },
+  {
+    "code": "LATERAL_RAISE_SINGLE_ARM",
+    "name": "Lateral Raise (Single Arm, Leaning)",
+    "description": "Unilateral lateral raise with lean",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbell",
+    "videoUrl": null,
+    "instructions": "1. Hold onto support with one hand\n2. Lean away\n3. Raise dumbbell\n4. Increased range"
+  },
+  {
+    "code": "FRONT_RAISE_BARBELL",
+    "name": "Front Raise (Barbell)",
+    "description": "Front delt isolation with barbell",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Hold bar at thighs\n2. Raise bar to shoulder height\n3. Keep arms straight\n4. Control descent"
+  },
+  {
+    "code": "FRONT_RAISE_DUMBBELL",
+    "name": "Front Raise (Dumbbell)",
+    "description": "Front delt isolation with dumbbells",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Dumbbells at thighs\n2. Raise to shoulder height\n3. Alternating or together\n4. Don't swing"
+  },
+  {
+    "code": "FRONT_RAISE_PLATE",
+    "name": "Front Raise (Plate)",
+    "description": "Front raise holding weight plate",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Plate",
+    "videoUrl": null,
+    "instructions": "1. Hold plate at bottom\n2. Raise to shoulder height\n3. Arms extended\n4. Control throughout"
+  },
+  {
+    "code": "REAR_DELT_FLY_DUMBBELL",
+    "name": "Rear Delt Fly (Dumbbell)",
+    "description": "Bent-over rear delt isolation",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Bend forward at hips\n2. Raise dumbbells laterally\n3. Lead with elbows\n4. Squeeze rear delts"
+  },
+  {
+    "code": "REAR_DELT_FLY_CABLE",
+    "name": "Rear Delt Fly (Cable)",
+    "description": "Cable rear delt fly",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Cross cables in front\n2. Pull apart to sides\n3. Squeeze rear delts\n4. Constant tension"
+  },
+  {
+    "code": "REAR_DELT_FLY_MACHINE",
+    "name": "Rear Delt Fly (Machine/Reverse Pec Deck)",
+    "description": "Machine rear delt isolation",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Machine",
+    "videoUrl": null,
+    "instructions": "1. Sit facing pec deck\n2. Pull handles back\n3. Squeeze shoulder blades\n4. Controlled movement"
+  },
+  {
+    "code": "UPRIGHT_ROW_BARBELL",
+    "name": "Upright Row (Barbell)",
+    "description": "Shoulder and trap exercise",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Pull bar up to chin\n2. Elbows high\n3. Use wide grip for shoulders\n4. Control descent"
+  },
+  {
+    "code": "UPRIGHT_ROW_DUMBBELL",
+    "name": "Upright Row (Dumbbell)",
+    "description": "Dumbbell upright row",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Pull dumbbells to chin\n2. Elbows lead\n3. More natural path\n4. Shoulder-friendly"
+  },
+  {
+    "code": "UPRIGHT_ROW_CABLE",
+    "name": "Upright Row (Cable)",
+    "description": "Cable upright row for constant tension",
+    "category": "strength",
+    "muscleGroup": "shoulders",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Use straight bar or rope\n2. Pull to chin\n3. Constant tension\n4. Smooth movement"
+  },
+  {
+    "code": "BARBELL_CURL",
+    "name": "Barbell Curl",
+    "description": "Classic bicep exercise with barbell",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Stand with bar at thighs\n2. Curl bar to shoulders\n3. Keep elbows stationary\n4. Squeeze biceps at top\n5. Control descent"
+  },
+  {
+    "code": "BARBELL_CURL_WIDE_GRIP",
+    "name": "Barbell Curl (Wide Grip)",
+    "description": "Wide grip for short head emphasis",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Grip bar wider than shoulders\n2. Curl as normal\n3. Targets short head\n4. Different bicep activation"
+  },
+  {
+    "code": "BARBELL_CURL_CLOSE_GRIP",
+    "name": "Barbell Curl (Close Grip)",
+    "description": "Narrow grip for long head emphasis",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Grip bar narrower\n2. Targets long head\n3. Keep elbows in\n4. Full range"
+  },
+  {
+    "code": "EZ_BAR_CURL",
+    "name": "EZ-Bar Curl",
+    "description": "Bicep curl with cambered bar, easier on wrists",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "EZ-Bar",
+    "videoUrl": null,
+    "instructions": "1. Use EZ-bar for wrist comfort\n2. Curl to shoulders\n3. Less wrist strain\n4. Popular bicep exercise"
+  },
+  {
+    "code": "DUMBBELL_CURL",
+    "name": "Dumbbell Curl",
+    "description": "Bicep curl with dumbbells",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Dumbbells at sides\n2. Curl alternating or together\n3. Rotate palms up as you curl\n4. Keep elbows tucked"
+  },
+  {
+    "code": "DUMBBELL_CURL_ALTERNATING",
+    "name": "Dumbbell Curl (Alternating)",
+    "description": "Alternating arm curls",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Curl one arm at a time\n2. Can use more focus\n3. Alternate sides\n4. Supinate wrist"
+  },
+  {
+    "code": "HAMMER_CURL",
+    "name": "Hammer Curl",
+    "description": "Neutral grip curl for brachialis",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Dumbbells with neutral grip\n2. Curl keeping thumbs up\n3. Targets brachialis and forearms\n4. Control the descent"
+  },
+  {
+    "code": "PREACHER_CURL",
+    "name": "Preacher Curl",
+    "description": "Bicep curl on preacher bench for isolation",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Preacher Bench, Barbell or Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Arms supported on preacher pad\n2. Curl weight up\n3. Strict form, no swinging\n4. Full range of motion"
+  },
+  {
+    "code": "CONCENTRATION_CURL",
+    "name": "Concentration Curl",
+    "description": "Isolated single-arm bicep curl",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Dumbbell",
+    "videoUrl": null,
+    "instructions": "1. Sit, brace elbow on inner thigh\n2. Curl dumbbell up\n3. Maximum isolation\n4. Squeeze at top"
+  },
+  {
+    "code": "CABLE_CURL",
+    "name": "Cable Curl",
+    "description": "Bicep curl with cable for constant tension",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Use straight bar or rope\n2. Curl with constant tension\n3. Good pump\n4. Various attachments"
+  },
+  {
+    "code": "TRICEP_DIP",
+    "name": "Tricep Dip",
+    "description": "Bodyweight tricep exercise on parallel bars",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Dip Bars",
+    "videoUrl": null,
+    "instructions": "1. Support body on bars\n2. Keep torso upright for triceps\n3. Lower by bending elbows\n4. Press back up"
+  },
+  {
+    "code": "TRICEP_DIP_BENCH",
+    "name": "Bench Dip",
+    "description": "Tricep dip using bench",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Bench",
+    "videoUrl": null,
+    "instructions": "1. Hands on bench behind you\n2. Feet on floor or elevated\n3. Lower body, bend elbows\n4. Press back up"
+  },
+  {
+    "code": "TRICEP_PUSHDOWN",
+    "name": "Tricep Pushdown",
+    "description": "Cable tricep isolation",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Grip attachment overhead\n2. Push down until arms extended\n3. Keep elbows at sides\n4. Squeeze triceps at bottom"
+  },
+  {
+    "code": "TRICEP_PUSHDOWN_ROPE",
+    "name": "Tricep Pushdown (Rope)",
+    "description": "Rope attachment tricep pushdown",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Use rope attachment\n2. Split rope at bottom\n3. Full tricep contraction\n4. Popular variation"
+  },
+  {
+    "code": "OVERHEAD_TRICEP_EXTENSION",
+    "name": "Overhead Tricep Extension",
+    "description": "Overhead tricep exercise with dumbbell or cable",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Dumbbell or Cable",
+    "videoUrl": null,
+    "instructions": "1. Weight overhead\n2. Lower behind head\n3. Extend back up\n4. Keep elbows in"
+  },
+  {
+    "code": "SKULL_CRUSHER",
+    "name": "Skull Crusher (Lying Tricep Extension)",
+    "description": "Lying tricep extension to forehead",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Barbell or EZ-Bar",
+    "videoUrl": null,
+    "instructions": "1. Lie on bench with bar overhead\n2. Lower bar to forehead\n3. Extend back up\n4. Only move forearms"
+  },
+  {
+    "code": "TRICEP_KICKBACK",
+    "name": "Tricep Kickback",
+    "description": "Bent-over tricep isolation with dumbbell",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Dumbbell",
+    "videoUrl": null,
+    "instructions": "1. Hinge forward, elbow bent\n2. Extend arm back\n3. Squeeze tricep\n4. Control return"
+  },
+  {
+    "code": "CLOSE_GRIP_BENCH_PRESS",
+    "name": "Close-Grip Bench Press",
+    "description": "Bench press with narrow grip for triceps",
+    "category": "strength",
+    "muscleGroup": "arms",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Narrow grip on bar\n2. Lower to chest\n3. Press up focusing on triceps\n4. Elbows tucked"
+  },
+  {
+    "code": "PLANK",
+    "name": "Plank",
+    "description": "Isometric core hold",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Forearms on floor, body straight\n2. Hold position\n3. Keep core tight\n4. Don't let hips sag"
+  },
+  {
+    "code": "PLANK_SIDE",
+    "name": "Side Plank",
+    "description": "Lateral core stability",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. On side, forearm on floor\n2. Raise hips\n3. Straight line from head to feet\n4. Hold position"
+  },
+  {
+    "code": "PLANK_WEIGHTED",
+    "name": "Weighted Plank",
+    "description": "Plank with added weight",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Plate",
+    "videoUrl": null,
+    "instructions": "1. Standard plank position\n2. Place weight on back\n3. More challenging\n4. Shorter holds"
+  },
+  {
+    "code": "CRUNCH",
+    "name": "Crunch",
+    "description": "Basic abdominal exercise",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Lie on back, knees bent\n2. Curl shoulders off floor\n3. Crunch abs\n4. Lower with control"
+  },
+  {
+    "code": "REVERSE_CRUNCH",
+    "name": "Reverse Crunch",
+    "description": "Lower ab focused crunch",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Lie on back\n2. Bring knees to chest\n3. Lift hips off floor\n4. Lower with control"
+  },
+  {
+    "code": "BICYCLE_CRUNCH",
+    "name": "Bicycle Crunch",
+    "description": "Dynamic ab exercise with rotation",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Alternate bringing elbow to opposite knee\n2. Bicycle motion with legs\n3. Twist torso\n4. Controlled movement"
+  },
+  {
+    "code": "CABLE_CRUNCH",
+    "name": "Cable Crunch",
+    "description": "Weighted ab crunch with cable",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Kneel facing cable\n2. Hold rope at head\n3. Crunch down\n4. Keep hips stationary"
+  },
+  {
+    "code": "HANGING_LEG_RAISE",
+    "name": "Hanging Leg Raise",
+    "description": "Advanced lower ab exercise",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Pull-up Bar",
+    "videoUrl": null,
+    "instructions": "1. Hang from bar\n2. Raise legs to parallel\n3. Keep legs straight\n4. Lower with control"
+  },
+  {
+    "code": "HANGING_KNEE_RAISE",
+    "name": "Hanging Knee Raise",
+    "description": "Easier version of leg raises",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Pull-up Bar",
+    "videoUrl": null,
+    "instructions": "1. Hang from bar\n2. Bring knees to chest\n3. Good progression to leg raises\n4. Control descent"
+  },
+  {
+    "code": "RUSSIAN_TWIST",
+    "name": "Russian Twist",
+    "description": "Rotational core exercise",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Medicine Ball or Plate",
+    "videoUrl": null,
+    "instructions": "1. Sit with feet off floor\n2. Rotate torso side to side\n3. Touch weight to ground each side\n4. Keep core engaged"
+  },
+  {
+    "code": "WOODCHOP",
+    "name": "Woodchop (Cable)",
+    "description": "Diagonal rotational movement",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Pull cable from high to low across body\n2. Rotate through core\n3. Functional movement\n4. Both directions"
+  },
+  {
+    "code": "PALLOF_PRESS",
+    "name": "Pallof Press",
+    "description": "Anti-rotation core exercise",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Cable Machine",
+    "videoUrl": null,
+    "instructions": "1. Stand perpendicular to cable\n2. Press cable straight out\n3. Resist rotation\n4. Hold and return"
+  },
+  {
+    "code": "AB_WHEEL_ROLLOUT",
+    "name": "Ab Wheel Rollout",
+    "description": "Advanced core exercise with ab wheel",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Ab Wheel",
+    "videoUrl": null,
+    "instructions": "1. Kneel with ab wheel\n2. Roll forward, extend body\n3. Roll back to start\n4. Very challenging"
+  },
+  {
+    "code": "DEAD_BUG",
+    "name": "Dead Bug",
+    "description": "Core stability with opposite limb movement",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Lie on back, arms and legs up\n2. Lower opposite arm and leg\n3. Alternate sides\n4. Keep lower back flat"
+  },
+  {
+    "code": "BIRD_DOG",
+    "name": "Bird Dog",
+    "description": "Core stability on hands and knees",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Start on hands and knees\n2. Extend opposite arm and leg\n3. Hold position\n4. Alternate sides"
+  },
+  {
+    "code": "MOUNTAIN_CLIMBER",
+    "name": "Mountain Climber",
+    "description": "Dynamic core and cardio exercise",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Plank position\n2. Bring knee to chest alternating\n3. Fast pace for cardio\n4. Keep hips level"
+  },
+  {
+    "code": "L_SIT",
+    "name": "L-Sit",
+    "description": "Isometric hold with legs extended",
+    "category": "strength",
+    "muscleGroup": "core",
+    "equipment": "Parallettes or Floor",
+    "videoUrl": null,
+    "instructions": "1. Support body on hands\n2. Legs extended straight out\n3. Hold L position\n4. Very advanced"
+  },
+  {
+    "code": "BURPEE",
+    "name": "Burpee",
+    "description": "Full-body conditioning exercise",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Bodyweight",
+    "videoUrl": null,
+    "instructions": "1. Drop to push-up position\n2. Perform push-up\n3. Jump feet to hands\n4. Jump vertically\n5. Repeat continuously"
+  },
+  {
+    "code": "BURPEE_BOX_JUMP",
+    "name": "Burpee Box Jump",
+    "description": "Burpee combined with box jump",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Box",
+    "videoUrl": null,
+    "instructions": "1. Burpee as normal\n2. Jump onto box\n3. Step down\n4. High intensity"
+  },
+  {
+    "code": "KETTLEBELL_SWING",
+    "name": "Kettlebell Swing",
+    "description": "Explosive hip hinge with kettlebell",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Kettlebell",
+    "videoUrl": null,
+    "instructions": "1. Hinge at hips\n2. Swing kettlebell between legs\n3. Drive hips forward explosively\n4. Swing to shoulder height"
+  },
+  {
+    "code": "KETTLEBELL_SWING_SINGLE_ARM",
+    "name": "Kettlebell Swing (Single Arm)",
+    "description": "Unilateral kettlebell swing",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Kettlebell",
+    "videoUrl": null,
+    "instructions": "1. One arm swing\n2. More anti-rotation work\n3. Can alternate or switch\n4. Core stability"
+  },
+  {
+    "code": "KETTLEBELL_SNATCH",
+    "name": "Kettlebell Snatch",
+    "description": "Explosive movement from floor to overhead",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Kettlebell",
+    "videoUrl": null,
+    "instructions": "1. Explosive pull from floor\n2. Catch overhead\n3. One smooth motion\n4. Technical movement"
+  },
+  {
+    "code": "KETTLEBELL_CLEAN",
+    "name": "Kettlebell Clean",
+    "description": "Pull kettlebell to rack position",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Kettlebell",
+    "videoUrl": null,
+    "instructions": "1. Pull from floor to shoulder\n2. Catch in rack position\n3. Don't bang forearm\n4. Technical lift"
+  },
+  {
+    "code": "TURKISH_GET_UP",
+    "name": "Turkish Get-Up",
+    "description": "Complex movement from lying to standing with weight",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Kettlebell or Dumbbell",
+    "videoUrl": null,
+    "instructions": "1. Lie with weight overhead\n2. Stand up while keeping weight up\n3. Reverse to lie back down\n4. Very technical, many steps"
+  },
+  {
+    "code": "CLEAN",
+    "name": "Power Clean (Barbell)",
+    "description": "Olympic lift, floor to shoulders",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Pull bar from floor explosively\n2. Catch in front rack\n3. Partial squat catch\n4. Olympic weightlifting movement"
+  },
+  {
+    "code": "CLEAN_AND_JERK",
+    "name": "Clean and Jerk",
+    "description": "Olympic lift, floor to overhead via shoulders",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Clean bar to shoulders\n2. Dip and drive overhead\n3. Split or squat jerk\n4. Olympic competition lift"
+  },
+  {
+    "code": "SNATCH",
+    "name": "Snatch (Barbell)",
+    "description": "Olympic lift, floor to overhead in one motion",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Wide grip on bar\n2. Pull explosively overhead\n3. Catch in squat\n4. Most technical Olympic lift"
+  },
+  {
+    "code": "THRUSTER",
+    "name": "Thruster",
+    "description": "Front squat directly into push press",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Barbell",
+    "videoUrl": null,
+    "instructions": "1. Front squat\n2. Drive up and press overhead\n3. One continuous movement\n4. High intensity"
+  },
+  {
+    "code": "MAN_MAKER",
+    "name": "Man Maker (Dumbbell Complex)",
+    "description": "Burpee with renegade row and press",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Dumbbells",
+    "videoUrl": null,
+    "instructions": "1. Burpee with dumbbells\n2. Row each arm in plank\n3. Clean dumbbells\n4. Press overhead\n5. Brutal conditioning"
+  },
+  {
+    "code": "WALL_BALL",
+    "name": "Wall Ball",
+    "description": "Squat and throw medicine ball to wall",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Medicine Ball",
+    "videoUrl": null,
+    "instructions": "1. Hold ball at chest\n2. Squat down\n3. Drive up and throw ball to target\n4. Catch and repeat"
+  },
+  {
+    "code": "FARMERS_WALK",
+    "name": "Farmer's Walk",
+    "description": "Loaded carry for grip and full body",
+    "category": "strength",
+    "muscleGroup": "full_body",
+    "equipment": "Dumbbells or Farmer's Walk Handles",
+    "videoUrl": null,
+    "instructions": "1. Hold heavy weights at sides\n2. Walk for distance or time\n3. Keep upright posture\n4. Grip and core work"
+  },
+  {
+    "code": "BATTLE_ROPES",
+    "name": "Battle Ropes",
+    "description": "Conditioning with heavy ropes",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Battle Ropes",
+    "videoUrl": null,
+    "instructions": "1. Hold rope ends\n2. Create waves with various patterns\n3. High intensity intervals\n4. Full body cardio"
+  },
+  {
+    "code": "RUNNING",
+    "name": "Running",
+    "description": "Cardiovascular endurance exercise",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Treadmill or Outdoor",
+    "videoUrl": null,
+    "instructions": "1. Maintain steady pace\n2. Land midfoot\n3. Keep posture upright\n4. Breathe rhythmically"
+  },
+  {
+    "code": "RUNNING_SPRINTS",
+    "name": "Sprints",
+    "description": "High-intensity interval running",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Track or Treadmill",
+    "videoUrl": null,
+    "instructions": "1. All-out effort for short distance\n2. Recovery between sprints\n3. Builds speed and power\n4. HIIT training"
+  },
+  {
+    "code": "CYCLING",
+    "name": "Cycling",
+    "description": "Low-impact cardio exercise",
+    "category": "cardio",
+    "muscleGroup": "legs",
+    "equipment": "Bike or Stationary Bike",
+    "videoUrl": null,
+    "instructions": "1. Adjust seat height\n2. Maintain cadence\n3. Vary resistance\n4. Keep core engaged"
+  },
+  {
+    "code": "ROWING_MACHINE",
+    "name": "Rowing Machine",
+    "description": "Full-body cardio on rowing ergometer",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Rowing Machine",
+    "videoUrl": null,
+    "instructions": "1. Drive with legs first\n2. Pull handle to chest\n3. Extend arms then bend knees\n4. Maintain rhythm"
+  },
+  {
+    "code": "JUMP_ROPE",
+    "name": "Jump Rope",
+    "description": "High-intensity cardio with rope",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Jump Rope",
+    "videoUrl": null,
+    "instructions": "1. Jump on balls of feet\n2. Keep elbows close\n3. Rotate from wrists\n4. Land softly"
+  },
+  {
+    "code": "BOX_JUMP",
+    "name": "Box Jump",
+    "description": "Explosive jump onto elevated platform",
+    "category": "strength",
+    "muscleGroup": "legs",
+    "equipment": "Plyo Box",
+    "videoUrl": null,
+    "instructions": "1. Stand facing box\n2. Jump explosively onto box\n3. Land softly, full foot on box\n4. Step down with control"
+  },
+  {
+    "code": "ASSAULT_BIKE",
+    "name": "Assault Bike (Air Bike)",
+    "description": "Full-body cardio on air resistance bike",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Assault Bike",
+    "videoUrl": null,
+    "instructions": "1. Use arms and legs together\n2. Harder you pedal, more resistance\n3. Brutal for HIIT\n4. Very high calorie burn"
+  },
+  {
+    "code": "STAIR_CLIMBER",
+    "name": "Stair Climber",
+    "description": "Continuous stair climbing cardio",
+    "category": "cardio",
+    "muscleGroup": "legs",
+    "equipment": "Stair Climber Machine",
+    "videoUrl": null,
+    "instructions": "1. Step continuously\n2. Maintain posture\n3. Don't lean heavily on rails\n4. Good glute work"
+  },
+  {
+    "code": "ELLIPTICAL",
+    "name": "Elliptical Trainer",
+    "description": "Low-impact cardio machine",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Elliptical Machine",
+    "videoUrl": null,
+    "instructions": "1. Smooth elliptical motion\n2. Low impact on joints\n3. Can use arms\n4. Good for recovery cardio"
+  },
+  {
+    "code": "SWIMMING",
+    "name": "Swimming",
+    "description": "Full-body low-impact cardio",
+    "category": "cardio",
+    "muscleGroup": "full_body",
+    "equipment": "Pool",
+    "videoUrl": null,
+    "instructions": "1. Various strokes available\n2. Excellent full-body workout\n3. Zero impact\n4. Technical skill required"
+  }
+]

@@ -1,12 +1,13 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@/db/schema';
+import env from '@/config/env';
 
-const connectionString = `postgresql://${process.env.DATABASE_USER}:${process.env.DATABASE_PASSWORD}@${process.env.DATABASE_HOST}:${process.env.DATABASE_PORT}/${process.env.DATABASE_NAME}`;
+const connectionString = `postgresql://${env.DATABASE_USER}:${env.DATABASE_PASSWORD}@${env.DATABASE_HOST}:${env.DATABASE_PORT}/${env.DATABASE_NAME}`;
 
 // Create postgres client
 const client = postgres(connectionString, {
-  max: Number(process.env.DATABASE_POOL_MAX) || 10,
+  max: env.DATABASE_POOL_MAX,
   idle_timeout: 20,
   connect_timeout: 10,
 });
