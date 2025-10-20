@@ -9,6 +9,10 @@ import { logger } from '@/utils/logger';
 import { errorResponse } from '@/utils/response';
 import { AppError } from '@/utils/errors';
 import healthRoutes from '@/routes/health';
+import jwtPlugin from '@/plugins/jwt';
+import authRoutes from '@/modules/auth/auth.routes';
+import profileRoutes from '@/routes/profile';
+import adminUserRoutes from '@/routes/admin/users';
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({
@@ -42,6 +46,9 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
     credentials: true,
   });
 
+  // Register JWT plugin for authentication
+  await app.register(jwtPlugin);
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     const statusCode = error.statusCode || 500;
@@ -65,14 +72,22 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
     }
 
     // Don't leak error details in production
-    const message =
-      env.NODE_ENV === 'production' ? 'Internal server error' : error.message;
+    const message = env.NODE_ENV === 'production' ? 'Internal server error' : error.message;
 
     return reply.status(statusCode).send(errorResponse('INTERNAL_ERROR', message));
   });
 
   // Register routes
   await app.register(healthRoutes);
+
+  // Authentication routes
+  await app.register(authRoutes, { prefix: '/api/auth' });
+
+  // User profile routes (protected)
+  await app.register(profileRoutes, { prefix: '/api/profile' });
+
+  // Admin routes (admin only)
+  await app.register(adminUserRoutes, { prefix: '/api/admin/users' });
 
   // Root route
   app.get('/', async () => {
@@ -84,6 +99,15 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
         health: '/health',
         docs: '/documentation',
         api: '/api',
+        auth: {
+          google: '/api/auth/google',
+          apple: '/api/auth/apple',
+          refresh: '/api/auth/refresh',
+          verify: '/api/auth/verify',
+          logout: '/api/auth/logout',
+        },
+        profile: '/api/profile',
+        admin: '/api/admin/users',
       },
     };
   });

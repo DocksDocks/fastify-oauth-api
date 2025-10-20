@@ -1,4 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import type { JWTPayload } from '@/modules/auth/auth.types';
 
 /**
  * Role-Based Access Control (RBAC) Middleware
@@ -25,13 +26,7 @@ export type UserRole = 'user' | 'admin' | 'superadmin';
  * Extended FastifyRequest with user information from JWT
  */
 export interface AuthenticatedRequest extends FastifyRequest {
-  user?: {
-    id: number;
-    email: string;
-    role: UserRole;
-    iat?: number;
-    exp?: number;
-  };
+  user: JWTPayload;
 }
 
 /**
@@ -111,7 +106,7 @@ export function requireRole(requiredRole: UserRole) {
  */
 export async function requireAdmin(
   request: AuthenticatedRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ): Promise<void> {
   return requireRole('admin')(request, reply);
 }
@@ -131,7 +126,7 @@ export async function requireAdmin(
  */
 export async function requireSuperadmin(
   request: AuthenticatedRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ): Promise<void> {
   return requireRole('superadmin')(request, reply);
 }
@@ -207,7 +202,7 @@ export function requireSelfOrAdmin(allowAdmin = true) {
  */
 export async function optionalAuth(
   _request: AuthenticatedRequest,
-  _reply: FastifyReply
+  _reply: FastifyReply,
 ): Promise<void> {
   // This middleware does nothing - authentication is handled by @fastify/jwt
   // If JWT is present and valid, request.user will be populated
@@ -243,9 +238,7 @@ export function requireAnyRole(allowedRoles: UserRole[]) {
       });
     }
 
-    const hasAllowedRole = allowedRoles.some(role =>
-      hasRole(request.user!.role, role)
-    );
+    const hasAllowedRole = allowedRoles.some((role) => hasRole(request.user!.role, role));
 
     if (!hasAllowedRole) {
       return reply.code(403).send({

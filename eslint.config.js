@@ -3,6 +3,9 @@ import typescript from 'typescript-eslint';
 import globals from 'globals';
 
 export default [
+  {
+    ignores: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**', '*.config.js'],
+  },
   js.configs.recommended,
   ...typescript.configs.recommended,
   {
@@ -37,13 +40,5 @@ export default [
       'prefer-const': 'error',
       'no-var': 'error',
     },
-    ignores: [
-      'node_modules',
-      'dist',
-      'build',
-      'coverage',
-      '*.config.js',
-      '*.config.ts',
-    ],
   },
 ];

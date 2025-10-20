@@ -6,6 +6,7 @@
 - Node.js 22+ LTS (ES Modules only)
 - Fastify 5.6.1+ (latest v5 ecosystem)
 - TypeScript 5.9.3+ with strict mode
+- Path aliases (`@/*` → `src/*`)
 
 **Infrastructure:**
 - PostgreSQL 15-alpine (primary database)
@@ -15,14 +16,16 @@
 
 **ORM & Database:**
 - Drizzle ORM 0.44.6+ (type-safe SQL)
-- Raw postgres driver for performance
-- node-pg-migrate for migrations
+- Drizzle Kit for migrations
+- PostgreSQL native driver
 
-**Authentication:**
+**Authentication & Authorization:**
 - OAuth 2.0 (Google + Apple Sign-In)
 - @fastify/jwt for token management
-- @fastify/oauth2 for provider integration
-- Argon2 for password hashing
+- JWT with role-based access control (RBAC)
+- google-auth-library for Google OAuth
+- apple-signin-auth for Apple OAuth
+- Role hierarchy: user → admin → superadmin
 
 ## Project Architecture
 
@@ -30,31 +33,140 @@
 fastify-oauth-api/
 ├── docker/                      # Service-specific Docker configs
 │   ├── caddy/                   # Reverse proxy
+│   │   ├── caddy.Dockerfile
+│   │   └── Caddyfile
 │   ├── database/                # PostgreSQL
+│   │   ├── database.Dockerfile
+│   │   ├── postgresql.conf
+│   │   ├── init-db.sh
+│   │   └── backup-internal.sh
 │   ├── redis/                   # Redis cache
+│   │   ├── redis.Dockerfile
+│   │   └── redis.conf
 │   └── server/                  # Fastify app
+│       └── server.Dockerfile
 ├── scripts-docker/              # Modular management scripts
-│   ├── postgres/               # DB-specific scripts
-│   ├── redis/                  # Cache-specific scripts
-│   ├── api/                    # API-specific scripts
-│   ├── caddy/                  # Proxy-specific scripts
-│   └── system/                 # System-wide scripts
+│   ├── postgres/                # DB-specific scripts (run, stop, log, exec, backup, remove)
+│   ├── redis/                   # Cache-specific scripts (run, stop, log, exec, remove)
+│   ├── api/                     # API-specific scripts (run, stop, log, exec, rebuild, remove)
+│   ├── caddy/                   # Proxy-specific scripts (run, stop, log, exec, reload, remove)
+│   ├── system/                  # System-wide scripts (start-all, stop-all, restart-all, health-check, logs-all, remove-all, remove-volumes, setup-swap)
+│   └── start.sh                 # Quick start script
 ├── src/
-│   ├── db/                     # Database layer
-│   │   ├── schema.ts           # Drizzle schema
-│   │   ├── client.ts           # DB connection
-│   │   ├── migrations/         # SQL migrations
-│   │   └── seeds/              # Seed data
-│   ├── modules/                # Feature modules
-│   │   ├── auth/              # Authentication logic
-│   │   └── user/              # User management
-│   ├── routes/                 # API endpoints
-│   ├── plugins/                # Fastify plugins
-│   ├── middleware/             # Custom middleware
-│   └── config/                 # Configuration
-├── docker-compose.yml          # Single orchestration file
-└── .env                        # Environment variables
+│   ├── config/                  # Configuration layer
+│   │   ├── env.ts               # Environment validation (Zod)
+│   │   └── index.ts             # Barrel export
+│   ├── db/                      # Database layer
+│   │   ├── schema/              # Drizzle schemas
+│   │   │   ├── users.ts         # Users table with role enum
+│   │   │   └── index.ts         # Barrel export
+│   │   ├── migrations/          # SQL migrations (auto-generated)
+│   │   ├── seeds/               # Seed data
+│   │   │   └── index.ts         # Admin seeding script
+│   │   └── client.ts            # DB connection (Drizzle)
+│   ├── modules/                 # Feature modules
+│   │   └── auth/                # Authentication module
+│   │       ├── auth.types.ts    # OAuth & JWT types
+│   │       ├── auth.service.ts  # Google & Apple OAuth logic
+│   │       ├── jwt.service.ts   # JWT token management
+│   │       ├── auth.controller.ts # Route handlers
+│   │       └── auth.routes.ts   # Route registration
+│   ├── routes/                  # API endpoints
+│   │   ├── health.ts            # Health check endpoint
+│   │   ├── profile.ts           # User profile routes (GET, PATCH, DELETE)
+│   │   └── admin/               # Admin routes
+│   │       └── users.ts         # User management (list, get, update role, delete, stats)
+│   ├── plugins/                 # Fastify plugins
+│   │   └── jwt.ts               # JWT plugin with authenticate decorator
+│   ├── middleware/              # Custom middleware
+│   │   └── authorize.ts         # RBAC middleware (requireAdmin, requireSuperadmin, etc.)
+│   ├── utils/                   # Utilities
+│   │   ├── logger.ts            # Pino logger setup
+│   │   ├── errors.ts            # Custom error classes
+│   │   └── response.ts          # Response formatters
+│   ├── app.ts                   # Fastify app factory
+│   └── server.ts                # Server entry point
+├── test/                        # Tests (TO IMPLEMENT)
+├── keys/                        # OAuth private keys (gitignored)
+├── docker-compose.yml           # Single orchestration file
+├── .env.example                 # Environment template
+├── .env                         # Environment variables (gitignored)
+├── tsconfig.json                # TypeScript config
+├── drizzle.config.ts            # Drizzle config
+├── vitest.config.ts             # Vitest config
+├── eslint.config.js             # ESLint flat config
+├── package.json                 # Dependencies
+├── CLAUDE.md                    # This file
+├── IMPLEMENTATION_GUIDE.md      # Setup and configuration guide
+├── RASPBERRY_PI.md              # RPi deployment guide
+└── README.md                    # Project overview
 ```
+
+## Current Implementation Status
+
+### ✅ Fully Implemented
+
+**Infrastructure:**
+- [x] Docker orchestration (single docker-compose.yml)
+- [x] Modular scripts-docker/ architecture
+- [x] PostgreSQL 15 with health checks
+- [x] Redis 7 with persistence
+- [x] Caddy reverse proxy
+- [x] Multi-stage Dockerfiles
+- [x] Non-root users in all containers
+- [x] Resource limits (CPU, memory)
+
+**Configuration:**
+- [x] Environment validation (Zod)
+- [x] TypeScript strict mode
+- [x] Path aliases (`@/*`)
+- [x] ESLint + Prettier
+- [x] Husky git hooks
+
+**Database:**
+- [x] Drizzle ORM setup
+- [x] Users schema with role enum
+- [x] Database migrations
+- [x] Admin seeding system
+- [x] Connection pooling
+
+**Authentication:**
+- [x] Google OAuth flow
+- [x] Apple OAuth flow (ready for use)
+- [x] JWT token generation
+- [x] JWT token verification
+- [x] Token refresh mechanism
+- [x] Auto-admin promotion
+
+**Authorization (RBAC):**
+- [x] Role-based access control
+- [x] Three roles: user, admin, superadmin
+- [x] Authorization middleware
+- [x] Role-based route protection
+
+**API Endpoints:**
+- [x] Health check
+- [x] OAuth authentication (Google + Apple)
+- [x] Token refresh
+- [x] Token verification
+- [x] User profile management
+- [x] Admin user management
+
+**Code Quality:**
+- [x] Error handling
+- [x] Structured logging (Pino)
+- [x] Security headers (Helmet)
+- [x] Rate limiting
+- [x] CORS
+- [x] Compression
+- [x] Graceful shutdown
+
+### ⏳ Pending Implementation
+
+- [ ] Swagger/OpenAPI documentation
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] E2E tests
 
 ## Development Workflow
 
@@ -74,17 +186,23 @@ docker compose logs -f           # all services
 npm run docker:api:log           # API only
 npm run docker:postgres:log      # PostgreSQL only
 
-# Development
+# Development (local machine, Docker for DB/Redis)
 npm run dev                      # Hot reload with tsx
 
 # Database
 npm run db:generate              # Generate migrations
 npm run db:migrate               # Run migrations
 npm run db:studio                # Open Drizzle Studio
+npm run db:seed                  # Seed admin users
 
 # Testing
 npm test                         # Run tests with Vitest
 npm run test:coverage            # Coverage report
+
+# Code Quality
+npm run lint                     # ESLint
+npm run format                   # Prettier
+npm run type-check               # TypeScript
 ```
 
 ## Code Style Standards
@@ -99,6 +217,19 @@ npm run test:coverage            # Coverage report
 - Explicit return types on exported functions
 - Interface over type for object shapes
 - No `any` types (use `unknown` if needed)
+- `moduleResolution: "bundler"` (supports path aliases)
+
+**Path Aliases:**
+- Use `@/*` instead of relative paths
+- Maps to `src/*` directory
+- NO `.js` extensions in imports
+- Examples:
+  ```typescript
+  import { env } from '@/config/env';
+  import { db } from '@/db/client';
+  import { users } from '@/db/schema/users';
+  import type { User } from '@/db/schema/users';
+  ```
 
 **Async/Await:**
 - ALWAYS use async/await (never callbacks)
@@ -114,8 +245,199 @@ npm run test:coverage            # Coverage report
 **Code Organization:**
 - One feature per file/directory
 - Export named functions (avoid default exports)
-- Keep files under 200 lines
+- Keep files under 300 lines
 - Use barrel exports (index.ts) for modules
+
+## OAuth & JWT Authentication
+
+### OAuth Flow
+
+**Supported Providers:**
+1. **Google Sign-In** - Fully implemented
+2. **Apple Sign-In** - Fully implemented (requires paid Apple Developer account)
+
+**Flow Steps:**
+1. Client requests OAuth URL: `GET /api/auth/google` or `GET /api/auth/apple`
+2. Server returns authorization URL
+3. User authenticates with provider (redirect)
+4. Provider redirects to callback with authorization code
+5. Server exchanges code for user info (Google) or verifies ID token (Apple)
+6. Server creates or updates user in database
+7. Server checks if user email matches `ADMIN_EMAIL` → auto-promote to admin
+8. Server generates JWT access + refresh tokens
+9. Client stores tokens and uses access token for subsequent requests
+
+**Auto-Admin Promotion:**
+- Set `ADMIN_EMAIL=your-email@gmail.com` in `.env`
+- Set `ADMIN_EMAILS_ADDITIONAL=email1@gmail.com,email2@gmail.com` for multiple admins
+- When user signs in via OAuth, email is checked against these lists
+- If match found, user is automatically promoted to admin role
+- Also works for existing users (upgrades user → admin on next login)
+
+### JWT Implementation
+
+**Token Types:**
+- **Access Token**: Short-lived (15 minutes), used for API requests
+- **Refresh Token**: Long-lived (7 days), used to get new access tokens
+
+**JWT Payload:**
+```typescript
+interface JWTPayload {
+  id: number;          // User ID
+  email: string;       // User email
+  role: 'user' | 'admin' | 'superadmin';  // For RBAC
+  iat?: number;        // Issued at
+  exp?: number;        // Expires at
+}
+```
+
+**Token Endpoints:**
+- `POST /api/auth/refresh` - Refresh access token using refresh token
+- `GET /api/auth/verify` - Verify access token
+- `POST /api/auth/logout` - Logout (client discards tokens)
+
+### Module Structure
+
+**`src/modules/auth/`:**
+- **`auth.types.ts`**: TypeScript interfaces for OAuth, JWT, providers
+- **`auth.service.ts`**: OAuth logic (handleGoogleOAuth, handleAppleOAuth, handleOAuthCallback, getGoogleAuthUrl, getAppleAuthUrl)
+- **`jwt.service.ts`**: JWT management (generateTokens, verifyToken, refreshAccessToken)
+- **`auth.controller.ts`**: Route handlers (handleGoogleLogin, handleGoogleCallback, handleAppleLogin, handleAppleCallback, handleRefreshToken, handleLogout, handleVerifyToken)
+- **`auth.routes.ts`**: Fastify route registration with schemas
+
+**`src/plugins/jwt.ts`:**
+- Registers `@fastify/jwt` plugin
+- Adds `fastify.authenticate` decorator for route protection
+- Extends FastifyRequest with typed `user` property
+
+## Role-Based Access Control (RBAC)
+
+### Role Hierarchy
+
+```
+user → admin → superadmin
+```
+
+**Permissions:**
+- **user**: Access own profile, use public endpoints
+- **admin**: All user permissions + manage other users, view stats
+- **superadmin**: All admin permissions + promote to superadmin, delete superadmins
+
+### Database Schema
+
+```typescript
+// src/db/schema/users.ts
+export const roleEnum = pgEnum('role', ['user', 'admin', 'superadmin']);
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  avatar: text('avatar'),
+  provider: text('provider').notNull(),  // 'google' | 'apple'
+  providerId: text('provider_id').notNull(),
+  role: roleEnum('role').notNull().default('user'),  // RBAC role
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+```
+
+### Authorization Middleware
+
+**`src/middleware/authorize.ts`** provides these middleware functions:
+
+**`requireAdmin`** - Requires admin or superadmin role
+```typescript
+fastify.get('/api/admin/users', {
+  preHandler: requireAdmin,
+  handler: listUsers
+});
+```
+
+**`requireSuperadmin`** - Requires superadmin role only
+```typescript
+fastify.patch('/api/admin/promote-superadmin/:id', {
+  preHandler: requireSuperadmin,
+  handler: promoteSuperadmin
+});
+```
+
+**`requireRole(allowedRoles)`** - Requires one of specified roles
+```typescript
+fastify.get('/api/reports', {
+  preHandler: requireRole(['admin', 'superadmin']),
+  handler: getReports
+});
+```
+
+**`requireSelfOrAdmin(allowAdmin)`** - Requires user to be themselves or admin
+```typescript
+fastify.patch('/api/users/:id', {
+  preHandler: requireSelfOrAdmin(true),
+  handler: updateUser
+});
+```
+
+**`optionalAuth`** - Attaches user if authenticated, but doesn't require it
+```typescript
+fastify.get('/api/public-data', {
+  preHandler: optionalAuth,
+  handler: getPublicData  // request.user may or may not exist
+});
+```
+
+### Admin Seeding
+
+**Manual Promotion:**
+```bash
+npm run db:seed
+```
+
+This script:
+1. Reads `ADMIN_EMAIL` and `ADMIN_EMAILS_ADDITIONAL` from `.env`
+2. Finds users by email in database
+3. Updates role from `user` to `admin` if not already admin
+4. Logs results
+
+**Auto-Promotion:**
+- Happens automatically on OAuth login
+- Implemented in `src/modules/auth/auth.service.ts` → `handleOAuthCallback()`
+- No manual script needed
+
+## API Endpoints Reference
+
+### Public Endpoints (No Authentication Required)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API information and available endpoints |
+| GET | `/health` | Health check (returns `{"status":"ok"}`) |
+| GET | `/api/auth/google` | Get Google OAuth authorization URL |
+| GET | `/api/auth/google/callback` | Google OAuth callback (receives code, returns tokens) |
+| GET | `/api/auth/apple` | Get Apple OAuth authorization URL |
+| POST | `/api/auth/apple/callback` | Apple OAuth callback (receives code + id_token, returns tokens) |
+| POST | `/api/auth/refresh` | Refresh access token using refresh token |
+| GET | `/api/auth/verify` | Verify access token validity |
+| POST | `/api/auth/logout` | Logout (client-side token discard) |
+
+### Protected Endpoints (Require JWT Authentication)
+
+| Method | Endpoint | Description | Required Role |
+|--------|----------|-------------|---------------|
+| GET | `/api/profile` | Get current user profile | user+ |
+| PATCH | `/api/profile` | Update profile (name, avatar) | user+ |
+| DELETE | `/api/profile` | Delete own account | user+ |
+
+### Admin Endpoints (Require Admin Role)
+
+| Method | Endpoint | Description | Required Role |
+|--------|----------|-------------|---------------|
+| GET | `/api/admin/users` | List all users (with pagination, search, sort) | admin+ |
+| GET | `/api/admin/users/stats` | Get user statistics (total, by role, by provider) | admin+ |
+| GET | `/api/admin/users/:id` | Get user by ID | admin+ |
+| PATCH | `/api/admin/users/:id/role` | Update user role | admin+ (superadmin for superadmin role) |
+| DELETE | `/api/admin/users/:id` | Delete user | admin+ (superadmin for superadmin users) |
 
 ## Docker Standards
 
@@ -130,7 +452,7 @@ npm run test:coverage            # Coverage report
 - Multi-stage builds MANDATORY
 - Non-root user REQUIRED (nodejs:nodejs 1001:1001)
 - Health checks on ALL services
-- Pinned base images (node:22-alpine, NEVER :latest)
+- Pinned base images (node:22-alpine, postgres:15-alpine, NEVER :latest)
 - .dockerignore includes node_modules, .git, .env
 
 **Container Naming Convention:**
@@ -141,7 +463,14 @@ npm run test:coverage            # Coverage report
 
 **Service Naming:**
 - Network: api-network (single custom network)
-- Volumes: fastify_oauth_{service}_data
+- Volumes: fastify_oauth_postgres_data, fastify_oauth_redis_data, fastify_oauth_caddy_data
+
+**Resource Limits (Optimized for Raspberry Pi 4B):**
+- API: 512MB RAM, 1 CPU
+- PostgreSQL: 512MB RAM, 1 CPU
+- Redis: 256MB RAM, 0.5 CPU
+- Caddy: 256MB RAM, 0.5 CPU
+- **Total: ~1.5GB RAM, ~3 CPUs**
 
 ## Database Practices
 
@@ -150,23 +479,26 @@ npm run test:coverage            # Coverage report
 - Always use `timestamp` with timezone
 - Index foreign keys automatically
 - Use `serial` for auto-increment IDs
+- Use `pgEnum` for role-based fields
 
 **Migrations:**
 - NEVER edit existing migrations
 - Create new migration to modify schema
-- Run migrations automatically on container start
+- Run migrations automatically on container start (can also run manually)
 - Keep migrations reversible when possible
+- Generate with: `npm run db:generate`
+- Apply with: `npm run db:migrate`
 
 **Queries:**
 - Use Drizzle ORM query builder
 - Raw SQL only for complex queries
-- ALWAYS use parameterized statements: `db.query(sql, [params])`
+- ALWAYS use parameterized statements
 - Never string concatenation in queries
 
 **Performance:**
 - Connection pooling (min: 2, max: 10)
 - Index all foreign keys
-- Index frequently-queried columns
+- Index frequently-queried columns (email)
 - Use EXPLAIN ANALYZE for slow queries
 
 ## Security Requirements
@@ -175,7 +507,7 @@ npm run test:coverage            # Coverage report
 - ALL secrets in .env file (NEVER commit .env)
 - Provide .env.example with placeholders
 - Use ${VARIABLE} references in docker-compose.yml
-- Validate all env vars on startup
+- Validate all env vars on startup (using Zod)
 
 **Docker Security:**
 - Non-root users in ALL containers
@@ -185,58 +517,35 @@ npm run test:coverage            # Coverage report
 
 **API Security:**
 - Rate limiting: 100 requests/minute per IP
-- CORS restricted to known origins
+- CORS restricted to known origins (production)
 - Helmet for security headers
 - HTTPS only in production (Caddy handles)
 - JWT tokens expire (15m access, 7d refresh)
 
 **Authentication:**
-- OAuth tokens stored in Redis (1-hour TTL)
-- Password hashing with Argon2
-- PKCE flow for OAuth providers
-- Secure session cookies (httpOnly, secure, sameSite)
+- OAuth tokens validated server-side
+- JWT tokens signed with HS256 (configurable)
+- Refresh token rotation (can be implemented)
+- Secure session cookies (httpOnly, secure, sameSite) if using cookies
 
 ## Redis Usage Patterns
 
-**Caching:**
+**Session Management:**
+- Store OAuth tokens (optional, not currently implemented)
+- 1-hour TTL for access tokens
+- 7-day TTL for refresh tokens
+- Automatic cleanup via Redis expiry
+
+**Caching (To Implement):**
 - TTL: 5 minutes for API responses
 - Key prefix: `fastify:`
 - Invalidate on data updates
 - Use Redis SCAN for bulk operations
 
-**Session Management:**
-- Store OAuth tokens
-- 1-hour TTL for access tokens
-- 7-day TTL for refresh tokens
-- Automatic cleanup via Redis expiry
-
 **Pub/Sub (Optional):**
 - Channel naming: `fastify:{feature}:{event}`
 - JSON payloads only
 - Error handling for dropped messages
-
-## OAuth Implementation
-
-**Google Sign-In:**
-- Scopes: openid, email, profile
-- Mobile app support via redirect URLs
-- Token validation server-side
-- User info caching in Redis
-
-**Apple Sign-In:**
-- Private key in ./keys/ (NOT committed)
-- Team ID and Key ID in environment
-- JWT generation for client authentication
-- Handle email privacy relay
-
-**Flow:**
-1. Client requests OAuth URL from `/api/auth/oauth/{provider}`
-2. User authenticates with provider
-3. Provider redirects to callback URL with code
-4. Server exchanges code for tokens
-5. Server validates tokens and creates user
-6. Server issues JWT access + refresh tokens
-7. Client uses JWT for subsequent requests
 
 ## Caddy Configuration
 
@@ -249,6 +558,7 @@ npm run test:coverage            # Coverage report
 **Development:**
 - Use staging Let's Encrypt (avoid rate limits)
 - `CADDY_ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory`
+- `CADDY_DOMAIN=localhost`
 
 **Production:**
 - Production Let's Encrypt
@@ -272,35 +582,57 @@ npm run test:coverage            # Coverage report
 
 **Coverage:**
 - Minimum 80% code coverage
-- 100% for critical paths (auth, payments)
+- 100% for critical paths (auth)
 - Run with: `npm run test:coverage`
+- Vitest v3 API: Coverage thresholds nested in `thresholds` object
+
+**Vitest Config:**
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'v8',
+      thresholds: {  // Vitest v3: nested in thresholds
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
+    },
+  },
+});
+```
 
 ## Critical DO NOTs
 
-❌ **NEVER commit .env files** with real credentials  
-❌ **NEVER use :latest** Docker tags  
-❌ **NEVER run containers as root**  
-❌ **NEVER use 'version' field** in docker-compose.yml (deprecated)  
-❌ **NEVER hardcode container names** in docker-compose.yml  
-❌ **NEVER use synchronous I/O** in request handlers  
-❌ **NEVER concatenate SQL** strings (always parameterize)  
-❌ **NEVER expose stack traces** in production API responses  
-❌ **NEVER skip database migrations** (always migrate up/down)  
-❌ **NEVER hardcode configuration** (use environment variables)  
+❌ **NEVER commit .env files** with real credentials
+❌ **NEVER use :latest** Docker tags
+❌ **NEVER run containers as root**
+❌ **NEVER use 'version' field** in docker-compose.yml (deprecated)
+❌ **NEVER hardcode container names** in docker-compose.yml
+❌ **NEVER use synchronous I/O** in request handlers
+❌ **NEVER concatenate SQL** strings (always parameterize)
+❌ **NEVER expose stack traces** in production API responses
+❌ **NEVER skip database migrations** (always migrate up/down)
+❌ **NEVER hardcode configuration** (use environment variables)
 ❌ **NEVER create multiple docker-compose files** (use single file + .env)
+❌ **NEVER use .js extensions** in TypeScript imports (use path aliases without extensions)
 
 ## Critical DOs
 
-✅ **ALWAYS pin dependency versions** (exact in package.json)  
-✅ **ALWAYS use async/await** (never callbacks)  
-✅ **ALWAYS validate environment variables** on startup  
-✅ **ALWAYS include health checks** in Dockerfiles  
-✅ **ALWAYS use non-root users** in containers  
-✅ **ALWAYS structure logs as JSON** for aggregation  
-✅ **ALWAYS handle errors explicitly** (no silent failures)  
-✅ **ALWAYS use modular scripts-docker/** for management  
-✅ **ALWAYS test locally before committing** (docker compose up)  
+✅ **ALWAYS pin dependency versions** (exact in package.json)
+✅ **ALWAYS use async/await** (never callbacks)
+✅ **ALWAYS validate environment variables** on startup
+✅ **ALWAYS include health checks** in Dockerfiles
+✅ **ALWAYS use non-root users** in containers
+✅ **ALWAYS structure logs as JSON** for aggregation
+✅ **ALWAYS handle errors explicitly** (no silent failures)
+✅ **ALWAYS use modular scripts-docker/** for management
+✅ **ALWAYS test locally before committing** (docker compose up)
 ✅ **ALWAYS use ${CONTAINER_NAME} variables** for container names in compose
+✅ **ALWAYS use path aliases** (`@/*`) instead of relative paths
+✅ **ALWAYS use named exports** (avoid default exports)
 
 ## Logging Standards
 
@@ -317,7 +649,7 @@ npm run test:coverage            # Coverage report
 
 **Sensitive Data:**
 - NEVER log passwords, tokens, or API keys
-- Redact email addresses (show only domain)
+- Redact email addresses (show only domain) if logging
 - Hash user IDs if needed for debugging
 
 ## Performance Guidelines
@@ -331,12 +663,12 @@ npm run test:coverage            # Coverage report
 **Database Optimization:**
 - Connection pooling (reuse connections)
 - Query batching where possible
-- Use indexes on foreign keys
+- Use indexes on foreign keys and email
 - Monitor slow query log
 
 **Container Resources:**
 - API: 512MB RAM, 1 CPU
-- PostgreSQL: 512MB RAM, 1 CPU  
+- PostgreSQL: 512MB RAM, 1 CPU
 - Redis: 256MB RAM, 0.5 CPU
 - Caddy: 256MB RAM, 0.5 CPU
 
@@ -370,6 +702,15 @@ docker compose logs api
 find scripts-docker -name "*.sh" -exec chmod +x {} \;
 ```
 
+**TypeScript path alias errors:**
+```bash
+# Check tsconfig.json has:
+# - "baseUrl": "."
+# - "paths": { "@/*": ["src/*"] }
+# - "moduleResolution": "bundler"
+npm run type-check
+```
+
 ## Production Deployment Checklist
 
 Before deploying to production, verify:
@@ -377,18 +718,39 @@ Before deploying to production, verify:
 - [ ] `NODE_ENV=production` in .env
 - [ ] Strong `JWT_SECRET` (min 32 chars random)
 - [ ] Strong `DATABASE_PASSWORD` (min 16 chars random)
+- [ ] Strong `SESSION_SECRET` (min 32 chars random)
 - [ ] Redis password enabled (`REDIS_PASSWORD` set)
 - [ ] Real domain in `CADDY_DOMAIN`
 - [ ] Production Let's Encrypt in `CADDY_ACME_CA`
 - [ ] Valid email in `CADDY_EMAIL`
 - [ ] OAuth credentials for production (not dev)
+- [ ] `LOG_PRETTY_PRINT=false`
+- [ ] `CORS_ORIGIN` with specific domains (not *)
+- [ ] `DATABASE_SSL=true` if database is exposed
 - [ ] Health checks configured in orchestrator
 - [ ] Backup strategy implemented
 - [ ] Monitoring and alerting configured
-- [ ] SSL/TLS for database if exposed
 - [ ] Firewall rules configured
 - [ ] Log aggregation configured
 - [ ] Secrets stored in secret manager (not .env file)
+- [ ] `SWAGGER_ENABLED=false` or protect endpoint
+
+## Development Guide
+
+For detailed setup instructions, see **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)**:
+- Environment variable configuration
+- Google OAuth setup (step-by-step)
+- Apple OAuth setup (when you get paid account)
+- Docker container deep dive
+- Testing OAuth flows
+- Admin user setup
+- Troubleshooting
+
+For Raspberry Pi deployment, see **[RASPBERRY_PI.md](./RASPBERRY_PI.md)**:
+- SWAP configuration for 4GB RAM
+- Performance tuning
+- Resource monitoring
+- Backup strategies
 
 ## Support Resources
 
@@ -397,6 +759,8 @@ Before deploying to production, verify:
 - Drizzle ORM: https://orm.drizzle.team/
 - Docker Compose: https://docs.docker.com/compose/
 - Caddy: https://caddyserver.com/docs/
+- Google OAuth: https://developers.google.com/identity/protocols/oauth2
+- Apple Sign-In: https://developer.apple.com/sign-in-with-apple/
 
 **Community:**
 - Fastify Discord: https://discord.gg/fastify
@@ -404,6 +768,6 @@ Before deploying to production, verify:
 
 ---
 
-**Last Updated:** October 2025  
-**Maintainer:** Infrastructure Team  
-**Version:** 7.0 (Modular Architecture)
+**Last Updated:** October 2025
+**Maintainer:** Infrastructure Team
+**Version:** 8.0 (Production-Ready OAuth + RBAC)

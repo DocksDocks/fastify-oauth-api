@@ -22,10 +22,9 @@ async function seedAdmins(): Promise<void> {
 
     // Get admin emails from environment
     const primaryAdminEmail = env.ADMIN_EMAIL;
-    const additionalEmails = env.ADMIN_EMAILS_ADDITIONAL
-      .split(',')
-      .map(email => email.trim())
-      .filter(email => email.length > 0);
+    const additionalEmails = env.ADMIN_EMAILS_ADDITIONAL.split(',')
+      .map((email) => email.trim())
+      .filter((email) => email.length > 0);
 
     const allAdminEmails = [primaryAdminEmail, ...additionalEmails];
 
@@ -41,11 +40,7 @@ async function seedAdmins(): Promise<void> {
 
     // Process each admin email
     for (const email of allAdminEmails) {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
+      const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
       if (!user) {
         console.log(`⚠️  User not found: ${email}`);

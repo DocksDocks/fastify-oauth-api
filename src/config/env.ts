@@ -21,6 +21,22 @@ const envSchema = z.object({
   ADMIN_EMAIL: z.string().email(),
   ADMIN_EMAILS_ADDITIONAL: z.string().optional().default(''),
 
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().optional(),
+  GOOGLE_REDIRECT_URI_MOBILE: z.string().optional(),
+  GOOGLE_SCOPES: z.string().default('openid email profile'),
+
+  // Apple OAuth
+  APPLE_CLIENT_ID: z.string().optional(),
+  APPLE_TEAM_ID: z.string().optional(),
+  APPLE_KEY_ID: z.string().optional(),
+  APPLE_PRIVATE_KEY_PATH: z.string().optional(),
+  APPLE_REDIRECT_URI: z.string().optional(),
+  APPLE_REDIRECT_URI_MOBILE: z.string().optional(),
+  APPLE_SCOPES: z.string().default('name email'),
+
   LOG_LEVEL: z.string().default('info'),
   LOG_PRETTY_PRINT: z.string().default('false'),
 });
