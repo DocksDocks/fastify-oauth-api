@@ -1,0 +1,130 @@
+# ==========================================
+# Node.js
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+
+# ==========================================
+# Build outputs
+# ==========================================
+dist/
+build/
+.output/
+*.tsbuildinfo
+
+# ==========================================
+# Environment variables
+# ==========================================
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ==========================================
+# Secrets and keys
+# ==========================================
+keys/*.p8
+keys/*.pem
+keys/*.key
+*.p8
+*.pem
+*.key
+secrets/
+
+# ==========================================
+# Database
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+drizzle/meta/
+
+# ==========================================
+# Logs
+# ==========================================
+logs/
+*.log
+scripts-docker/system/logs/*.log
+pino-*.log
+
+# ==========================================
+# Backups
+# ==========================================
+scripts-docker/system/backups/*.sql
+scripts-docker/system/backups/*.sql.gz
+scripts-docker/system/backups/*.dump
+*.backup
+
+# ==========================================
+# Testing
+# ==========================================
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+
+# ==========================================
+# IDEs and editors
+# ==========================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.DS_Store
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# Docker
+# ==========================================
+.docker/
+docker-compose.override.yml
+.dockerignore.local
+
+# ==========================================
+# OS
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ==========================================
+# Temporary files
+# ==========================================
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# ==========================================
+# Misc
+# ==========================================
+.eslintcache
+.stylelintcache
+.prettierignore
+.husky/_/
+
+# Keep .gitkeep files
+!**/.gitkeep

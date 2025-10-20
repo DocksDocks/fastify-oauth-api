@@ -1,0 +1,204 @@
+name: fastify-oauth-api
+
+networks:
+  api-network:
+    driver: bridge
+    name: ${DOCKER_NETWORK_NAME:-api-network}
+
+volumes:
+  fastify_oauth_postgres_data:
+    name: fastify_oauth_postgres_data
+  fastify_oauth_redis_data:
+    name: fastify_oauth_redis_data
+  fastify_oauth_caddy_data:
+    name: fastify_oauth_caddy_data
+  fastify_oauth_caddy_config:
+    name: fastify_oauth_caddy_config
+
+services:
+  postgres:
+    container_name: ${CONTAINER_POSTGRES_NAME:-fastify-oauth-postgres}
+    image: ${CONTAINER_POSTGRES_NAME:-fastify-oauth-postgres}-img
+    build:
+      context: .
+      dockerfile: docker/database/database.Dockerfile
+      args:
+        POSTGRES_VERSION: ${POSTGRES_VERSION:-15-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_DB: ${DATABASE_NAME:-fastify_oauth_db}
+      POSTGRES_PORT: ${DATABASE_PORT:-5432}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - fastify_oauth_postgres_data:/var/lib/postgresql/data
+      - ./docker/database/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./docker/database/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    networks:
+      - api-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-fastify_oauth_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.4'
+          memory: 256M
+
+  redis:
+    container_name: ${CONTAINER_REDIS_NAME:-fastify-oauth-redis}
+    image: ${CONTAINER_REDIS_NAME:-fastify-oauth-redis}-img
+    build:
+      context: .
+      dockerfile: docker/redis/redis.Dockerfile
+      args:
+        REDIS_VERSION: ${REDIS_VERSION:-7-alpine}
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - fastify_oauth_redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - api-network
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+        reservations:
+          cpus: '0.2'
+          memory: 96M
+
+  api:
+    container_name: ${CONTAINER_API_NAME:-fastify-oauth-api}
+    image: ${CONTAINER_API_NAME:-fastify-oauth-api}-img
+    build:
+      context: .
+      dockerfile: docker/server/server.Dockerfile
+      target: ${BUILD_TARGET:-production}
+      args:
+        NODE_VERSION: ${NODE_VERSION:-22-alpine}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=512}
+      PORT: ${PORT:-3000}
+      HOST: ${HOST:-0.0.0.0}
+      API_VERSION: ${API_VERSION:-v1}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_USER: ${DATABASE_USER:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      DATABASE_NAME: ${DATABASE_NAME:-fastify_oauth_db}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      DATABASE_POOL_MIN: ${DATABASE_POOL_MIN:-2}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-fastify:}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRES_IN: ${JWT_ACCESS_TOKEN_EXPIRES_IN:-15m}
+      JWT_REFRESH_TOKEN_EXPIRES_IN: ${JWT_REFRESH_TOKEN_EXPIRES_IN:-7d}
+      JWT_ISSUER: ${JWT_ISSUER:-fastify-oauth-api}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-fastify-oauth-api}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID}
+      APPLE_KEY_ID: ${APPLE_KEY_ID}
+      APPLE_PRIVATE_KEY_PATH: ${APPLE_PRIVATE_KEY_PATH}
+      APPLE_REDIRECT_URI: ${APPLE_REDIRECT_URI}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_PRETTY_PRINT: ${LOG_PRETTY_PRINT:-false}
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - ./keys:/app/keys:ro
+    networks:
+      - api-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 640M
+        reservations:
+          cpus: '0.6'
+          memory: 320M
+
+  caddy:
+    container_name: ${CONTAINER_CADDY_NAME:-fastify-oauth-caddy}
+    image: ${CONTAINER_CADDY_NAME:-fastify-oauth-caddy}-img
+    build:
+      context: .
+      dockerfile: docker/caddy/caddy.Dockerfile
+      args:
+        CADDY_VERSION: ${CADDY_VERSION:-2-alpine}
+    restart: unless-stopped
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN:-localhost}
+      CADDY_EMAIL: ${CADDY_EMAIL:-admin@example.com}
+      CADDY_ACME_CA: ${CADDY_ACME_CA:-https://acme-staging-v02.api.letsencrypt.org/directory}
+      API_HOST: api
+      API_PORT: ${PORT:-3000}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - fastify_oauth_caddy_data:/data
+      - fastify_oauth_caddy_config:/config
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - api-network
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.2'
+          memory: 64M
