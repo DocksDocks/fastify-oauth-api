@@ -10,6 +10,8 @@ const envSchema = z.object({
   DATABASE_USER: z.string(),
   DATABASE_PASSWORD: z.string(),
   DATABASE_NAME: z.string(),
+  DATABASE_POOL_MIN: z.coerce.number().default(2),
+  DATABASE_POOL_MAX: z.coerce.number().default(10),
 
   REDIS_HOST: z.string(),
   REDIS_PORT: z.string(),

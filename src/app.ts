@@ -5,7 +5,6 @@ import fastifyHelmet from '@fastify/helmet';
 import fastifyCompress from '@fastify/compress';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { env } from '@/config';
-import { logger } from '@/utils/logger';
 import { errorResponse } from '@/utils/response';
 import { AppError } from '@/utils/errors';
 import healthRoutes from '@/routes/health';
@@ -13,10 +12,32 @@ import jwtPlugin from '@/plugins/jwt';
 import authRoutes from '@/modules/auth/auth.routes';
 import profileRoutes from '@/routes/profile';
 import adminUserRoutes from '@/routes/admin/users';
+import { exercisesRoutes } from '@/modules/exercises/exercises.routes';
+import { workoutsRoutes } from '@/modules/workouts/workouts.routes';
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
+  const isProduction = env.NODE_ENV === 'production';
+  const prettyPrint = env.LOG_PRETTY_PRINT === 'true';
+
   const app = Fastify({
-    logger: logger,
+    logger: {
+      level: env.LOG_LEVEL,
+      transport:
+        !isProduction && prettyPrint
+          ? {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname',
+              },
+            }
+          : undefined,
+      redact: {
+        paths: ['req.headers.authorization', 'password', 'token', 'accessToken', 'refreshToken'],
+        remove: true,
+      },
+    },
     ...opts,
   });
 
@@ -86,13 +107,19 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   // User profile routes (protected)
   await app.register(profileRoutes, { prefix: '/api/profile' });
 
+  // Exercise routes (optional auth, RBAC)
+  await app.register(exercisesRoutes, { prefix: '/api/exercises' });
+
+  // Workout routes (protected, RBAC, sharing)
+  await app.register(workoutsRoutes, { prefix: '/api/workouts' });
+
   // Admin routes (admin only)
   await app.register(adminUserRoutes, { prefix: '/api/admin/users' });
 
   // Root route
   app.get('/', async () => {
     return {
-      name: 'Fastify OAuth API',
+      name: 'Fastify OAuth API - Gym Workout Tracker',
       version: '1.0.0',
       environment: env.NODE_ENV,
       endpoints: {
@@ -107,6 +134,8 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           logout: '/api/auth/logout',
         },
         profile: '/api/profile',
+        exercises: '/api/exercises',
+        workouts: '/api/workouts',
         admin: '/api/admin/users',
       },
     };

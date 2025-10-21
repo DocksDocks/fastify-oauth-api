@@ -8,6 +8,7 @@
  */
 
 import type { FastifyInstance } from 'fastify';
+import { optionalAuth } from '@/middleware/authorize';
 import {
   handleGoogleLogin,
   handleGoogleCallback,
@@ -18,6 +19,8 @@ import {
   handleVerifyToken,
   handleGoogleMobileAuth,
   handleAppleMobileAuth,
+  handleGetSessions,
+  handleRevokeSession,
 } from './auth.controller';
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -185,6 +188,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
               type: 'object',
               properties: {
                 accessToken: { type: 'string' },
+                refreshToken: { type: 'string' }, // Token rotation - return new refresh token
                 expiresIn: { type: 'number' },
               },
             },
@@ -222,18 +226,31 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
   fastify.post('/logout', {
     schema: {
-      description: 'Logout (client should discard tokens)',
+      description: 'Logout (revoke refresh tokens)',
       tags: ['auth'],
+      body: {
+        type: 'object',
+        properties: {
+          refreshToken: { type: 'string' },
+          logoutAll: { type: 'boolean' },
+        },
+      },
       response: {
         200: {
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                message: { type: 'string' },
+              },
+            },
           },
         },
       },
     },
+    preHandler: optionalAuth, // Optional auth: populates request.user if token provided
     handler: handleLogout,
   });
 
@@ -342,5 +359,76 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     handler: handleAppleMobileAuth,
+  });
+
+  // Session Management Routes (Protected)
+  fastify.get('/sessions', {
+    schema: {
+      description: 'Get active sessions for current user',
+      tags: ['auth', 'sessions'],
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                sessions: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'number' },
+                      familyId: { type: 'string' },
+                      createdAt: { type: 'string' },
+                      expiresAt: { type: 'string' },
+                      ipAddress: { type: 'string', nullable: true },
+                      userAgent: { type: 'string', nullable: true },
+                      isUsed: { type: 'boolean' },
+                      usedAt: { type: 'string', nullable: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    preHandler: fastify.authenticate,
+    handler: handleGetSessions,
+  });
+
+  fastify.delete('/sessions/:id', {
+    schema: {
+      description: 'Revoke a specific session',
+      tags: ['auth', 'sessions'],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                message: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+    preHandler: fastify.authenticate,
+    handler: handleRevokeSession,
   });
 }

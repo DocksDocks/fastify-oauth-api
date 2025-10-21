@@ -339,7 +339,8 @@ async function getUserStats(request: FastifyRequest, reply: FastifyReply): Promi
  * Register admin user routes
  */
 export default async function adminUserRoutes(fastify: FastifyInstance): Promise<void> {
-  // All routes require admin authentication
+  // All routes require authentication first, then admin authorization
+  fastify.addHook('onRequest', fastify.authenticate);
   fastify.addHook('onRequest', requireAdmin);
 
   fastify.get('/', {
@@ -369,8 +370,33 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
             data: {
               type: 'object',
               properties: {
-                users: { type: 'array' },
-                pagination: { type: 'object' },
+                users: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'number' },
+                      email: { type: 'string' },
+                      name: { type: 'string', nullable: true },
+                      avatar: { type: 'string', nullable: true },
+                      role: { type: 'string', enum: ['user', 'coach', 'admin', 'superadmin'] },
+                      provider: { type: 'string' },
+                      createdAt: { type: 'string' },
+                      lastLoginAt: { type: 'string', nullable: true },
+                    },
+                  },
+                },
+                pagination: {
+                  type: 'object',
+                  properties: {
+                    page: { type: 'number' },
+                    limit: { type: 'number' },
+                    total: { type: 'number' },
+                    totalPages: { type: 'number' },
+                    hasNext: { type: 'boolean' },
+                    hasPrev: { type: 'boolean' },
+                  },
+                },
               },
             },
           },
@@ -422,7 +448,21 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: { type: 'object' },
+            data: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                avatar: { type: 'string', nullable: true },
+                role: { type: 'string', enum: ['user', 'coach', 'admin', 'superadmin'] },
+                provider: { type: 'string' },
+                providerId: { type: 'string' },
+                createdAt: { type: 'string' },
+                updatedAt: { type: 'string' },
+                lastLoginAt: { type: 'string', nullable: true },
+              },
+            },
           },
         },
       },
@@ -454,7 +494,16 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: { type: 'object' },
+            data: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                role: { type: 'string', enum: ['user', 'coach', 'admin', 'superadmin'] },
+                updatedAt: { type: 'string' },
+              },
+            },
             message: { type: 'string' },
           },
         },

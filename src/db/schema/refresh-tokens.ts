@@ -10,7 +10,7 @@ export const refreshTokens = pgTable('refresh_tokens', {
   familyId: text('family_id').notNull(), // For token rotation/reuse detection
   isRevoked: boolean('is_revoked').notNull().default(false), // Manual revocation
   isUsed: boolean('is_used').notNull().default(false), // For one-time use
-  replacedBy: integer('replaced_by').references(() => refreshTokens.id, { onDelete: 'set null' }), // Token rotation chain
+  replacedBy: integer('replaced_by'), // Token rotation chain - self-reference
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(), // 7 days default
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   usedAt: timestamp('used_at', { withTimezone: true }), // When token was used to refresh

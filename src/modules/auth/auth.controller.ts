@@ -14,7 +14,15 @@ import {
   getGoogleAuthUrl,
   getAppleAuthUrl,
 } from './auth.service';
-import { generateTokens, refreshAccessToken, verifyToken } from './jwt.service';
+import {
+  generateTokens,
+  refreshAccessToken,
+  verifyToken,
+  revokeRefreshToken,
+  revokeAllUserTokens,
+  getUserSessions,
+  revokeSession,
+} from './jwt.service';
 
 /**
  * Generate Google OAuth authorization URL
@@ -85,7 +93,12 @@ export async function handleGoogleCallback(
     const user = await handleOAuthCallback(profile);
 
     // Generate JWT tokens
-    const tokens = await generateTokens(request.server, user);
+    const tokens = await generateTokens(
+      request.server,
+      user,
+      request.ip,
+      request.headers['user-agent']
+    );
 
     const response: LoginResponse = {
       success: true,
@@ -187,7 +200,12 @@ export async function handleAppleCallback(
     const userRecord = await handleOAuthCallback(profile);
 
     // Generate JWT tokens
-    const tokens = await generateTokens(request.server, userRecord);
+    const tokens = await generateTokens(
+      request.server,
+      userRecord,
+      request.ip,
+      request.headers['user-agent']
+    );
 
     const response: LoginResponse = {
       success: true,
@@ -234,8 +252,13 @@ export async function handleRefreshToken(
       });
     }
 
-    // Generate new access token
-    const tokens = await refreshAccessToken(request.server, refreshToken);
+    // Refresh access token with rotation and reuse detection
+    const tokens = await refreshAccessToken(
+      request.server,
+      refreshToken,
+      request.ip,
+      request.headers['user-agent']
+    );
 
     return reply.send({
       success: true,
@@ -243,29 +266,50 @@ export async function handleRefreshToken(
     });
   } catch (error) {
     request.log.error({ error }, 'Token refresh failed');
+    const err = error as Error;
     return reply.status(401).send({
       success: false,
-      error: 'Invalid or expired refresh token',
+      error: err.message || 'Invalid or expired refresh token',
     });
   }
 }
 
 /**
- * Logout user (invalidate tokens)
+ * Logout user (revoke refresh tokens)
  * POST /api/auth/logout
- * Note: JWT tokens are stateless, so we just return success
- * Client should discard tokens
+ * Body: { refreshToken?, logoutAll? }
  */
-export async function handleLogout(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+export async function handleLogout(
+  request: FastifyRequest<{
+    Body: { refreshToken?: string; logoutAll?: boolean };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
   try {
-    // In a stateless JWT system, logout happens client-side
-    // For enhanced security, you could implement a token blacklist in Redis
-    // For now, just return success and let client discard tokens
+    const { refreshToken, logoutAll } = request.body;
+    const user = request.user; // May or may not be authenticated
 
-    return reply.send({
-      success: true,
-      message: 'Logged out successfully',
-    });
+    if (logoutAll && user) {
+      // Logout from all devices (requires authentication)
+      await revokeAllUserTokens(user.id);
+      return reply.send({
+        success: true,
+        data: { message: 'Logged out from all devices successfully' },
+      });
+    } else if (refreshToken) {
+      // Logout from this device only
+      await revokeRefreshToken(refreshToken);
+      return reply.send({
+        success: true,
+        data: { message: 'Logged out successfully' },
+      });
+    } else {
+      // No token provided, just return success (client-side logout)
+      return reply.send({
+        success: true,
+        data: { message: 'Logged out successfully' },
+      });
+    }
   } catch (error) {
     request.log.error({ error }, 'Logout failed');
     return reply.status(500).send({
@@ -315,6 +359,70 @@ export async function handleVerifyToken(
 }
 
 /**
+ * Get user's active sessions
+ * GET /api/auth/sessions
+ * Requires authentication
+ */
+export async function handleGetSessions(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const user = request.user!; // User from JWT authentication
+
+    const sessions = await getUserSessions(user.id);
+
+    return reply.send({
+      success: true,
+      data: { sessions },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to get sessions');
+    return reply.status(500).send({
+      success: false,
+      error: 'Failed to retrieve sessions',
+    });
+  }
+}
+
+/**
+ * Revoke a specific session
+ * DELETE /api/auth/sessions/:id
+ * Requires authentication
+ */
+export async function handleRevokeSession(
+  request: FastifyRequest<{
+    Params: { id: string };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const user = request.user!; // User from JWT authentication
+    const sessionId = parseInt(request.params.id, 10);
+
+    if (isNaN(sessionId)) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Invalid session ID',
+      });
+    }
+
+    await revokeSession(sessionId, user.id);
+
+    return reply.send({
+      success: true,
+      data: { message: 'Session revoked successfully' },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to revoke session');
+    return reply.status(500).send({
+      success: false,
+      error: 'Failed to revoke session',
+    });
+  }
+}
+
+/**
  * Handle Google OAuth for mobile apps
  * POST /api/auth/google/mobile
  * Body: { code: string }
@@ -350,7 +458,12 @@ export async function handleGoogleMobileAuth(
     const user = await handleOAuthCallback(profile);
 
     // Generate JWT tokens
-    const tokens = await generateTokens(request.server, user);
+    const tokens = await generateTokens(
+      request.server,
+      user,
+      request.ip,
+      request.headers['user-agent']
+    );
 
     const response: LoginResponse = {
       success: true,
@@ -416,7 +529,12 @@ export async function handleAppleMobileAuth(
     const userRecord = await handleOAuthCallback(profile);
 
     // Generate JWT tokens
-    const tokens = await generateTokens(request.server, userRecord);
+    const tokens = await generateTokens(
+      request.server,
+      userRecord,
+      request.ip,
+      request.headers['user-agent']
+    );
 
     const response: LoginResponse = {
       success: true,

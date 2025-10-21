@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { exercises } from '@/db/schema/exercises';
 
@@ -39,7 +40,8 @@ export async function seedExercises(): Promise<void> {
     console.log(`   Found ${exercisesData.length} exercises in JSON file`);
     console.log(`   All codes are unique ✓`);
 
-    // Insert exercises (createdBy is null for system exercises)
+    // Insert or update exercises (createdBy is null for system exercises)
+    // Use onConflictDoUpdate to make seeding idempotent
     const insertedExercises = await db.insert(exercises).values(
       exercisesData.map((exercise) => ({
         code: exercise.code,
@@ -53,7 +55,19 @@ export async function seedExercises(): Promise<void> {
         createdBy: null, // System exercises have no creator
         isPublic: true, // All system exercises are public
       }))
-    ).returning();
+    ).onConflictDoUpdate({
+      target: exercises.code,
+      set: {
+        name: sql`excluded.name`,
+        description: sql`excluded.description`,
+        category: sql`excluded.category`,
+        muscleGroup: sql`excluded.muscle_group`,
+        equipment: sql`excluded.equipment`,
+        videoUrl: sql`excluded.video_url`,
+        instructions: sql`excluded.instructions`,
+        updatedAt: new Date(),
+      }
+    }).returning();
 
     console.log(`✓ Successfully seeded ${insertedExercises.length} system exercises`);
     console.log('\nExercises by muscle group:');

@@ -20,7 +20,7 @@ import type { JWTPayload } from '@/modules/auth/auth.types';
  *   });
  */
 
-export type UserRole = 'user' | 'admin' | 'superadmin';
+export type UserRole = 'user' | 'coach' | 'admin' | 'superadmin';
 
 /**
  * Extended FastifyRequest with user information from JWT
@@ -33,7 +33,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
  * Role hierarchy for permission checks
  * Higher index = higher privilege
  */
-const ROLE_HIERARCHY: UserRole[] = ['user', 'admin', 'superadmin'];
+const ROLE_HIERARCHY: UserRole[] = ['user', 'coach', 'admin', 'superadmin'];
 
 /**
  * Check if a role has sufficient privileges
@@ -201,13 +201,17 @@ export function requireSelfOrAdmin(allowAdmin = true) {
  * ```
  */
 export async function optionalAuth(
-  _request: AuthenticatedRequest,
+  request: AuthenticatedRequest,
   _reply: FastifyReply,
 ): Promise<void> {
-  // This middleware does nothing - authentication is handled by @fastify/jwt
-  // If JWT is present and valid, request.user will be populated
-  // If JWT is missing or invalid, request.user will be undefined
-  // No error is thrown in either case
+  try {
+    // Try to verify JWT token from Authorization header
+    await request.jwtVerify();
+    // If successful, request.user is populated
+  } catch {
+    // If JWT is missing or invalid, silently continue without user
+    // request.user will remain undefined
+  }
 }
 
 /**

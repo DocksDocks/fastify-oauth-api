@@ -78,7 +78,7 @@ export interface AppleUserInfo {
 export interface JWTPayload {
   id: number;
   email: string;
-  role: 'user' | 'admin' | 'superadmin';
+  role: 'user' | 'coach' | 'admin' | 'superadmin';
   iat?: number;
   exp?: number;
 }
@@ -103,7 +103,7 @@ export interface LoginResponse {
       email: string;
       name: string | null;
       avatar: string | null;
-      role: 'user' | 'admin' | 'superadmin';
+      role: 'user' | 'coach' | 'admin' | 'superadmin';
     };
     tokens: TokenPair;
   };
