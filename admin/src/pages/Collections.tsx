@@ -169,7 +169,7 @@ export function Collections() {
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="text-destructive-foreground">{error}</AlertDescription>
         </Alert>
       )}
 
@@ -180,17 +180,17 @@ export function Collections() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>{selectedCollection.name}</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="text-[var(--color-text-primary)]">{selectedCollection.name}</CardTitle>
+                      <CardDescription className="text-[var(--color-text-secondary)]">
                         {totalRecords} record{totalRecords !== 1 ? 's' : ''} found
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[var(--color-text-tertiary)]" />
                         <Input
                           placeholder="Search..."
-                          className="pl-8 w-64"
+                          className="pl-8 w-64 text-[var(--color-text-primary)]"
                           value={searchTerm}
                           onChange={(e) => handleSearch(e.target.value)}
                         />
@@ -206,7 +206,7 @@ export function Collections() {
                       ))}
                     </div>
                   ) : data.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-[var(--color-text-muted)]">
                       No records found
                     </div>
                   ) : (
@@ -217,7 +217,7 @@ export function Collections() {
                             {selectedCollection?.columns?.map((column) => (
                               <TableHead key={column.name}>
                                 <div className="flex items-center gap-1">
-                                  <span>{column.label}</span>
+                                  <span className="text-[var(--color-text-secondary)]">{column.label}</span>
                                   {column.sortable && (
                                     <Button
                                       variant="ghost"
@@ -229,7 +229,7 @@ export function Collections() {
                                         className={`h-3 w-3 ${
                                           sortColumn === column.name
                                             ? 'text-primary'
-                                            : 'text-muted-foreground'
+                                            : 'text-[var(--color-text-tertiary)]'
                                         }`}
                                       />
                                     </Button>
@@ -254,7 +254,7 @@ export function Collections() {
                                     </Badge>
                                   ) : (
                                     <span
-                                      className={`block truncate ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
+                                      className={`block truncate text-[var(--color-text-primary)] ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
                                       title={formatValue(row[column.name], column.type)}
                                     >
                                       {formatValue(row[column.name], column.type)}
@@ -274,7 +274,7 @@ export function Collections() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[var(--color-text-secondary)]">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex items-center gap-2">

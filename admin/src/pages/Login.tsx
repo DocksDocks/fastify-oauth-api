@@ -33,14 +33,14 @@ export function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl">Admin Panel</CardTitle>
-          <CardDescription>Sign in with your Google account to continue</CardDescription>
+          <CardTitle className="text-3xl text-[var(--color-text-primary)]">Admin Panel</CardTitle>
+          <CardDescription className="text-[var(--color-text-secondary)]">Sign in with your Google account to continue</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="text-destructive-foreground">{error}</AlertDescription>
             </Alert>
           )}
 
@@ -77,7 +77,7 @@ export function Login() {
             )}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-[var(--color-text-muted)]">
             Only authorized administrators can access this panel
           </p>
         </CardContent>

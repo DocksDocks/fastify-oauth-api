@@ -11,7 +11,7 @@
      ============================================ */
 
   /* Primary - Dark Purple (Sidebar, Main Actions) */
-  --color-primary: #5b21b6;
+  --color-primary: #6d28d9;
   --color-primary-foreground: #ffffff;
 
   /* Secondary - Green (Secondary Actions) */
@@ -41,6 +41,22 @@
   /* Popovers/Dropdowns */
   --color-popover: #ffffff;
   --color-popover-foreground: #1e1b4b;
+
+  /* ============================================
+     TEXT COLORS
+     ============================================ */
+
+  /* Primary text - Main headings and important content */
+  --color-text-primary: #1e1b4b;
+
+  /* Secondary text - Subheadings and descriptions */
+  --color-text-secondary: #4c1d95;
+
+  /* Tertiary text - Labels and subtle content */
+  --color-text-tertiary: #6b21a8;
+
+  /* Muted text - Placeholder and disabled text */
+  --color-text-muted: #6b7280;
 
   /* ============================================
      UTILITY COLORS
@@ -73,7 +89,7 @@
 @media (prefers-color-scheme: dark) {
   @theme {
     /* Brand Colors - Adjusted for Dark Mode */
-    --color-primary: #7c3aed;
+    --color-primary: #8b5cf6;
     --color-primary-foreground: #1e1b4b;
 
     --color-secondary: #22c55e;
@@ -94,6 +110,12 @@
 
     --color-popover: #1e1b4b;
     --color-popover-foreground: #fafafa;
+
+    /* Text Colors - Dark Theme */
+    --color-text-primary: #fafafa;
+    --color-text-secondary: #c4b5fd;
+    --color-text-tertiary: #a78bfa;
+    --color-text-muted: #9ca3af;
 
     /* Utility Colors - Dark Theme */
     --color-muted: #2e2a5c;

@@ -51,8 +51,8 @@ export function Dashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your admin panel</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Dashboard</h1>
+          <p className="text-[var(--color-text-secondary)]">Overview of your admin panel</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -74,12 +74,12 @@ export function Dashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your admin panel</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Dashboard</h1>
+          <p className="text-[var(--color-text-secondary)]">Overview of your admin panel</p>
         </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error || 'Failed to load stats'}</AlertDescription>
+          <AlertDescription className="text-destructive-foreground">{error || 'Failed to load stats'}</AlertDescription>
         </Alert>
       </div>
     );
@@ -88,31 +88,31 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your admin panel</p>
+        <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Dashboard</h1>
+        <p className="text-[var(--color-text-secondary)]">Overview of your admin panel</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-[var(--color-text-secondary)]">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-[var(--color-text-tertiary)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.users.total}</div>
-            <p className="text-xs text-muted-foreground">All registered users</p>
+            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.users.total}</div>
+            <p className="text-xs text-[var(--color-text-muted)]">All registered users</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active API Keys</CardTitle>
-            <Key className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-[var(--color-text-secondary)]">Active API Keys</CardTitle>
+            <Key className="h-4 w-4 text-[var(--color-text-tertiary)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.apiKeys.active}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.apiKeys.active}</div>
+            <p className="text-xs text-[var(--color-text-muted)]">
               {stats.apiKeys.revoked} revoked
             </p>
           </CardContent>
@@ -120,14 +120,14 @@ export function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-[var(--color-text-secondary)]">Admins</CardTitle>
+            <Activity className="h-4 w-4 text-[var(--color-text-tertiary)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-[var(--color-text-primary)]">
               {(stats.users.byRole?.admin || 0) + (stats.users.byRole?.superadmin || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[var(--color-text-muted)]">
               {stats.users.byRole?.superadmin || 0} superadmins
             </p>
           </CardContent>
@@ -135,12 +135,12 @@ export function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Collections</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-[var(--color-text-secondary)]">Collections</CardTitle>
+            <Database className="h-4 w-4 text-[var(--color-text-tertiary)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">Available tables</p>
+            <div className="text-2xl font-bold text-[var(--color-text-primary)]">5</div>
+            <p className="text-xs text-[var(--color-text-muted)]">Available tables</p>
           </CardContent>
         </Card>
       </div>
@@ -149,8 +149,8 @@ export function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Users by Role</CardTitle>
-            <CardDescription>Breakdown of user roles in the system</CardDescription>
+            <CardTitle className="text-[var(--color-text-primary)]">Users by Role</CardTitle>
+            <CardDescription className="text-[var(--color-text-secondary)]">Breakdown of user roles in the system</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {Object.entries(stats.users?.byRole || {}).map(([role, count]) => (
@@ -160,7 +160,7 @@ export function Dashboard() {
                     {role}
                   </Badge>
                 </div>
-                <span className="font-semibold">{count}</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{count}</span>
               </div>
             ))}
           </CardContent>
@@ -168,8 +168,8 @@ export function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Users by Provider</CardTitle>
-            <CardDescription>Authentication provider distribution</CardDescription>
+            <CardTitle className="text-[var(--color-text-primary)]">Users by Provider</CardTitle>
+            <CardDescription className="text-[var(--color-text-secondary)]">Authentication provider distribution</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {Object.entries(stats.users?.byProvider || {}).map(([provider, count]) => (
@@ -179,7 +179,7 @@ export function Dashboard() {
                     {provider}
                   </Badge>
                 </div>
-                <span className="font-semibold">{count}</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{count}</span>
               </div>
             ))}
           </CardContent>
