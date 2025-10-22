@@ -44,10 +44,10 @@ export default defineConfig({
       ],
       all: true,
       thresholds: {
-        lines: 90,
-        functions: 89,
-        branches: 82,
-        statements: 90,
+        lines: 100,
+        functions: 100,
+        branches: 89, // Keep at 89 - branch coverage is harder to achieve
+        statements: 100,
       },
     },
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],

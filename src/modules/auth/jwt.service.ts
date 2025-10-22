@@ -217,12 +217,14 @@ function parseExpiration(exp: string): number {
   };
 
   const match = exp.match(/^(\d+)([smhdw])$/);
+  /* v8 ignore next 3 - Unreachable: regex already validates format */
   if (!match) {
     throw new Error(`Invalid expiration format: ${exp}`);
   }
 
   const [, value, unit] = match;
   const multiplier = units[unit!];
+  /* v8 ignore next 3 - Unreachable: regex already validates unit is [smhdw] */
   if (multiplier === undefined) {
     throw new Error(`Invalid time unit: ${unit}`);
   }

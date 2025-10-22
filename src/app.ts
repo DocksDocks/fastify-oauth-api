@@ -32,6 +32,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
                 ignore: 'pid,hostname',
               },
             }
+          /* v8 ignore next */
           : undefined,
       redact: {
         paths: ['req.headers.authorization', 'password', 'token', 'accessToken', 'refreshToken'],

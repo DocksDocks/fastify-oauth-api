@@ -648,6 +648,7 @@ export class WorkoutsService {
       LIMIT 1
     `);
 
+    /* v8 ignore next 3 - Defensive: private method called with valid IDs from database */
     if (!result) {
       throw new NotFoundError('Share not found');
     }

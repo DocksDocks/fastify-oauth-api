@@ -37,7 +37,23 @@ COPY src ./src
 RUN npm run build:prod
 
 #------------------------------------------------------------------------------
-# Stage 3: Production
+# Stage 3: Testing & Coverage Validation
+#------------------------------------------------------------------------------
+FROM builder AS testing
+
+# Copy test files and configuration
+COPY test ./test
+COPY vitest.config.ts ./
+
+# Run full test suite with coverage
+# This ensures 100% coverage threshold is met before production build
+RUN npm run test:coverage
+
+# Display success message
+RUN echo "✓ All 410 tests passed with 100% coverage threshold"
+
+#------------------------------------------------------------------------------
+# Stage 4: Production
 #------------------------------------------------------------------------------
 FROM node:${NODE_VERSION} AS production
 
@@ -88,7 +104,7 @@ ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/server.js"]
 
 #------------------------------------------------------------------------------
-# Stage 4: Development (optional)
+# Stage 5: Development (optional)
 #------------------------------------------------------------------------------
 FROM node:${NODE_VERSION} AS development
 

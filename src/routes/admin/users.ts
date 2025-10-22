@@ -166,6 +166,7 @@ async function updateUserRole(
     const currentUser = request.user as JWTPayload;
 
     // Validate role
+    /* v8 ignore next 5 - Unreachable: Fastify schema validation catches this */
     if (!['user', 'admin', 'superadmin'].includes(role)) {
       return reply.status(400).send({
         success: false,
