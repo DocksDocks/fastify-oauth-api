@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { buildTestApp } from '../helper/app-helper';
 import { createUser } from '../helper/factories';
 import { generateTestToken } from '../helper/factories';
 import type { FastifyInstance } from 'fastify';
 import type { User } from '@/db/schema/users';
+import { db } from '@/db/client';
 import '../helper/setup';
 
 describe('Profile Routes', () => {
@@ -76,6 +77,29 @@ describe('Profile Routes', () => {
       });
 
       expect(response.statusCode).toBe(401);
+    });
+
+    it('should handle database error during profile fetch', async () => {
+      // Mock database select to throw an error
+      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+        throw new Error('Database connection error');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to fetch profile');
+
+      // Cleanup
+      mockSelect.mockRestore();
     });
   });
 
@@ -213,6 +237,62 @@ describe('Profile Routes', () => {
       // Schema validation checks for 'uri' format
       expect(response.statusCode).toBe(400);
     });
+
+    it('should return 404 when user not found during update', async () => {
+      // Mock database update to return empty array (no user found)
+      const mockUpdate = vi.spyOn(db, 'update').mockImplementationOnce(() => {
+        return {
+          set: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          returning: vi.fn().mockResolvedValue([]), // Empty array = no user found
+        } as any;
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          name: 'New Name',
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('User not found');
+
+      // Cleanup
+      mockUpdate.mockRestore();
+    });
+
+    it('should handle database error during profile update', async () => {
+      // Mock database update to throw an error
+      const mockUpdate = vi.spyOn(db, 'update').mockImplementationOnce(() => {
+        throw new Error('Database connection lost');
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          name: 'New Name',
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to update profile');
+
+      // Cleanup
+      mockUpdate.mockRestore();
+    });
   });
 
   describe('DELETE /api/profile', () => {
@@ -263,6 +343,29 @@ describe('Profile Routes', () => {
       });
 
       expect(response.statusCode).toBe(401);
+    });
+
+    it('should handle database error during profile delete', async () => {
+      // Mock database delete to throw an error
+      const mockDelete = vi.spyOn(db, 'delete').mockImplementationOnce(() => {
+        throw new Error('Database connection failed');
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to delete account');
+
+      // Cleanup
+      mockDelete.mockRestore();
     });
   });
 

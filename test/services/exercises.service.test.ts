@@ -329,6 +329,34 @@ describe('ExercisesService', () => {
         })
       ).rejects.toThrow(BadRequestError);
     });
+
+    it('should throw BadRequestError for invalid video URL', async () => {
+      await expect(
+        exercisesService.createSystemExercise({
+          code: 'INVALID_VIDEO',
+          name: 'Invalid Video System',
+          description: 'Test',
+          category: 'strength',
+          muscleGroup: 'chest',
+          equipment: 'Barbell',
+          videoUrl: 'http://evil.com/malicious.mp4',
+        })
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should accept valid video URL for system exercise', async () => {
+      const exercise = await exercisesService.createSystemExercise({
+        code: 'VALID_VIDEO_SYS',
+        name: 'Valid Video System',
+        description: 'Test',
+        category: 'strength',
+        muscleGroup: 'chest',
+        equipment: 'Barbell',
+        videoUrl: 'https://youtube.com/watch?v=system',
+      });
+
+      expect(exercise.videoUrl).toBe('https://youtube.com/watch?v=system');
+    });
   });
 
   describe('updateExercise', () => {
@@ -355,13 +383,59 @@ describe('ExercisesService', () => {
       ).rejects.toThrow(ForbiddenError);
     });
 
-    it('should throw ForbiddenError when updating system exercise', async () => {
+    it('should throw ForbiddenError when updating system exercise as regular user', async () => {
       const user = await createUser();
       const exercise = await createExercise({ createdBy: null, isPublic: true });
 
       await expect(
-        exercisesService.updateExercise(exercise.id, { name: 'Hacked' }, user.id)
+        exercisesService.updateExercise(exercise.id, { name: 'Hacked' }, user.id, false)
       ).rejects.toThrow(ForbiddenError);
+    });
+
+    it('should allow admin to update system exercise', async () => {
+      const admin = await createUser({ email: 'admin@test.com', role: 'admin' });
+      const exercise = await createExercise({
+        createdBy: null,
+        isPublic: true,
+        name: 'System Exercise'
+      });
+
+      const updated = await exercisesService.updateExercise(
+        exercise.id,
+        { name: 'Updated by Admin' },
+        admin.id,
+        true // isAdmin
+      );
+
+      expect(updated.name).toBe('Updated by Admin');
+    });
+
+    it('should validate video URL on update', async () => {
+      const user = await createUser();
+      const exercise = await createExercise({ createdBy: user.id });
+
+      await expect(
+        exercisesService.updateExercise(
+          exercise.id,
+          { videoUrl: 'http://evil.com/malicious.mp4' },
+          user.id,
+          false
+        )
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should accept valid video URL on update', async () => {
+      const user = await createUser();
+      const exercise = await createExercise({ createdBy: user.id });
+
+      const updated = await exercisesService.updateExercise(
+        exercise.id,
+        { videoUrl: 'https://youtube.com/watch?v=valid' },
+        user.id,
+        false
+      );
+
+      expect(updated.videoUrl).toBe('https://youtube.com/watch?v=valid');
     });
   });
 

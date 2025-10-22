@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { buildTestApp } from '../../helper/app-helper';
 import { createUser } from '../../helper/factories';
 import { generateTestToken } from '../../helper/factories';
 import type { FastifyInstance } from 'fastify';
 import type { User } from '@/db/schema/users';
+import { db } from '@/db/client';
 import '../../helper/setup';
 
 describe('Admin Users Routes', () => {
@@ -168,6 +169,29 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(401);
     });
+
+    it('should handle database error during listUsers', async () => {
+      // Mock database select to throw an error
+      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+        throw new Error('Database query failed');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to list users');
+
+      // Cleanup
+      mockSelect.mockRestore();
+    });
   });
 
   describe('GET /api/admin/users/stats', () => {
@@ -198,6 +222,29 @@ describe('Admin Users Routes', () => {
       });
 
       expect(response.statusCode).toBe(403);
+    });
+
+    it('should handle database error during getUserStats', async () => {
+      // Mock database select to throw an error
+      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+        throw new Error('Database query failed');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users/stats',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to get user statistics');
+
+      // Cleanup
+      mockSelect.mockRestore();
     });
   });
 
@@ -244,6 +291,29 @@ describe('Admin Users Routes', () => {
       });
 
       expect(response.statusCode).toBe(403);
+    });
+
+    it('should handle database error during getUserById', async () => {
+      // Mock database select to throw an error
+      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+        throw new Error('Database connection failed');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/admin/users/${regularUser.id}`,
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to get user');
+
+      // Cleanup
+      mockSelect.mockRestore();
     });
   });
 
@@ -348,6 +418,62 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(403);
     });
+
+    it('should return 404 when user not found during role update', async () => {
+      // Mock database update to return empty array (no user found)
+      const mockUpdate = vi.spyOn(db, 'update').mockImplementationOnce(() => {
+        return {
+          set: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          returning: vi.fn().mockResolvedValue([]), // Empty array = no user found
+        } as any;
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/users/${regularUser.id}/role`,
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+        payload: {
+          role: 'admin',
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('User not found');
+
+      // Cleanup
+      mockUpdate.mockRestore();
+    });
+
+    it('should handle database error during role update', async () => {
+      // Mock database update to throw an error
+      const mockUpdate = vi.spyOn(db, 'update').mockImplementationOnce(() => {
+        throw new Error('Database update failed');
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/users/${regularUser.id}/role`,
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+        payload: {
+          role: 'admin',
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to update user role');
+
+      // Cleanup
+      mockUpdate.mockRestore();
+    });
   });
 
   describe('DELETE /api/admin/users/:id', () => {
@@ -434,6 +560,29 @@ describe('Admin Users Routes', () => {
       });
 
       expect(response.statusCode).toBe(403);
+    });
+
+    it('should handle database error during user deletion', async () => {
+      // Mock database delete to throw an error
+      const mockDelete = vi.spyOn(db, 'delete').mockImplementationOnce(() => {
+        throw new Error('Database deletion failed');
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/users/${regularUser.id}`,
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to delete user');
+
+      // Cleanup
+      mockDelete.mockRestore();
     });
   });
 

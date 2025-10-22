@@ -120,5 +120,38 @@ describe('App', () => {
       expect(app.authenticate).toBeDefined();
       expect(typeof app.authenticate).toBe('function');
     });
+
+    it('should configure logger for production (LOG_PRETTY_PRINT=false)', async () => {
+      // Save original value
+      const originalValue = process.env.LOG_PRETTY_PRINT;
+
+      // Set to false to test production path
+      process.env.LOG_PRETTY_PRINT = 'false';
+
+      // Build app with production logger config
+      const prodApp = await buildTestApp();
+
+      // Verify app was created successfully
+      expect(prodApp).toBeDefined();
+      expect(prodApp.server).toBeDefined();
+
+      // Test that app still works with production logger
+      const response = await prodApp.inject({
+        method: 'GET',
+        url: '/health',
+      });
+
+      expect(response.statusCode).toBe(200);
+
+      // Cleanup
+      await prodApp.close();
+
+      // Restore original value
+      if (originalValue !== undefined) {
+        process.env.LOG_PRETTY_PRINT = originalValue;
+      } else {
+        delete process.env.LOG_PRETTY_PRINT;
+      }
+    });
   });
 });

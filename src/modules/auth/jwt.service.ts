@@ -20,7 +20,7 @@ import { eq, and, lt } from 'drizzle-orm';
  * @param token - Plain text refresh token
  * @returns Hashed token
  */
-function hashToken(token: string): string {
+export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 

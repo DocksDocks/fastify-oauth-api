@@ -35,7 +35,7 @@ export default defineConfig({
         'src/db/client.ts', // Exclude database connection setup
         'src/server.ts', // Exclude server entry point
         'src/utils/logger.ts', // Exclude logger setup
-        'src/utils/token-generator.ts', // Exclude token generator utility
+        'src/utils/dev-token-generator.ts', // Exclude dev token generator utility
         'src/modules/auth/auth.controller.ts', // Exclude OAuth controller (external API integration)
         'src/modules/auth/auth.service.ts', // Exclude OAuth service (external API integration)
         '*.config.ts', // Exclude config files

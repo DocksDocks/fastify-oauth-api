@@ -94,6 +94,57 @@ describe('WorkoutsService', () => {
       expect(page2.workouts).toHaveLength(2);
       expect(page1.pagination.totalPages).toBe(3);
     });
+
+    it('should include exercises when listing workouts (batch operation)', async () => {
+      const user = await createUser();
+      const exercise1 = await createExercise({ code: 'BENCH_PRESS', name: 'Bench Press' });
+      const exercise2 = await createExercise({ code: 'SQUAT', name: 'Squat' });
+      const exercise3 = await createExercise({ code: 'DEADLIFT', name: 'Deadlift' });
+
+      // Create two workouts with exercises
+      const workout1 = await createWorkout({ name: 'Push Day', ownerId: user.id });
+      await createWorkoutExercise({
+        workoutId: workout1.id,
+        exerciseId: exercise1.id,
+        orderIndex: 1,
+        sets: 4,
+        reps: 8,
+      });
+      await createWorkoutExercise({
+        workoutId: workout1.id,
+        exerciseId: exercise2.id,
+        orderIndex: 2,
+        sets: 3,
+        reps: 10,
+      });
+
+      const workout2 = await createWorkout({ name: 'Pull Day', ownerId: user.id });
+      await createWorkoutExercise({
+        workoutId: workout2.id,
+        exerciseId: exercise3.id,
+        orderIndex: 1,
+        sets: 5,
+        reps: 5,
+      });
+
+      // List workouts - should trigger batch exercise loading with grouping
+      const result = await workoutsService.listWorkouts({}, user.id);
+
+      expect(result.workouts).toHaveLength(2);
+
+      // Verify first workout has 2 exercises
+      const pushDay = result.workouts.find(w => w.name === 'Push Day');
+      expect(pushDay).toBeDefined();
+      expect(pushDay!.exercises).toHaveLength(2);
+      expect(pushDay!.exercises[0].exercise.code).toBe('BENCH_PRESS');
+      expect(pushDay!.exercises[1].exercise.code).toBe('SQUAT');
+
+      // Verify second workout has 1 exercise
+      const pullDay = result.workouts.find(w => w.name === 'Pull Day');
+      expect(pullDay).toBeDefined();
+      expect(pullDay!.exercises).toHaveLength(1);
+      expect(pullDay!.exercises[0].exercise.code).toBe('DEADLIFT');
+    });
   });
 
   describe('getSharedWorkouts', () => {
@@ -302,6 +353,94 @@ describe('WorkoutsService', () => {
           otherUser.id
         )
       ).rejects.toThrow(ForbiddenError);
+    });
+
+    it('should throw ForbiddenError when adding private exercise from another user', async () => {
+      const userA = await createUser({ email: 'userA@test.com' });
+      const userB = await createUser({ email: 'userB@test.com' });
+
+      // User A creates a private exercise
+      const privateExercise = await createExercise({
+        code: 'PRIVATE_EX',
+        name: 'Private Exercise',
+        isPublic: false,
+        createdBy: userA.id
+      });
+
+      // User B tries to add it to their workout
+      const workoutB = await createWorkout({ ownerId: userB.id });
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workoutB.id,
+          [{ exerciseId: privateExercise.id, orderIndex: 1 }],
+          userB.id
+        )
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    it('should allow adding public exercises from any user', async () => {
+      const userA = await createUser({ email: 'userA@test.com' });
+      const userB = await createUser({ email: 'userB@test.com' });
+
+      // User A creates a public exercise
+      const publicExercise = await createExercise({
+        code: 'PUBLIC_EX',
+        name: 'Public Exercise',
+        isPublic: true,
+        createdBy: userA.id
+      });
+
+      // User B should be able to add it to their workout
+      const workoutB = await createWorkout({ ownerId: userB.id });
+
+      await workoutsService.addExercisesToWorkout(
+        workoutB.id,
+        [{ exerciseId: publicExercise.id, orderIndex: 1 }],
+        userB.id
+      );
+
+      const updated = await workoutsService.getWorkoutById(workoutB.id, userB.id);
+      expect(updated.exercises).toHaveLength(1);
+    });
+
+    it('should allow adding own private exercises', async () => {
+      const user = await createUser();
+
+      // User creates their own private exercise
+      const privateExercise = await createExercise({
+        code: 'MY_PRIVATE',
+        name: 'My Private Exercise',
+        isPublic: false,
+        createdBy: user.id
+      });
+
+      const workout = await createWorkout({ ownerId: user.id });
+
+      await workoutsService.addExercisesToWorkout(
+        workout.id,
+        [{ exerciseId: privateExercise.id, orderIndex: 1 }],
+        user.id
+      );
+
+      const updated = await workoutsService.getWorkoutById(workout.id, user.id);
+      expect(updated.exercises).toHaveLength(1);
+    });
+
+    it('should throw BadRequestError when adding non-existent exercises', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workout.id,
+          [
+            { exerciseId: 99999, orderIndex: 1 },
+            { exerciseId: 88888, orderIndex: 2 }
+          ],
+          user.id
+        )
+      ).rejects.toThrow(BadRequestError);
     });
   });
 

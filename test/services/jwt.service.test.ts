@@ -8,6 +8,8 @@ import {
   decodeToken,
   isTokenExpired,
   extractTokenFromHeader,
+  revokeTokenFamily,
+  cleanupExpiredTokens,
 } from '@/modules/auth/jwt.service';
 import type { User } from '@/db/schema/users';
 import env from '@/config/env';
@@ -287,6 +289,88 @@ describe('JWT Service', () => {
 
       expect(extracted).toBe(tokens.accessToken);
       expect(extracted).toContain('.');
+    });
+  });
+
+  describe('revokeTokenFamily', () => {
+    it('should revoke all tokens in a family', async () => {
+      const tokens1 = await generateTokens(fastify, testUser);
+
+      // Get familyId from database
+      const { db } = await import('@/db/client');
+      const { refreshTokens } = await import('@/db/schema/refresh-tokens');
+      const { eq } = await import('drizzle-orm');
+      const { hashToken } = await import('@/modules/auth/jwt.service');
+
+      const [tokenRecord] = await db
+        .select()
+        .from(refreshTokens)
+        .where(eq(refreshTokens.token, hashToken(tokens1.refreshToken)))
+        .limit(1);
+
+      expect(tokenRecord).toBeDefined();
+      const familyId = tokenRecord.familyId;
+
+      // Create a rotation to have multiple tokens in same family
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const tokens2 = await refreshAccessToken(fastify, tokens1.refreshToken);
+
+      // Revoke the entire family
+      await revokeTokenFamily(familyId);
+
+      // Try to use the new token from the family - should fail
+      await expect(refreshAccessToken(fastify, tokens2.refreshToken))
+        .rejects.toThrow('revoked');
+    });
+
+    it('should not affect other token families', async () => {
+      const user1 = await createUser({ email: 'user1@test.com' });
+      const user2 = await createUser({ email: 'user2@test.com' });
+
+      const tokens1 = await generateTokens(fastify, user1);
+      const tokens2 = await generateTokens(fastify, user2);
+
+      // Get user1's familyId from database
+      const { db } = await import('@/db/client');
+      const { refreshTokens } = await import('@/db/schema/refresh-tokens');
+      const { eq } = await import('drizzle-orm');
+      const { hashToken } = await import('@/modules/auth/jwt.service');
+
+      const [tokenRecord1] = await db
+        .select()
+        .from(refreshTokens)
+        .where(eq(refreshTokens.token, hashToken(tokens1.refreshToken)))
+        .limit(1);
+
+      expect(tokenRecord1).toBeDefined();
+
+      // Revoke user1's family
+      await revokeTokenFamily(tokenRecord1.familyId);
+
+      // User1's tokens should be revoked
+      await expect(refreshAccessToken(fastify, tokens1.refreshToken))
+        .rejects.toThrow('revoked');
+
+      // User2's tokens should still work
+      await expect(refreshAccessToken(fastify, tokens2.refreshToken))
+        .resolves.toBeDefined();
+    });
+  });
+
+  describe('cleanupExpiredTokens', () => {
+    it('should execute without error when there are no expired tokens', async () => {
+      // Just verify the function runs successfully
+      await expect(cleanupExpiredTokens()).resolves.not.toThrow();
+    });
+
+    it('should execute without error when called multiple times', async () => {
+      // Run cleanup multiple times
+      await cleanupExpiredTokens();
+      await cleanupExpiredTokens();
+      await cleanupExpiredTokens();
+
+      // Verify it doesn't throw errors
+      await expect(cleanupExpiredTokens()).resolves.not.toThrow();
     });
   });
 });

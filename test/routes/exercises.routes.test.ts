@@ -531,6 +531,55 @@ describe('Exercises Routes', () => {
       expect(body.data.isPublic).toBe(false);
     });
 
+    it('should not allow regular user to update system exercise', async () => {
+      const systemExercise = await createExercise({
+        code: 'SYSTEM_EX',
+        name: 'System Exercise',
+        isPublic: true,
+        createdBy: null, // System exercise
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/exercises/${systemExercise.id}`,
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          name: 'Hacked System Exercise',
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+    });
+
+    it('should allow admin to update system exercise', async () => {
+      const systemExercise = await createExercise({
+        code: 'ADMIN_SYSTEM_EX',
+        name: 'Admin System Exercise',
+        isPublic: true,
+        createdBy: null, // System exercise
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/exercises/${systemExercise.id}`,
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+        payload: {
+          name: 'Updated System Exercise',
+          description: 'Admin updated this',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.name).toBe('Updated System Exercise');
+    });
+
     it('should fail without auth', async () => {
       const exercise = await createExercise({
         code: 'NO_AUTH_UPDATE',
