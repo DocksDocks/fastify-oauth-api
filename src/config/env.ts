@@ -22,6 +22,7 @@ const envSchema = z.object({
 
   ADMIN_EMAIL: z.string().email(),
   ADMIN_EMAILS_ADDITIONAL: z.string().optional().default(''),
+  SUPER_ADMIN_EMAIL: z.string().email().optional(),
 
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().optional(),

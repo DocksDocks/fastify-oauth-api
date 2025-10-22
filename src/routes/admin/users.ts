@@ -319,12 +319,23 @@ async function getUserStats(request: FastifyRequest, reply: FastifyReply): Promi
       .from(users)
       .groupBy(users.provider);
 
+    // Convert arrays to objects for frontend consumption
+    const byRole: Record<string, number> = {};
+    for (const stat of roleStats) {
+      byRole[stat.role] = stat.count;
+    }
+
+    const byProvider: Record<string, number> = {};
+    for (const stat of providerStats) {
+      byProvider[stat.provider] = stat.count;
+    }
+
     return reply.send({
       success: true,
       data: {
         total,
-        byRole: roleStats,
-        byProvider: providerStats,
+        byRole,
+        byProvider,
       },
     });
   } catch (error) {
@@ -421,8 +432,8 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
               type: 'object',
               properties: {
                 total: { type: 'number' },
-                byRole: { type: 'array' },
-                byProvider: { type: 'array' },
+                byRole: { type: 'object', additionalProperties: { type: 'number' } },
+                byProvider: { type: 'object', additionalProperties: { type: 'number' } },
               },
             },
           },

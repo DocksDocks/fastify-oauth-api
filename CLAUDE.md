@@ -25,7 +25,17 @@
 - JWT with role-based access control (RBAC)
 - google-auth-library for Google OAuth
 - apple-signin-auth for Apple OAuth
-- Role hierarchy: user → admin → superadmin
+- Role hierarchy: user → coach → admin → superadmin
+- Global API key authentication for all routes
+
+**Admin Panel (Frontend):**
+- Vite 5.x + React 19
+- TypeScript with path aliases
+- shadcn/ui component library
+- TailwindCSS for styling
+- Zustand for state management
+- React Router for client-side routing
+- Axios with request/response interceptors
 
 ## Project Architecture
 
@@ -52,17 +62,47 @@ fastify-oauth-api/
 │   ├── caddy/                   # Proxy-specific scripts (run, stop, log, exec, reload, remove)
 │   ├── system/                  # System-wide scripts (start-all, stop-all, restart-all, health-check, logs-all, remove-all, remove-volumes, setup-swap)
 │   └── start.sh                 # Quick start script
+├── admin/                       # Admin panel (Vite + React)
+│   ├── src/
+│   │   ├── components/          # React components
+│   │   │   ├── ui/              # shadcn/ui components
+│   │   │   ├── layout/          # Layout components (Sidebar, Header, Layout)
+│   │   │   └── ProtectedRoute.tsx
+│   │   ├── pages/               # Page components
+│   │   │   ├── Login.tsx
+│   │   │   ├── OAuthCallback.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── ApiKeys.tsx
+│   │   │   └── Collections.tsx
+│   │   ├── store/               # Zustand stores
+│   │   │   └── auth.ts          # Authentication state
+│   │   ├── lib/                 # Utilities
+│   │   │   ├── api.ts           # Axios client with interceptors
+│   │   │   └── utils.ts         # Helper functions
+│   │   ├── types/               # TypeScript types
+│   │   │   └── index.ts
+│   │   ├── App.tsx              # Main app with routing
+│   │   ├── main.tsx             # Entry point
+│   │   └── index.css            # Global styles with Tailwind
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   └── .env.example
 ├── src/
 │   ├── config/                  # Configuration layer
 │   │   ├── env.ts               # Environment validation (Zod)
+│   │   ├── collections.ts       # Collections browser config
 │   │   └── index.ts             # Barrel export
 │   ├── db/                      # Database layer
 │   │   ├── schema/              # Drizzle schemas
 │   │   │   ├── users.ts         # Users table with role enum
+│   │   │   ├── api-keys.ts      # Global API keys
+│   │   │   ├── seed-status.ts   # Seed tracking
 │   │   │   └── index.ts         # Barrel export
 │   │   ├── migrations/          # SQL migrations (auto-generated)
 │   │   ├── seeds/               # Seed data
-│   │   │   └── index.ts         # Admin seeding script
+│   │   │   ├── index.ts         # Admin seeding script
+│   │   │   └── super-admin.ts   # Super admin + API keys seed
 │   │   └── client.ts            # DB connection (Drizzle)
 │   ├── modules/                 # Feature modules
 │   │   └── auth/                # Authentication module
@@ -75,11 +115,14 @@ fastify-oauth-api/
 │   │   ├── health.ts            # Health check endpoint
 │   │   ├── profile.ts           # User profile routes (GET, PATCH, DELETE)
 │   │   └── admin/               # Admin routes
-│   │       └── users.ts         # User management (list, get, update role, delete, stats)
+│   │       ├── users.ts         # User management (list, get, update role, delete, stats)
+│   │       ├── api-keys.ts      # API key management (generate, regenerate, revoke)
+│   │       └── collections.ts   # Collections browser (read-only DB viewer)
 │   ├── plugins/                 # Fastify plugins
 │   │   └── jwt.ts               # JWT plugin with authenticate decorator
 │   ├── middleware/              # Custom middleware
-│   │   └── authorize.ts         # RBAC middleware (requireAdmin, requireSuperadmin, etc.)
+│   │   ├── authorize.ts         # RBAC middleware (requireAdmin, requireSuperadmin, etc.)
+│   │   └── api-key.ts           # Global API key validation
 │   ├── utils/                   # Utilities
 │   │   ├── logger.ts            # Pino logger setup
 │   │   ├── errors.ts            # Custom error classes
@@ -410,6 +453,274 @@ This script:
 - Happens automatically on OAuth login
 - Implemented in `src/modules/auth/auth.service.ts` → `handleOAuthCallback()`
 - No manual script needed
+
+## Admin Panel
+
+The admin panel is a full-featured web interface for managing the API. It provides a user-friendly way to view statistics, manage API keys, and browse database collections.
+
+### Tech Stack
+
+**Frontend:**
+- Vite 5.x (build tool with hot module replacement)
+- React 19 (UI library)
+- TypeScript with strict mode
+- Path aliases (`@/*` → `src/*`)
+
+**UI & Styling:**
+- shadcn/ui component library (headless components)
+- TailwindCSS for styling
+- CSS variables for theming (light/dark mode support)
+- Lucide icons
+
+**State & Data:**
+- Zustand for client-side state management
+- localStorage persistence for auth state
+- Axios for HTTP requests with interceptors
+- React Router for client-side routing
+
+### Features
+
+**1. Dashboard**
+- User statistics (total, by role, by provider)
+- API key statistics (active, revoked)
+- Collection count
+- Visual cards with icons and badges
+
+**2. API Keys Management**
+- List all API keys with status badges
+- Generate new API keys with custom names
+- Regenerate existing keys (invalidates old key)
+- Revoke keys (soft delete)
+- Copy-to-clipboard functionality
+- One-time display of plain keys (security best practice)
+
+**3. Collections Browser**
+- Read-only database viewer (Strapi-like)
+- Manual table configuration in `src/config/collections.ts`
+- Pagination (10 records per page)
+- Search across searchable columns
+- Sort by sortable columns (ascending/descending)
+- Dynamic column formatting (timestamps, booleans, JSON, etc.)
+- Role badges and status indicators
+
+**4. Authentication**
+- Google OAuth integration
+- Admin/superadmin role requirement
+- JWT token management with automatic refresh
+- Protected routes with role checking
+- Persistent login state
+
+### Architecture
+
+**Layout Components:**
+- `Sidebar`: Navigation menu with active link highlighting
+- `Header`: User profile dropdown with logout
+- `Layout`: Wrapper combining Sidebar + Header + page content
+
+**Pages:**
+- `Login`: OAuth login with Google button
+- `OAuthCallback`: Handles OAuth redirect and token exchange
+- `Dashboard`: Statistics and overview
+- `ApiKeys`: API key management interface
+- `Collections`: Database browser with pagination/search/sort
+
+**State Management:**
+- `useAuthStore` (Zustand): User, tokens, isAuthenticated
+- Syncs with localStorage for axios interceptor access
+
+**API Client:**
+- Axios instance with base URL
+- Request interceptor: adds X-API-Key + Authorization headers
+- Response interceptor: handles 401 with token refresh
+- Helper methods: `authApi`, `adminApi`
+
+### Global API Key Authentication
+
+All API routes (except whitelisted paths) require `X-API-Key` header.
+
+**Whitelisted Paths:**
+- `/health` - Health check endpoint
+- `/api/auth/*` - OAuth flow endpoints
+- `/admin/*` - Admin panel static files
+
+**API Key Setup:**
+1. Run super admin seed: `npm run db:seed:superadmin`
+2. Copy displayed API keys (only shown once)
+3. Store `admin_panel_api_key` in `admin/.env`:
+   ```
+   VITE_ADMIN_PANEL_API_KEY=your_key_here
+   ```
+4. Store other keys (`ios_api_key`, `android_api_key`) in mobile apps
+
+**Security:**
+- Keys hashed with bcrypt (cost factor 10)
+- Plain key shown only once during generation/regeneration
+- Keys stored in database with creator tracking
+- Soft delete (revokedAt timestamp)
+
+### Development Workflow
+
+**Start Both API + Admin:**
+```bash
+npm run dev
+```
+
+This runs:
+- Backend API on `http://localhost:3000`
+- Admin panel on `http://localhost:5173`
+- Vite proxy forwards `/api/*` requests to backend
+- Hot module replacement for instant feedback
+
+**Separate Commands:**
+```bash
+npm run dev:api      # Start API only
+npm run dev:admin    # Start admin only (in admin/ directory)
+```
+
+### Production Deployment
+
+**Build Admin Panel:**
+```bash
+npm run build:admin
+```
+
+This:
+1. Runs Vite build in `admin/` directory
+2. Outputs static files to `admin/dist/`
+3. Fastify serves these files from `/admin` route
+
+**Docker Build:**
+The Dockerfile includes a multi-stage build:
+- Stage 4: Builds admin panel with Node.js
+- Stage 5: Copies built files to production image
+- Admin panel served as static files by Fastify
+
+**Access Admin Panel:**
+- Development: `http://localhost:5173`
+- Production: `https://yourdomain.com/admin`
+
+### Super Admin Setup
+
+**Initial Setup:**
+1. Set `SUPER_ADMIN_EMAIL` in `.env`:
+   ```bash
+   SUPER_ADMIN_EMAIL=your-email@gmail.com
+   ```
+
+2. Run migrations:
+   ```bash
+   npm run db:migrate
+   ```
+
+3. Run super admin seed:
+   ```bash
+   npm run db:seed:superadmin
+   ```
+
+4. **Important:** Copy the 3 API keys displayed in console:
+   - `ios_api_key`
+   - `android_api_key`
+   - `admin_panel_api_key`
+
+5. Store `admin_panel_api_key` in `admin/.env`:
+   ```bash
+   echo "VITE_ADMIN_PANEL_API_KEY=<key>" > admin/.env
+   ```
+
+6. Login via Google OAuth:
+   - Navigate to `http://localhost:5173` (dev) or `/admin` (prod)
+   - Click "Continue with Google"
+   - Sign in with super admin email
+   - Automatically promoted to superadmin role
+
+**Additional Super Admins:**
+- First super admin can promote others via admin panel (future feature)
+- Or add more emails to `SUPER_ADMIN_EMAIL` (comma-separated)
+
+### Collections Configuration
+
+**Manual Configuration:**
+Edit `src/config/collections.ts` to add/modify tables:
+
+```typescript
+export const collections: Collection[] = [
+  {
+    name: 'Users',          // Display name
+    table: 'users',         // Database table name
+    columns: [
+      {
+        name: 'id',         // Column name in DB
+        label: 'ID',        // Display label
+        type: 'number',     // Data type for formatting
+        sortable: true,     // Enable sorting
+        searchable: false,  // Exclude from search
+      },
+      {
+        name: 'email',
+        label: 'Email',
+        type: 'text',
+        sortable: true,
+        searchable: true,   // Include in search
+      },
+      // ... more columns
+    ],
+    defaultSort: {
+      column: 'createdAt',
+      order: 'desc',
+    },
+  },
+  // ... more collections
+];
+```
+
+**Column Types:**
+- `text`: Plain text
+- `number`: Numeric values
+- `boolean`: Yes/No with badge
+- `timestamp`: Formatted date/time
+- `json`: Syntax-highlighted JSON
+
+**Security:**
+- Read-only access (no create/update/delete)
+- Manual configuration prevents accidental exposure
+- Admin/superadmin role required
+
+### Environment Variables
+
+**Backend (root `.env`):**
+```bash
+SUPER_ADMIN_EMAIL=your-email@gmail.com
+ADMIN_PANEL_API_KEY=<generated_key>
+IOS_API_KEY=<generated_key>
+ANDROID_API_KEY=<generated_key>
+```
+
+**Frontend (`admin/.env`):**
+```bash
+VITE_ADMIN_PANEL_API_KEY=<same_as_backend_ADMIN_PANEL_API_KEY>
+```
+
+### Troubleshooting
+
+**"API key is required" error:**
+1. Ensure `VITE_ADMIN_PANEL_API_KEY` is set in `admin/.env`
+2. Rebuild admin panel: `npm run build:admin`
+3. Restart dev server: `npm run dev`
+
+**401 Unauthorized after login:**
+1. Check user role in database (must be admin or superadmin)
+2. Verify JWT_SECRET matches between requests
+3. Check browser localStorage for access_token
+
+**Collections not showing data:**
+1. Verify table name matches database exactly
+2. Check column names in collection config
+3. Ensure user has admin/superadmin role
+
+**OAuth redirect not working:**
+1. Check `GOOGLE_REDIRECT_URI` in backend `.env`
+2. Ensure redirect URI matches Google Cloud Console
+3. For development, use `http://localhost:3000/api/auth/google/callback`
 
 ## API Endpoints Reference
 

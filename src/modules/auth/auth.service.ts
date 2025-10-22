@@ -38,6 +38,16 @@ function isAdminEmail(email: string): boolean {
 }
 
 /**
+ * Check if email should be auto-promoted to superadmin
+ */
+function isSuperAdminEmail(email: string): boolean {
+  if (!env.SUPER_ADMIN_EMAIL) {
+    return false;
+  }
+  return env.SUPER_ADMIN_EMAIL.toLowerCase() === email.toLowerCase();
+}
+
+/**
  * Google OAuth: Exchange authorization code for user info
  * Works for both web and mobile flows
  */
@@ -144,9 +154,10 @@ export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> 
   // Check if user exists
   let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
-  // Determine role based on admin emails
+  // Determine role based on super admin and admin emails
+  const shouldBeSuperAdmin = isSuperAdminEmail(email);
   const shouldBeAdmin = isAdminEmail(email);
-  const assignedRole = shouldBeAdmin ? 'admin' : 'user';
+  const assignedRole = shouldBeSuperAdmin ? 'superadmin' : shouldBeAdmin ? 'admin' : 'user';
 
   if (user) {
     // Update existing user
@@ -155,8 +166,13 @@ export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> 
       updatedAt: new Date(),
     };
 
-    // Auto-promote to admin if email matches and currently just a user
-    if (shouldBeAdmin && user.role === 'user') {
+    // Auto-promote to superadmin if email matches (highest priority)
+    if (shouldBeSuperAdmin && user.role !== 'superadmin') {
+      updates.role = 'superadmin';
+      console.log(`[OAuth] Auto-promoted ${email} to superadmin role`);
+    }
+    // Auto-promote to admin if email matches and not already superadmin
+    else if (shouldBeAdmin && user.role === 'user') {
       updates.role = 'admin';
       console.log(`[OAuth] Auto-promoted ${email} to admin role`);
     }

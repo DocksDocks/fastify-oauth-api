@@ -1,6 +1,8 @@
 import { buildApp } from '@/app';
 import { env } from '@/config';
 import { logger } from '@/utils/logger';
+import { initializeApiKeyCache } from '@/services/api-key-cache.service';
+import { disconnectRedis } from '@/utils/redis';
 
 const start = async (): Promise<void> => {
   try {
@@ -11,6 +13,7 @@ const start = async (): Promise<void> => {
     signals.forEach((signal) => {
       process.on(signal, async () => {
         logger.info(`Received ${signal}, closing server gracefully...`);
+        await disconnectRedis();
         await app.close();
         process.exit(0);
       });
@@ -21,6 +24,9 @@ const start = async (): Promise<void> => {
       port: Number(env.PORT),
       host: env.HOST,
     });
+
+    // Initialize API key cache after server starts
+    await initializeApiKeyCache();
 
     logger.info({
       message: 'Server started successfully',

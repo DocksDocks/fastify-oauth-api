@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* ============================================
+   THEME CONFIGURATION
+   Tailwind CSS v4 - CSS-First Approach
+   ============================================ */
+
+@theme {
+  /* ============================================
+     BRAND COLORS
+     ============================================ */
+
+  /* Primary - Dark Purple (Sidebar, Main Actions) */
+  --color-primary: #5b21b6;
+  --color-primary-foreground: #ffffff;
+
+  /* Secondary - Green (Secondary Actions) */
+  --color-secondary: #16a34a;
+  --color-secondary-foreground: #ffffff;
+
+  /* Tertiary - Light Purple (Tertiary Actions) */
+  --color-tertiary: #7c3aed;
+  --color-tertiary-foreground: #ffffff;
+
+  /* Destructive - Red (Errors, Warnings) */
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+
+  /* ============================================
+     LAYOUT COLORS
+     ============================================ */
+
+  /* Main Background - Light Purple Tint */
+  --color-background: #faf5ff;
+  --color-foreground: #1e1b4b;
+
+  /* Cards - White */
+  --color-card: #ffffff;
+  --color-card-foreground: #1e1b4b;
+
+  /* Popovers/Dropdowns */
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1e1b4b;
+
+  /* ============================================
+     UTILITY COLORS
+     ============================================ */
+
+  /* Muted Elements */
+  --color-muted: #f3e8ff;
+  --color-muted-foreground: #6b7280;
+
+  /* Accent/Hover States */
+  --color-accent: #f3e8ff;
+  --color-accent-foreground: #1e1b4b;
+
+  /* Borders & Inputs */
+  --color-border: #e9d5ff;
+  --color-input: #e9d5ff;
+
+  /* Focus Ring */
+  --color-ring: #7c3aed;
+
+  /* ============================================
+     RADIUS
+     ============================================ */
+  --radius: 0.5rem;
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  @theme {
+    /* Brand Colors - Adjusted for Dark Mode */
+    --color-primary: #7c3aed;
+    --color-primary-foreground: #1e1b4b;
+
+    --color-secondary: #22c55e;
+    --color-secondary-foreground: #ffffff;
+
+    --color-tertiary: #a78bfa;
+    --color-tertiary-foreground: #1e1b4b;
+
+    --color-destructive: #991b1b;
+    --color-destructive-foreground: #fafafa;
+
+    /* Layout Colors - Dark Theme */
+    --color-background: #1e1b4b;
+    --color-foreground: #fafafa;
+
+    --color-card: #1e1b4b;
+    --color-card-foreground: #fafafa;
+
+    --color-popover: #1e1b4b;
+    --color-popover-foreground: #fafafa;
+
+    /* Utility Colors - Dark Theme */
+    --color-muted: #2e2a5c;
+    --color-muted-foreground: #9ca3af;
+
+    --color-accent: #2e2a5c;
+    --color-accent-foreground: #fafafa;
+
+    --color-border: #2e2a5c;
+    --color-input: #2e2a5c;
+    --color-ring: #0f172a;
+  }
+}

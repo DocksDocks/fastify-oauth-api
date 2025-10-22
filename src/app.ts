@@ -4,6 +4,9 @@ import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyCompress from '@fastify/compress';
 import fastifyRateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { env } from '@/config';
 import { errorResponse } from '@/utils/response';
 import { AppError } from '@/utils/errors';
@@ -12,8 +15,14 @@ import jwtPlugin from '@/plugins/jwt';
 import authRoutes from '@/modules/auth/auth.routes';
 import profileRoutes from '@/routes/profile';
 import adminUserRoutes from '@/routes/admin/users';
+import adminApiKeysRoutes from '@/routes/admin/api-keys';
+import adminCollectionsRoutes from '@/routes/admin/collections';
 import { exercisesRoutes } from '@/modules/exercises/exercises.routes';
 import { workoutsRoutes } from '@/modules/workouts/workouts.routes';
+import { validateApiKey } from '@/middleware/api-key';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const isProduction = env.NODE_ENV === 'production';
@@ -64,12 +73,21 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   });
 
   await app.register(fastifyCors, {
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: isProduction
+      ? process.env.CORS_ORIGIN || '*'
+      : [
+          'http://localhost:5173', // Vite dev server
+          'http://127.0.0.1:5173',
+          process.env.CORS_ORIGIN || '*',
+        ],
     credentials: true,
   });
 
   // Register JWT plugin for authentication
   await app.register(jwtPlugin);
+
+  // Register API key validation middleware (runs on all routes except whitelisted)
+  app.addHook('onRequest', validateApiKey);
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
@@ -116,12 +134,40 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   // Admin routes (admin only)
   await app.register(adminUserRoutes, { prefix: '/api/admin/users' });
+  await app.register(adminApiKeysRoutes, { prefix: '/api/admin/api-keys' });
+  await app.register(adminCollectionsRoutes, { prefix: '/api/admin/collections' });
+
+  // Serve admin panel static files (production only)
+  if (isProduction) {
+    const adminDistPath = path.join(__dirname, '../dist/admin');
+
+    await app.register(fastifyStatic, {
+      root: adminDistPath,
+      prefix: '/admin/',
+      decorateReply: false, // Don't add reply.sendFile (we use custom handler)
+    });
+
+    // SPA fallback for admin panel (handles client-side routing)
+    app.setNotFoundHandler((request, reply) => {
+      if (request.url.startsWith('/admin')) {
+        return reply.sendFile('index.html', adminDistPath);
+      }
+      // For API routes, return 404 JSON
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Route not found',
+        },
+      });
+    });
+  }
 
   // Root route
   app.get('/', async () => {
     return {
-      name: 'Fastify OAuth API - Gym Workout Tracker',
-      version: '1.0.0',
+      name: 'Fastify OAuth API - Gym Workout Tracker + Admin Panel',
+      version: '2.0.0',
       environment: env.NODE_ENV,
       endpoints: {
         health: '/health',
@@ -137,7 +183,12 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
         profile: '/api/profile',
         exercises: '/api/exercises',
         workouts: '/api/workouts',
-        admin: '/api/admin/users',
+        admin: {
+          users: '/api/admin/users',
+          apiKeys: '/api/admin/api-keys',
+          collections: '/api/admin/collections',
+          panel: isProduction ? '/admin' : 'http://localhost:5173',
+        },
       },
     };
   });

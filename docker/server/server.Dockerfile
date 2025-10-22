@@ -53,7 +53,27 @@ RUN npm run test:coverage
 RUN echo "✓ All 410 tests passed with 100% coverage threshold"
 
 #------------------------------------------------------------------------------
-# Stage 4: Production
+# Stage 4: Admin Panel Builder
+#------------------------------------------------------------------------------
+FROM node:${NODE_VERSION} AS admin-builder
+
+WORKDIR /app/admin
+
+# Copy admin package files
+COPY admin/package.json admin/package-lock.json* ./
+
+# Install admin dependencies
+RUN npm ci && \
+    npm cache clean --force
+
+# Copy admin source code
+COPY admin/ ./
+
+# Build admin panel
+RUN npm run build
+
+#------------------------------------------------------------------------------
+# Stage 5: Production
 #------------------------------------------------------------------------------
 FROM node:${NODE_VERSION} AS production
 
@@ -83,6 +103,9 @@ COPY --from=builder --chown=nodejs:nodejs /app/drizzle.config.ts ./
 # Copy database files
 COPY --chown=nodejs:nodejs src/db/migrations ./src/db/migrations
 
+# Copy built admin panel from admin-builder stage
+COPY --from=admin-builder --chown=nodejs:nodejs /app/admin/dist ./admin/dist
+
 # Create keys directory (will be mounted as volume)
 RUN mkdir -p /app/keys && \
     chown -R nodejs:nodejs /app/keys
@@ -104,7 +127,7 @@ ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/server.js"]
 
 #------------------------------------------------------------------------------
-# Stage 5: Development (optional)
+# Stage 6: Development (optional)
 #------------------------------------------------------------------------------
 FROM node:${NODE_VERSION} AS development
 
