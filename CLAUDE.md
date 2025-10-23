@@ -254,6 +254,12 @@ npm run format                   # Prettier
 npm run type-check               # TypeScript
 ```
 
+**IMPORTANT - Command Execution Rules:**
+- ❌ **NEVER use `timeout` or `sleep` commands** - They cause delays, block execution, and create unnecessary waiting
+- ✅ **Run commands directly** without artificial delays
+- ✅ **Use background processes** (`&`) or `run_in_background` parameter if async execution is needed
+- ✅ **Check exit codes and outputs** instead of waiting arbitrary time periods
+
 ## Code Style Standards
 
 **Module System:**
@@ -978,6 +984,7 @@ export default defineConfig({
 ❌ **NEVER hardcode configuration** (use environment variables)
 ❌ **NEVER create multiple docker-compose files** (use single file + .env)
 ❌ **NEVER use .js extensions** in TypeScript imports (use path aliases without extensions)
+❌ **NEVER use timeout or sleep commands** in bash commands (causes delays and blocks execution)
 
 ## Critical DOs
 

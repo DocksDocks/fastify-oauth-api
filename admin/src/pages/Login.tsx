@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { authApi } from '@/lib/api';
 import { AlertCircle } from 'lucide-react';
+import { isAxiosError } from 'axios';
 
 export function Login() {
   const [loading, setLoading] = useState(false);
@@ -23,8 +24,12 @@ export function Login() {
       }
 
       window.location.href = authUrl;
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to initiate Google login');
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.data?.error) {
+        setError(err.response.data.error.message || 'Failed to initiate Google login');
+      } else {
+        setError('Failed to initiate Google login');
+      }
       setLoading(false);
     }
   };
@@ -33,8 +38,8 @@ export function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl text-[var(--color-text-primary)]">Admin Panel</CardTitle>
-          <CardDescription className="text-[var(--color-text-secondary)]">Sign in with your Google account to continue</CardDescription>
+          <CardTitle className="text-3xl text-(--color-text-primary)">Admin Panel</CardTitle>
+          <CardDescription className="text-text-secondary">Sign in with your Google account to continue</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -77,7 +82,7 @@ export function Login() {
             )}
           </Button>
 
-          <p className="text-center text-sm text-[var(--color-text-muted)]">
+          <p className="text-center text-sm text-(--color-text-muted)">
             Only authorized administrators can access this panel
           </p>
         </CardContent>

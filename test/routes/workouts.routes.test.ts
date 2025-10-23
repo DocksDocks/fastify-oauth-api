@@ -12,7 +12,7 @@ describe('Workouts Routes', () => {
   let user: User;
   let otherUser: User;
   let userToken: string;
-  let otherUserToken: string;
+  let _otherUserToken: string;
   let exercise1: Exercise;
   let exercise2: Exercise;
 
@@ -34,7 +34,7 @@ describe('Workouts Routes', () => {
     });
 
     userToken = userTokens.accessToken;
-    otherUserToken = otherTokens.accessToken;
+    _otherUserToken = otherTokens.accessToken;
 
     // Create test exercises
     exercise1 = await createExercise({
@@ -94,7 +94,7 @@ describe('Workouts Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.data.workouts.every((w: any) => w.isTemplate === true)).toBe(true);
+      expect(body.data.workouts.every((w: { isTemplate: boolean }) => w.isTemplate === true)).toBe(true);
     });
 
     it('should filter workouts by difficulty', async () => {
@@ -119,7 +119,7 @@ describe('Workouts Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.data.workouts.every((w: any) => w.difficulty === 'beginner')).toBe(true);
+      expect(body.data.workouts.every((w: { difficulty: string }) => w.difficulty === 'beginner')).toBe(true);
     });
 
     it('should search workouts by name', async () => {
@@ -136,7 +136,7 @@ describe('Workouts Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.data.workouts.some((w: any) => w.name.includes('Upper'))).toBe(true);
+      expect(body.data.workouts.some((w: { name: string }) => w.name.includes('Upper'))).toBe(true);
     });
 
     it('should paginate workouts', async () => {

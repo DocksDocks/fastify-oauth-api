@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isAxiosError } from 'axios';
 
 export function OAuthCallback() {
   const [searchParams] = useSearchParams();
@@ -41,8 +42,12 @@ export function OAuthCallback() {
 
         setAuth(user, accessToken, refreshToken);
         navigate('/admin/dashboard', { replace: true });
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Authentication failed');
+      } catch (err: unknown) {
+        if (isAxiosError(err) && err.response?.data?.error) {
+          setError(err.response.data.error.message || 'Authentication failed');
+        } else {
+          setError('Authentication failed');
+        }
       }
     };
 

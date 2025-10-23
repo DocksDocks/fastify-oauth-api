@@ -2,34 +2,19 @@
  * Collections Management Routes
  *
  * Read-only access to database tables via admin panel
- * Tables must be manually configured in src/config/collections.ts
+ * Tables are auto-generated from Drizzle schema files
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { sql, type SQL } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { requireAdmin } from '@/middleware/authorize';
 import {
-  collections,
   getCollectionByTable,
   getAvailableCollections,
+  getTableMap,
   type Collection,
 } from '@/config/collections';
-import { users } from '@/db/schema/users';
-import { exercises } from '@/db/schema/exercises';
-import { workouts } from '@/db/schema/workouts';
-import { apiKeys } from '@/db/schema/api-keys';
-import { refreshTokens } from '@/db/schema/refresh-tokens';
-import type { PgTable } from 'drizzle-orm/pg-core';
-
-// Table map for dynamic access
-const tableMap: Record<string, PgTable> = {
-  users,
-  exercises,
-  workouts,
-  api_keys: apiKeys,
-  refresh_tokens: refreshTokens,
-};
 
 /**
  * List all available collections
@@ -181,6 +166,7 @@ async function getCollectionData(
     }
 
     // Get table schema from map
+    const tableMap = getTableMap();
     const tableSchema = tableMap[table];
     if (!tableSchema) {
       return reply.status(500).send({
@@ -284,6 +270,7 @@ async function getCollectionRecord(
     }
 
     // Get table schema from map
+    const tableMap = getTableMap();
     const tableSchema = tableMap[table];
     if (!tableSchema) {
       return reply.status(500).send({

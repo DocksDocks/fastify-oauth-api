@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    /* Override rootDir to allow test files */
+    "rootDir": ".",
+
+    /* Test output directory (not used since noEmit is true) */
+    "outDir": "./dist-test",
+
+    /* Don't emit files for tests */
+    "noEmit": true,
+
+    /* Keep path aliases from base config */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [
+    "test/**/*",
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-test",
+    "build"
+  ]
+}

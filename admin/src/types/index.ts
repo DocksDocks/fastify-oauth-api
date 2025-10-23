@@ -2,6 +2,24 @@
  * TypeScript types for API responses and data models
  */
 
+import type { AxiosError } from 'axios';
+
+/**
+ * Backend error response structure (from src/utils/response.ts)
+ */
+export interface ApiErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Typed Axios error for API calls
+ */
+export type ApiError = AxiosError<ApiErrorResponse>;
+
 export interface User {
   id: number;
   email: string;
@@ -38,7 +56,7 @@ export interface Collection {
 export interface CollectionColumn {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'boolean' | 'enum';
+  type: 'text' | 'number' | 'date' | 'timestamp' | 'boolean' | 'enum' | 'json';
   sortable?: boolean;
   searchable?: boolean;
 }

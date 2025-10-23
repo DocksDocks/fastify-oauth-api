@@ -34,7 +34,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-6">
       <div className="flex items-center gap-4">
-        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Welcome back, {user?.name || 'User'}!</h2>
+        <h2 className="text-lg font-semibold text-(--color-text-primary)">Welcome back, {user?.name || 'User'}!</h2>
         {user?.role && (
           <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize">
             {user.role}
@@ -55,14 +55,14 @@ export function Header() {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none text-[var(--color-text-primary)]">{user?.name || 'User'}</p>
-              <p className="text-xs leading-none text-[var(--color-text-muted)]">{user?.email}</p>
+              <p className="text-sm font-medium leading-none text-(--color-text-primary)">{user?.name || 'User'}</p>
+              <p className="text-xs leading-none text-(--color-text-muted)">{user?.email}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
-            <span className="text-[var(--color-text-secondary)]">Log out</span>
+            <span className="text-text-secondary">Log out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

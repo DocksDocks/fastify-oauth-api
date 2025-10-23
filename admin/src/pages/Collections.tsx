@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,14 +16,14 @@ import {
 } from '@/components/ui/table';
 import { adminApi } from '@/lib/api';
 import type { Collection, CollectionMeta } from '@/types';
-import { Database, Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown } from 'lucide-react';
 
 export function Collections() {
   const { table } = useParams();
   const navigate = useNavigate();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<CollectionMeta | null>(null);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,34 +38,7 @@ export function Collections() {
   const [sortColumn, setSortColumn] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  useEffect(() => {
-    fetchCollections();
-  }, []);
-
-  useEffect(() => {
-    if (table && collections && collections.length > 0) {
-      const collection = collections.find((c) => c.table === table);
-      if (collection) {
-        // Reset state when switching collections
-        setData([]);
-        setPage(1);
-        setSearchTerm('');
-        setSortColumn('');
-        setSortOrder('asc');
-        setError(null);
-
-        fetchCollectionMeta(collection.table);
-      }
-    }
-  }, [table, collections]);
-
-  useEffect(() => {
-    if (selectedCollection) {
-      fetchData(selectedCollection);
-    }
-  }, [selectedCollection, page, searchTerm, sortColumn, sortOrder]);
-
-  const fetchCollections = async () => {
+  const fetchCollections = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminApi.getCollections();
@@ -74,26 +47,28 @@ export function Collections() {
       if (!table && response.data.data.collections.length > 0) {
         navigate(`/admin/collections/${response.data.data.collections[0].table}`, { replace: true });
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to load collections');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(error.response?.data?.error?.message || 'Failed to load collections');
     } finally {
       setLoading(false);
     }
-  };
+  }, [table, navigate]);
 
-  const fetchCollectionMeta = async (tableName: string) => {
+  const fetchCollectionMeta = useCallback(async (tableName: string) => {
     try {
       setLoading(true);
       const response = await adminApi.getCollectionMeta(tableName);
       setSelectedCollection(response.data.data);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to load collection metadata');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(error.response?.data?.error?.message || 'Failed to load collection metadata');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchData = async (collection: CollectionMeta) => {
+  const fetchData = useCallback(async (collection: CollectionMeta) => {
     try {
       setLoading(true);
       const response = await adminApi.getCollectionData(
@@ -107,12 +82,42 @@ export function Collections() {
       setData(response.data.data.rows);
       setTotalPages(response.data.data.pagination.totalPages);
       setTotalRecords(response.data.data.pagination.total);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to load data');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(error.response?.data?.error?.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, searchTerm, sortColumn, sortOrder]);
+
+  useEffect(() => {
+    fetchCollections();
+  }, [fetchCollections]);
+
+  useEffect(() => {
+    if (table && collections && collections.length > 0) {
+      const collection = collections.find((c) => c.table === table);
+      if (collection) {
+        // Reset state when switching collections
+        setData([]);
+        setPage(1);
+        setTotalPages(1);
+        setTotalRecords(0);
+        setSearchTerm('');
+        setSortColumn('');
+        setSortOrder('asc');
+        setError(null);
+
+        fetchCollectionMeta(collection.table);
+      }
+    }
+  }, [table, collections, fetchCollectionMeta]);
+
+  useEffect(() => {
+    if (selectedCollection) {
+      fetchData(selectedCollection);
+    }
+  }, [selectedCollection, fetchData]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -129,14 +134,14 @@ export function Collections() {
     setPage(1);
   };
 
-  const formatValue = (value: any, type: string): string => {
+  const formatValue = (value: unknown, type: string): string => {
     if (value === null || value === undefined) return '-';
 
     switch (type) {
       case 'date':
-      case 'timestamp':
+      case 'timestamp': {
         // Format: "20 October 2025, 22:41:21"
-        const date = new Date(value);
+        const date = new Date(value as string | number | Date);
         const formatter = new Intl.DateTimeFormat(undefined, {
           day: 'numeric',
           month: 'long',
@@ -147,6 +152,7 @@ export function Collections() {
           hour12: false
         });
         return formatter.format(date);
+      }
       case 'boolean':
         return value ? 'Yes' : 'No';
       case 'json':
@@ -180,17 +186,17 @@ export function Collections() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-[var(--color-text-primary)]">{selectedCollection.name}</CardTitle>
-                      <CardDescription className="text-[var(--color-text-secondary)]">
+                      <CardTitle className="text-(--color-text-primary)">{selectedCollection.name}</CardTitle>
+                      <CardDescription className="text-text-secondary">
                         {totalRecords} record{totalRecords !== 1 ? 's' : ''} found
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[var(--color-text-tertiary)]" />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-(--color-text-tertiary)" />
                         <Input
                           placeholder="Search..."
-                          className="pl-8 w-64 text-[var(--color-text-primary)]"
+                          className="pl-8 w-64 text-(--color-text-primary)"
                           value={searchTerm}
                           onChange={(e) => handleSearch(e.target.value)}
                         />
@@ -206,7 +212,7 @@ export function Collections() {
                       ))}
                     </div>
                   ) : data.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--color-text-muted)]">
+                    <div className="text-center py-8 text-(--color-text-muted)">
                       No records found
                     </div>
                   ) : (
@@ -214,10 +220,13 @@ export function Collections() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            {selectedCollection?.columns?.map((column) => (
-                              <TableHead key={column.name}>
+                            {selectedCollection?.columns?.map((column, colIndex) => (
+                              <TableHead
+                                key={column.name}
+                                className={`${colIndex % 2 === 0 ? 'bg-primary/5' : 'bg-primary/3'}`}
+                              >
                                 <div className="flex items-center gap-1">
-                                  <span className="text-[var(--color-text-secondary)]">{column.label}</span>
+                                  <span className="text-text-secondary font-semibold">{column.label}</span>
                                   {column.sortable && (
                                     <Button
                                       variant="ghost"
@@ -229,7 +238,7 @@ export function Collections() {
                                         className={`h-3 w-3 ${
                                           sortColumn === column.name
                                             ? 'text-primary'
-                                            : 'text-[var(--color-text-tertiary)]'
+                                            : 'text-(--color-text-tertiary)'
                                         }`}
                                       />
                                     </Button>
@@ -242,11 +251,14 @@ export function Collections() {
                         <TableBody>
                           {data.map((row, rowIndex) => (
                             <TableRow key={rowIndex}>
-                              {selectedCollection?.columns?.map((column) => (
-                                <TableCell key={column.name} className="max-w-xs">
+                              {selectedCollection?.columns?.map((column, colIndex) => (
+                                <TableCell
+                                  key={column.name}
+                                  className={`max-w-xs ${colIndex % 2 === 0 ? 'bg-primary/5' : 'bg-primary/3'}`}
+                                >
                                   {column.name === 'role' ? (
                                     <Badge variant="outline" className="capitalize">
-                                      {row[column.name]}
+                                      {String(row[column.name] ?? '')}
                                     </Badge>
                                   ) : column.type === 'boolean' ? (
                                     <Badge variant={row[column.name] ? 'success' : 'outline'}>
@@ -254,7 +266,7 @@ export function Collections() {
                                     </Badge>
                                   ) : (
                                     <span
-                                      className={`block truncate text-[var(--color-text-primary)] ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
+                                      className={`block truncate text-(--color-text-primary) ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
                                       title={formatValue(row[column.name], column.type)}
                                     >
                                       {formatValue(row[column.name], column.type)}
@@ -274,7 +286,7 @@ export function Collections() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-[var(--color-text-secondary)]">
+                  <p className="text-sm text-text-secondary">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex items-center gap-2">

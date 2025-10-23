@@ -23,13 +23,13 @@ import {
 } from '@/components/ui/dialog';
 import { adminApi } from '@/lib/api';
 import type { ApiKey } from '@/types';
-import { Key, Copy, Check, RefreshCw, Trash2, AlertCircle, Plus } from 'lucide-react';
+import { Key, Copy, RefreshCw, Trash2, AlertCircle, Plus } from 'lucide-react';
+import { isAxiosError } from 'axios';
 
 export function ApiKeys() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   // Generate dialog state
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
@@ -55,8 +55,12 @@ export function ApiKeys() {
       setLoading(true);
       const response = await adminApi.getApiKeys();
       setApiKeys(response.data.apiKeys);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to load API keys');
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.data?.error) {
+        setError(err.response.data.error.message || 'Failed to load API keys');
+      } else {
+        setError('Failed to load API keys');
+      }
     } finally {
       setLoading(false);
     }
@@ -71,8 +75,12 @@ export function ApiKeys() {
       setGeneratedKey(response.data.apiKey);
       setNewKeyName('');
       await fetchApiKeys();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to generate API key');
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.data?.error) {
+        setError(err.response.data.error.message || 'Failed to generate API key');
+      } else {
+        setError('Failed to generate API key');
+      }
       setShowGenerateDialog(false);
     } finally {
       setGenerating(false);
@@ -86,8 +94,12 @@ export function ApiKeys() {
       const response = await adminApi.regenerateApiKey(regenerateKeyId);
       setRegeneratedKey(response.data.apiKey);
       await fetchApiKeys();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to regenerate API key');
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.data?.error) {
+        setError(err.response.data.error.message || 'Failed to regenerate API key');
+      } else {
+        setError('Failed to regenerate API key');
+      }
       setShowRegenerateDialog(false);
     }
   };
@@ -100,17 +112,17 @@ export function ApiKeys() {
       await fetchApiKeys();
       setShowRevokeDialog(false);
       setRevokeKeyId(null);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to revoke API key');
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.data?.error) {
+        setError(err.response.data.error.message || 'Failed to revoke API key');
+      } else {
+        setError('Failed to revoke API key');
+      }
     }
   };
 
-  const copyToClipboard = async (text: string, id?: number) => {
+  const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
-    if (id) {
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    }
   };
 
   const closeGenerateDialog = () => {
@@ -129,8 +141,8 @@ export function ApiKeys() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">API Keys</h1>
-          <p className="text-[var(--color-text-secondary)]">Manage API keys for authentication</p>
+          <h1 className="text-3xl font-bold text-(--color-text-primary)">API Keys</h1>
+          <p className="text-text-secondary">Manage API keys for authentication</p>
         </div>
         <Card>
           <CardHeader>
@@ -152,8 +164,8 @@ export function ApiKeys() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">API Keys</h1>
-          <p className="text-[var(--color-text-secondary)]">Manage API keys for authentication</p>
+          <h1 className="text-3xl font-bold text-(--color-text-primary)">API Keys</h1>
+          <p className="text-text-secondary">Manage API keys for authentication</p>
         </div>
         <Button onClick={() => setShowGenerateDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -170,33 +182,33 @@ export function ApiKeys() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-[var(--color-text-primary)]">API Keys</CardTitle>
-          <CardDescription className="text-[var(--color-text-secondary)]">
+          <CardTitle className="text-(--color-text-primary)">API Keys</CardTitle>
+          <CardDescription className="text-text-secondary">
             These keys are used to authenticate API requests. Keep them secure.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {(apiKeys?.length || 0) === 0 ? (
-            <div className="text-center py-8 text-[var(--color-text-muted)]">
+            <div className="text-center py-8 text-(--color-text-muted)">
               No API keys found. Generate one to get started.
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[var(--color-text-secondary)]">Name</TableHead>
-                  <TableHead className="text-[var(--color-text-secondary)]">Status</TableHead>
-                  <TableHead className="text-[var(--color-text-secondary)]">Created</TableHead>
-                  <TableHead className="text-[var(--color-text-secondary)]">Created By</TableHead>
-                  <TableHead className="text-right text-[var(--color-text-secondary)]">Actions</TableHead>
+                  <TableHead className="text-text-secondary">Name</TableHead>
+                  <TableHead className="text-text-secondary">Status</TableHead>
+                  <TableHead className="text-text-secondary">Created</TableHead>
+                  <TableHead className="text-text-secondary">Created By</TableHead>
+                  <TableHead className="text-right text-text-secondary">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {apiKeys?.map((key) => (
                   <TableRow key={key.id}>
-                    <TableCell className="font-medium text-[var(--color-text-primary)]">
+                    <TableCell className="font-medium text-(--color-text-primary)">
                       <div className="flex items-center gap-2">
-                        <Key className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                        <Key className="h-4 w-4 text-(--color-text-tertiary)" />
                         {key.name}
                       </div>
                     </TableCell>
@@ -205,10 +217,10 @@ export function ApiKeys() {
                         {key.revokedAt ? 'Revoked' : 'Active'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-[var(--color-text-secondary)]">
+                    <TableCell className="text-text-secondary">
                       {new Date(key.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-[var(--color-text-secondary)]">User #{key.createdBy}</TableCell>
+                    <TableCell className="text-text-secondary">User #{key.createdBy}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         {!key.revokedAt && (
@@ -249,8 +261,8 @@ export function ApiKeys() {
       <Dialog open={showGenerateDialog} onOpenChange={closeGenerateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-[var(--color-text-primary)]">Generate New API Key</DialogTitle>
-            <DialogDescription className="text-[var(--color-text-secondary)]">
+            <DialogTitle className="text-(--color-text-primary)">Generate New API Key</DialogTitle>
+            <DialogDescription className="text-text-secondary">
               {generatedKey
                 ? 'Your API key has been generated. Copy it now - you won\'t be able to see it again!'
                 : 'Create a new API key for authenticating requests.'}
@@ -261,13 +273,13 @@ export function ApiKeys() {
             <div className="space-y-4">
               <Alert variant="success">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle className="text-[var(--color-text-primary)]">API Key Generated</AlertTitle>
-                <AlertDescription className="text-[var(--color-text-secondary)]">
+                <AlertTitle className="text-(--color-text-primary)">API Key Generated</AlertTitle>
+                <AlertDescription className="text-text-secondary">
                   Make sure to copy your API key now. You won't be able to see it again!
                 </AlertDescription>
               </Alert>
               <div className="flex items-center gap-2">
-                <Input value={generatedKey} readOnly className="font-mono text-sm text-[var(--color-text-primary)]" />
+                <Input value={generatedKey} readOnly className="font-mono text-sm text-(--color-text-primary)" />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -280,7 +292,7 @@ export function ApiKeys() {
           ) : (
             <div className="space-y-4">
               <div>
-                <label htmlFor="keyName" className="text-sm font-medium text-[var(--color-text-secondary)]">
+                <label htmlFor="keyName" className="text-sm font-medium text-text-secondary">
                   Key Name
                 </label>
                 <Input
@@ -293,7 +305,7 @@ export function ApiKeys() {
                       handleGenerate();
                     }
                   }}
-                  className="text-[var(--color-text-primary)]"
+                  className="text-(--color-text-primary)"
                 />
               </div>
             </div>
@@ -323,8 +335,8 @@ export function ApiKeys() {
       <Dialog open={showRegenerateDialog} onOpenChange={closeRegenerateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-[var(--color-text-primary)]">Regenerate API Key</DialogTitle>
-            <DialogDescription className="text-[var(--color-text-secondary)]">
+            <DialogTitle className="text-(--color-text-primary)">Regenerate API Key</DialogTitle>
+            <DialogDescription className="text-text-secondary">
               {regeneratedKey
                 ? 'Your API key has been regenerated. Copy it now - you won\'t be able to see it again!'
                 : 'This will generate a new key and invalidate the old one. This action cannot be undone.'}
@@ -335,13 +347,13 @@ export function ApiKeys() {
             <div className="space-y-4">
               <Alert variant="warning">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle className="text-[var(--color-text-primary)]">API Key Regenerated</AlertTitle>
-                <AlertDescription className="text-[var(--color-text-secondary)]">
+                <AlertTitle className="text-(--color-text-primary)">API Key Regenerated</AlertTitle>
+                <AlertDescription className="text-text-secondary">
                   The old key has been invalidated. Make sure to update all services using this key.
                 </AlertDescription>
               </Alert>
               <div className="flex items-center gap-2">
-                <Input value={regeneratedKey} readOnly className="font-mono text-sm text-[var(--color-text-primary)]" />
+                <Input value={regeneratedKey} readOnly className="font-mono text-sm text-(--color-text-primary)" />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -374,8 +386,8 @@ export function ApiKeys() {
       <Dialog open={showRevokeDialog} onOpenChange={() => setShowRevokeDialog(false)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-[var(--color-text-primary)]">Revoke API Key</DialogTitle>
-            <DialogDescription className="text-[var(--color-text-secondary)]">
+            <DialogTitle className="text-(--color-text-primary)">Revoke API Key</DialogTitle>
+            <DialogDescription className="text-text-secondary">
               This will permanently revoke this API key. All requests using this key will fail. This
               action cannot be undone.
             </DialogDescription>

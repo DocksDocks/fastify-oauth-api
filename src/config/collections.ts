@@ -1,14 +1,18 @@
 /**
- * Collections Configuration
+ * Collections Configuration - Auto-Generated from Drizzle Schemas
  *
- * Manual definition of database tables accessible via admin panel
- * Each collection specifies which columns to show, which are searchable, etc.
+ * Automatically generates collection configurations from database schema files.
+ * No manual maintenance needed - always in sync with the database.
  */
+
+import { getTableColumns } from 'drizzle-orm';
+import type { PgTable, PgColumn } from 'drizzle-orm/pg-core';
+import * as schema from '@/db/schema';
 
 export interface CollectionColumn {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'boolean' | 'enum';
+  type: 'text' | 'number' | 'date' | 'timestamp' | 'boolean' | 'enum' | 'json';
   sortable?: boolean;
   searchable?: boolean;
 }
@@ -23,91 +27,254 @@ export interface Collection {
 }
 
 /**
- * Available collections for admin panel
- *
- * Add new collections here to make them accessible in the admin UI
+ * Tables to exclude from collections (internal system tables)
  */
-export const collections: Collection[] = [
-  {
-    name: 'Users',
-    table: 'users',
-    description: 'System users with OAuth authentication',
-    columns: [
-      { name: 'id', label: 'ID', type: 'number', sortable: true },
-      { name: 'email', label: 'Email', type: 'text', sortable: true, searchable: true },
-      { name: 'name', label: 'Name', type: 'text', sortable: true, searchable: true },
-      { name: 'role', label: 'Role', type: 'enum', sortable: true },
-      { name: 'provider', label: 'Provider', type: 'text', sortable: true },
-      { name: 'last_login_at', label: 'Last Login', type: 'date', sortable: true },
-      { name: 'created_at', label: 'Created', type: 'date', sortable: true },
-    ],
-    defaultSort: { column: 'created_at', order: 'desc' },
-    defaultLimit: 20,
-  },
-  {
-    name: 'Exercises',
-    table: 'exercises',
-    description: 'Exercise library (system and user-created)',
-    columns: [
-      { name: 'id', label: 'ID', type: 'number', sortable: true },
-      { name: 'name', label: 'Name', type: 'text', sortable: true, searchable: true },
-      { name: 'category', label: 'Category', type: 'text', sortable: true },
-      { name: 'muscle_group', label: 'Muscle Group', type: 'text', sortable: true },
-      { name: 'equipment', label: 'Equipment', type: 'text', sortable: true },
-      { name: 'difficulty', label: 'Difficulty', type: 'text', sortable: true },
-      { name: 'created_by', label: 'Created By', type: 'number', sortable: true },
-      { name: 'created_at', label: 'Created', type: 'date', sortable: true },
-    ],
-    defaultSort: { column: 'name', order: 'asc' },
-    defaultLimit: 20,
-  },
-  {
-    name: 'Workouts',
-    table: 'workouts',
-    description: 'User workout plans',
-    columns: [
-      { name: 'id', label: 'ID', type: 'number', sortable: true },
-      { name: 'name', label: 'Name', type: 'text', sortable: true, searchable: true },
-      { name: 'description', label: 'Description', type: 'text', searchable: true },
-      { name: 'user_id', label: 'User ID', type: 'number', sortable: true },
-      { name: 'is_public', label: 'Public', type: 'boolean', sortable: true },
-      { name: 'created_at', label: 'Created', type: 'date', sortable: true },
-      { name: 'updated_at', label: 'Updated', type: 'date', sortable: true },
-    ],
-    defaultSort: { column: 'created_at', order: 'desc' },
-    defaultLimit: 20,
-  },
-  {
-    name: 'API Keys',
-    table: 'api_keys',
-    description: 'Global API keys for mobile apps and admin panel',
-    columns: [
-      { name: 'id', label: 'ID', type: 'number', sortable: true },
-      { name: 'name', label: 'Name', type: 'text', sortable: true, searchable: true },
-      { name: 'created_by', label: 'Created By', type: 'number', sortable: true },
-      { name: 'created_at', label: 'Created', type: 'date', sortable: true },
-      { name: 'updated_at', label: 'Updated', type: 'date', sortable: true },
-      { name: 'revoked_at', label: 'Revoked', type: 'date', sortable: true },
-    ],
-    defaultSort: { column: 'created_at', order: 'desc' },
-    defaultLimit: 10,
-  },
-  {
-    name: 'Refresh Tokens',
-    table: 'refresh_tokens',
-    description: 'JWT refresh tokens for user sessions',
-    columns: [
-      { name: 'id', label: 'ID', type: 'number', sortable: true },
-      { name: 'user_id', label: 'User ID', type: 'number', sortable: true },
-      { name: 'family_id', label: 'Family ID', type: 'text', sortable: true },
-      { name: 'is_revoked', label: 'Revoked', type: 'boolean', sortable: true },
-      { name: 'expires_at', label: 'Expires', type: 'date', sortable: true },
-      { name: 'created_at', label: 'Created', type: 'date', sortable: true },
-    ],
-    defaultSort: { column: 'created_at', order: 'desc' },
-    defaultLimit: 20,
-  },
+const EXCLUDED_TABLES = new Set(['seed_status', 'refresh_tokens', 'api_keys']);
+
+/**
+ * Column name patterns that should not be searchable
+ */
+const NON_SEARCHABLE_PATTERNS = [
+  /^id$/i,
+  /_id$/i, // Foreign keys
+  /^created_at$/i,
+  /^updated_at$/i,
+  /^deleted_at$/i,
 ];
+
+/**
+ * Convert snake_case to Title Case
+ */
+function toTitleCase(str: string): string {
+  return str
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Determine if a column should be searchable
+ */
+function isSearchable(columnName: string, columnType: string): boolean {
+  // Only text columns are searchable
+  if (columnType !== 'text') {
+    return false;
+  }
+
+  // Check against non-searchable patterns
+  return !NON_SEARCHABLE_PATTERNS.some((pattern) => pattern.test(columnName));
+}
+
+/**
+ * Determine if a column should be sortable
+ */
+function isSortable(): boolean {
+  // All columns are sortable except very long text fields
+  // (we don't have a way to detect length from Drizzle metadata easily)
+  return true;
+}
+
+/**
+ * Map Drizzle column type to collection column type
+ */
+function mapColumnType(column: PgColumn): CollectionColumn['type'] {
+  const columnType = column.columnType.toLowerCase();
+
+  // Serial and integers
+  if (
+    columnType.includes('serial') ||
+    columnType.includes('integer') ||
+    columnType.includes('int') ||
+    columnType.includes('smallint') ||
+    columnType.includes('bigint')
+  ) {
+    return 'number';
+  }
+
+  // Text types
+  if (
+    columnType.includes('varchar') ||
+    columnType.includes('text') ||
+    columnType.includes('char')
+  ) {
+    return 'text';
+  }
+
+  // Timestamp with timezone
+  if (columnType.includes('timestamp') && columnType.includes('timezone')) {
+    return 'timestamp';
+  }
+
+  // Date or timestamp without timezone
+  if (columnType.includes('timestamp') || columnType.includes('date')) {
+    return 'date';
+  }
+
+  // Boolean
+  if (columnType.includes('boolean') || columnType.includes('bool')) {
+    return 'boolean';
+  }
+
+  // Enum (Drizzle uses special enum types)
+  if (column.enumValues && column.enumValues.length > 0) {
+    return 'enum';
+  }
+
+  // Numeric types (decimal, real, double precision)
+  if (
+    columnType.includes('decimal') ||
+    columnType.includes('numeric') ||
+    columnType.includes('real') ||
+    columnType.includes('double')
+  ) {
+    return 'number';
+  }
+
+  // JSON types
+  if (columnType.includes('json')) {
+    return 'json';
+  }
+
+  // Default to text
+  return 'text';
+}
+
+/**
+ * Get column priority for smart ordering
+ * Lower number = higher priority (appears first)
+ */
+function getColumnPriority(columnName: string): number {
+  // ID column always first
+  if (columnName === 'id') return 0;
+
+  // Name, title, email - important identifying fields
+  if (['name', 'title', 'email', 'code'].includes(columnName)) return 1;
+
+  // Status, role, permission - important state fields
+  if (['status', 'role', 'permission', 'is_public', 'is_coach'].includes(columnName)) return 2;
+
+  // Foreign keys and references
+  if (columnName.endsWith('_id') || columnName.startsWith('shared_')) return 3;
+
+  // Timestamps - always last
+  if (
+    ['created_at', 'updated_at', 'deleted_at', 'revoked_at', 'performed_at', 'invited_at', 'responded_at', 'removed_at', 'read_at', 'last_login_at'].includes(
+      columnName
+    )
+  ) {
+    return 5;
+  }
+
+  // Everything else in the middle
+  return 4;
+}
+
+/**
+ * Generate collection configuration from a Drizzle table schema
+ */
+function generateCollection(table: PgTable, tableName: string): Collection {
+  const columns = getTableColumns(table);
+  const columnEntries = Object.entries(columns);
+
+  // Generate column configurations
+  const collectionColumns: CollectionColumn[] = columnEntries
+    .map(([columnName, column]) => {
+      const type = mapColumnType(column as PgColumn);
+      return {
+        name: columnName,
+        label: toTitleCase(columnName),
+        type,
+        sortable: isSortable(),
+        searchable: isSearchable(columnName, type),
+        _priority: getColumnPriority(columnName), // Temporary field for sorting
+      };
+    })
+    // Sort by priority
+    .sort((a: any, b: any) => a._priority - b._priority)
+    // Remove priority field
+    .map(({ _priority, ...col }: any) => col);
+
+  // Determine default sort column
+  const hasCreatedAt = collectionColumns.some((col) => col.name === 'created_at');
+  const hasPerformedAt = collectionColumns.some((col) => col.name === 'performed_at');
+  const hasName = collectionColumns.some((col) => col.name === 'name');
+
+  let defaultSortColumn = 'id';
+  let defaultSortOrder: 'asc' | 'desc' = 'desc';
+
+  if (hasPerformedAt) {
+    defaultSortColumn = 'performed_at';
+    defaultSortOrder = 'desc';
+  } else if (hasCreatedAt) {
+    defaultSortColumn = 'created_at';
+    defaultSortOrder = 'desc';
+  } else if (hasName) {
+    defaultSortColumn = 'name';
+    defaultSortOrder = 'asc';
+  }
+
+  return {
+    name: toTitleCase(tableName),
+    table: tableName,
+    columns: collectionColumns,
+    defaultSort: {
+      column: defaultSortColumn,
+      order: defaultSortOrder,
+    },
+    defaultLimit: 20,
+  };
+}
+
+/**
+ * Get all table exports from schema
+ */
+function getSchemaTableMap(): Record<string, PgTable> {
+  const tableMap: Record<string, PgTable> = {};
+
+  for (const [exportName, exportValue] of Object.entries(schema)) {
+    // Skip non-table exports (enums, types, etc.)
+    if (!exportValue || typeof exportValue !== 'object') continue;
+
+    // Check if it's a Drizzle table (has Table symbol)
+    if (
+      exportValue &&
+      typeof exportValue === 'object' &&
+      'getSQL' in exportValue &&
+      typeof (exportValue as any).getSQL === 'function'
+    ) {
+      // Get table name from the table config
+      const tableName = (exportValue as any)[Symbol.for('drizzle:Name')] || exportName;
+
+      // Skip excluded tables
+      if (!EXCLUDED_TABLES.has(tableName)) {
+        tableMap[tableName] = exportValue as PgTable;
+      }
+    }
+  }
+
+  return tableMap;
+}
+
+/**
+ * Generate all collections from schema
+ */
+function generateCollections(): Collection[] {
+  const tableMap = getSchemaTableMap();
+  const collectionsList: Collection[] = [];
+
+  for (const [tableName, table] of Object.entries(tableMap)) {
+    const collection = generateCollection(table, tableName);
+    collectionsList.push(collection);
+  }
+
+  // Sort collections alphabetically by display name
+  return collectionsList.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Available collections for admin panel (auto-generated)
+ */
+export const collections: Collection[] = generateCollections();
 
 /**
  * Get collection configuration by table name
@@ -125,4 +292,11 @@ export function getAvailableCollections(): { name: string; table: string; descri
     table: c.table,
     description: c.description,
   }));
+}
+
+/**
+ * Get table map for dynamic queries
+ */
+export function getTableMap(): Record<string, PgTable> {
+  return getSchemaTableMap();
 }
