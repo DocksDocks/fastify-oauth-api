@@ -51,12 +51,12 @@ function isSuperAdminEmail(email: string): boolean {
  * Google OAuth: Exchange authorization code for user info
  * Works for both web and mobile flows
  */
-export async function handleGoogleOAuth(code: string): Promise<OAuthProfile> {
+export async function handleGoogleOAuth(code: string, redirectUri: string): Promise<OAuthProfile> {
   try {
     const oauth2Client = new OAuth2Client(
       env.GOOGLE_CLIENT_ID,
       env.GOOGLE_CLIENT_SECRET,
-      env.GOOGLE_REDIRECT_URI,
+      redirectUri,
     );
 
     // Exchange code for tokens
@@ -214,31 +214,50 @@ export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> 
 }
 
 /**
- * Generate OAuth authorization URL for Google (Web)
+ * Handle Admin OAuth callback: Validate existing admin/superadmin users only
+ * IMPORTANT: Does NOT create new users - only allows existing admins to login
  */
-export function getGoogleAuthUrl(state?: string): string {
-  const oauth2Client = new OAuth2Client(
-    env.GOOGLE_CLIENT_ID,
-    env.GOOGLE_CLIENT_SECRET,
-    env.GOOGLE_REDIRECT_URI,
-  );
+export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<User> {
+  const { email, provider } = profile;
 
-  const scopes = env.GOOGLE_SCOPES.split(' ');
+  // Check if user exists
+  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes,
-    state: state || undefined,
-    prompt: 'consent',
-  });
+  if (!user) {
+    // User doesn't exist - reject
+    throw new Error('Access denied. You are not registered as an administrator.');
+  }
 
-  return authUrl;
+  if (user.role !== 'admin' && user.role !== 'superadmin') {
+    // User exists but is not an admin - reject
+    throw new Error('Access denied. Only administrators can access this panel.');
+  }
+
+  // User exists and is admin/superadmin - update last login and return
+  const updates: Partial<typeof users.$inferInsert> = {
+    lastLoginAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  // Update name/avatar if missing and provided
+  if (!user.name && profile.name) {
+    updates.name = profile.name;
+  }
+  if (!user.avatar && profile.avatar) {
+    updates.avatar = profile.avatar;
+  }
+
+  const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, user.id)).returning();
+
+  console.log(`[Admin OAuth] Admin login successful: ${email} (${provider}) - Role: ${user.role}`);
+
+  return updatedUser;
 }
 
 /**
- * Generate OAuth authorization URL for Google (Mobile)
+ * Generate OAuth authorization URL for Google (Mobile - regular users)
  */
-export function getGoogleAuthUrlMobile(state?: string): string {
+export function getGoogleAuthUrl(state?: string): string {
   const oauth2Client = new OAuth2Client(
     env.GOOGLE_CLIENT_ID,
     env.GOOGLE_CLIENT_SECRET,
@@ -258,14 +277,36 @@ export function getGoogleAuthUrlMobile(state?: string): string {
 }
 
 /**
- * Generate OAuth authorization URL for Apple (Web)
+ * Generate OAuth authorization URL for Google (Admin panel - admins only)
+ */
+export function getGoogleAuthUrlAdmin(state?: string): string {
+  const oauth2Client = new OAuth2Client(
+    env.GOOGLE_CLIENT_ID,
+    env.GOOGLE_CLIENT_SECRET,
+    env.GOOGLE_REDIRECT_URI_ADMIN,
+  );
+
+  const scopes = env.GOOGLE_SCOPES.split(' ');
+
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: scopes,
+    state: state || undefined,
+    prompt: 'consent',
+  });
+
+  return authUrl;
+}
+
+/**
+ * Generate OAuth authorization URL for Apple (Mobile - regular users)
  */
 export function getAppleAuthUrl(state?: string): string {
   const scopes = env.APPLE_SCOPES.split(' ');
 
   const params = new URLSearchParams({
     client_id: env.APPLE_CLIENT_ID!,
-    redirect_uri: env.APPLE_REDIRECT_URI!,
+    redirect_uri: env.APPLE_REDIRECT_URI_MOBILE!,
     response_type: 'code id_token',
     response_mode: 'form_post',
     scope: scopes.join(' '),
@@ -276,14 +317,14 @@ export function getAppleAuthUrl(state?: string): string {
 }
 
 /**
- * Generate OAuth authorization URL for Apple (Mobile)
+ * Generate OAuth authorization URL for Apple (Admin panel - admins only)
  */
-export function getAppleAuthUrlMobile(state?: string): string {
+export function getAppleAuthUrlAdmin(state?: string): string {
   const scopes = env.APPLE_SCOPES.split(' ');
 
   const params = new URLSearchParams({
     client_id: env.APPLE_CLIENT_ID!,
-    redirect_uri: env.APPLE_REDIRECT_URI_MOBILE!,
+    redirect_uri: env.APPLE_REDIRECT_URI_ADMIN!,
     response_type: 'code id_token',
     response_mode: 'form_post',
     scope: scopes.join(' '),

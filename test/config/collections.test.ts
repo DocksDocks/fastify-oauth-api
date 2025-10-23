@@ -201,7 +201,7 @@ describe('Collections Configuration', () => {
         sortable: true,
       });
 
-      const isPublicColumn = exercises?.columns.find((c) => c.name === 'isPublic');
+      const isPublicColumn = exercises?.columns.find((c) => c.name === 'is_public');
       expect(isPublicColumn).toMatchObject({
         type: 'boolean',
         sortable: true,
@@ -215,8 +215,8 @@ describe('Collections Configuration', () => {
       expect(workouts?.name).toBe('Workouts');
       expect(workouts?.table).toBe('workouts');
 
-      // Workouts should have ownerId foreign key
-      const ownerIdColumn = workouts?.columns.find((c) => c.name === 'ownerId');
+      // Workouts should have owner_id foreign key
+      const ownerIdColumn = workouts?.columns.find((c) => c.name === 'owner_id');
       expect(ownerIdColumn).toBeDefined();
       expect(ownerIdColumn?.type).toBe('number');
     });
@@ -323,10 +323,10 @@ describe('Collections Configuration', () => {
 
     it('should map integer foreign key columns to number type', () => {
       collections.forEach((collection) => {
-        // Only check integer foreign keys (excludes providerId which is varchar)
+        // Only check integer foreign keys (excludes provider_id which is varchar)
         const integerFkColumns = collection.columns.filter((c) =>
           (c.name.endsWith('_id') || c.name.endsWith('Id')) &&
-          c.name !== 'providerId' // providerId is varchar, not integer
+          c.name !== 'provider_id' // provider_id is varchar, not integer
         );
         integerFkColumns.forEach((fk) => {
           expect(fk.type).toBe('number');
@@ -348,7 +348,7 @@ describe('Collections Configuration', () => {
     });
 
     it('should map boolean columns correctly', () => {
-      const booleanColumnNames = ['is_public', 'is_coach', 'is_revoked', 'is_used', 'isPublic', 'isCoach', 'isRevoked', 'isUsed', 'isTemplate', 'isLocked'];
+      const booleanColumnNames = ['is_public', 'is_coach', 'is_revoked', 'is_used', 'is_template', 'is_locked'];
 
       collections.forEach((collection) => {
         collection.columns
@@ -525,11 +525,11 @@ describe('Collections Configuration', () => {
           if (col.name === 'user_id') {
             expect(col.label).toBe('User Id');
           }
-          if (col.name === 'createdAt') {
-            expect(col.label).toBe('Createdat');
+          if (col.name === 'created_at') {
+            expect(col.label).toBe('Created At');
           }
-          if (col.name === 'isPublic') {
-            expect(col.label).toBe('Ispublic');
+          if (col.name === 'is_public') {
+            expect(col.label).toBe('Is Public');
           }
         });
       });

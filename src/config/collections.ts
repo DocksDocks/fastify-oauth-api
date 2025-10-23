@@ -190,13 +190,14 @@ function generateCollection(table: PgTable, tableName: string): Collection {
   const collectionColumns: CollectionColumn[] = columnEntries
     .map(([columnName, column]) => {
       const type = mapColumnType(column as PgColumn);
+      const dbColumnName = (column as PgColumn).name; // Database column name (snake_case)
       return {
-        name: columnName,
-        label: toTitleCase(columnName),
+        name: dbColumnName, // Use database column name for SQL queries
+        label: toTitleCase(dbColumnName), // Better formatting: "Created At" instead of "Createdat"
         type,
         sortable: isSortable(),
-        searchable: isSearchable(columnName, type),
-        _priority: getColumnPriority(columnName), // Temporary field for sorting
+        searchable: isSearchable(dbColumnName, type),
+        _priority: getColumnPriority(dbColumnName), // Temporary field for sorting
       } as CollectionColumnWithPriority;
     })
     // Sort by priority

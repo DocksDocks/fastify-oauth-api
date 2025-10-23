@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { isAxiosError } from 'axios';
 
 export function OAuthCallback() {
   const [searchParams] = useSearchParams();
@@ -15,23 +13,27 @@ export function OAuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const code = searchParams.get('code');
-      const error = searchParams.get('error');
-
-      if (error) {
-        setError(`Authentication failed: ${error}`);
+    const handleCallback = () => {
+      // Check for error in query params
+      const errorParam = searchParams.get('error');
+      if (errorParam) {
+        setError(`Authentication failed: ${errorParam.replace(/_/g, ' ')}`);
         return;
       }
 
-      if (!code) {
-        setError('No authorization code received');
+      // Get data from URL hash (tokens passed by backend)
+      const hash = window.location.hash.substring(1); // Remove the '#'
+      const params = new URLSearchParams(hash);
+      const dataParam = params.get('data');
+
+      if (!dataParam) {
+        setError('No authentication data received');
         return;
       }
 
       try {
-        const response = await authApi.googleCallback(code);
-        const { user, tokens } = response.data.data;
+        const data = JSON.parse(decodeURIComponent(dataParam));
+        const { user, tokens } = data;
         const { accessToken, refreshToken } = tokens;
 
         // Check if user is admin or superadmin
@@ -43,11 +45,8 @@ export function OAuthCallback() {
         setAuth(user, accessToken, refreshToken);
         navigate('/admin/dashboard', { replace: true });
       } catch (err: unknown) {
-        if (isAxiosError(err) && err.response?.data?.error) {
-          setError(err.response.data.error.message || 'Authentication failed');
-        } else {
-          setError('Authentication failed');
-        }
+        console.error('Failed to parse auth data:', err);
+        setError('Failed to process authentication data');
       }
     };
 

@@ -5,9 +5,9 @@ import {
   getUserByEmail,
   updateLastLogin,
   getGoogleAuthUrl,
-  getGoogleAuthUrlMobile,
+  getGoogleAuthUrlAdmin,
   getAppleAuthUrl,
-  getAppleAuthUrlMobile,
+  getAppleAuthUrlAdmin,
 } from '@/modules/auth/auth.service';
 import { createUser } from '../helper/factories';
 import type { OAuthProfile } from '@/modules/auth/auth.types';
@@ -330,17 +330,19 @@ describe('Auth Service', () => {
     });
   });
 
-  describe('getGoogleAuthUrlMobile', () => {
-    it('should generate Google OAuth URL for mobile', () => {
-      const url = getGoogleAuthUrlMobile();
+  describe('getGoogleAuthUrlAdmin', () => {
+    it('should generate Google OAuth URL for admin panel', () => {
+      const url = getGoogleAuthUrlAdmin();
 
       expect(url).toContain('https://accounts.google.com/o/oauth2/v2/auth');
       expect(url).toContain('response_type=code');
+      expect(url).toContain('access_type=offline');
+      expect(url).toContain('prompt=consent');
     });
 
     it('should include state parameter if provided', () => {
-      const state = 'mobile-state-456';
-      const url = getGoogleAuthUrlMobile(state);
+      const state = 'admin-state-456';
+      const url = getGoogleAuthUrlAdmin(state);
 
       expect(url).toContain(`state=${state}`);
     });
@@ -388,9 +390,9 @@ describe('Auth Service', () => {
     });
   });
 
-  describe('getAppleAuthUrlMobile', () => {
-    it('should generate Apple OAuth URL for mobile', () => {
-      const url = getAppleAuthUrlMobile();
+  describe('getAppleAuthUrlAdmin (Admin Panel)', () => {
+    it('should generate Apple OAuth URL for admin panel', () => {
+      const url = getAppleAuthUrlAdmin();
 
       expect(url).toContain('https://appleid.apple.com/auth/authorize');
       // URLSearchParams encodes spaces as + instead of %20
@@ -398,8 +400,8 @@ describe('Auth Service', () => {
     });
 
     it('should include state parameter if provided', () => {
-      const state = 'apple-mobile-123';
-      const url = getAppleAuthUrlMobile(state);
+      const state = 'apple-admin-123';
+      const url = getAppleAuthUrlAdmin(state);
 
       expect(url).toContain(`state=${state}`);
     });

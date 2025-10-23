@@ -27,8 +27,8 @@ const envSchema = z.object({
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_REDIRECT_URI: z.string().optional(),
-  GOOGLE_REDIRECT_URI_MOBILE: z.string().optional(),
+  GOOGLE_REDIRECT_URI_ADMIN: z.string().optional(), // Admin panel OAuth
+  GOOGLE_REDIRECT_URI_MOBILE: z.string().optional(), // Mobile app OAuth
   GOOGLE_SCOPES: z.string().default('openid email profile'),
 
   // Apple OAuth
@@ -36,8 +36,8 @@ const envSchema = z.object({
   APPLE_TEAM_ID: z.string().optional(),
   APPLE_KEY_ID: z.string().optional(),
   APPLE_PRIVATE_KEY_PATH: z.string().optional(),
-  APPLE_REDIRECT_URI: z.string().optional(),
-  APPLE_REDIRECT_URI_MOBILE: z.string().optional(),
+  APPLE_REDIRECT_URI_ADMIN: z.string().optional(), // Admin panel OAuth
+  APPLE_REDIRECT_URI_MOBILE: z.string().optional(), // Mobile app OAuth
   APPLE_SCOPES: z.string().default('name email'),
 
   LOG_LEVEL: z.string().default('info'),

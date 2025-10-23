@@ -19,6 +19,11 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 3000,
+      allowedHosts: [
+        '.ngrok-free.app',  // Allow all ngrok free tier hosts
+        '.ngrok.io',        // Allow ngrok paid tier custom domains
+        '.ngrok.app',       // Allow ngrok Hobbyist tier custom domains (e.g., growup.ngrok.app)
+      ],
       proxy: {
         '/api': {
           target: 'http://localhost:1337',

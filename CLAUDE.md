@@ -795,6 +795,45 @@ VITE_ADMIN_PANEL_API_KEY=<same_as_backend_ADMIN_PANEL_API_KEY>
 - Caddy: 256MB RAM, 0.5 CPU
 - **Total: ~1.5GB RAM, ~3 CPUs**
 
+**Docker Database & Redis Access:**
+Both PostgreSQL and Redis run inside Docker containers and are accessible via:
+
+1. **Via npm scripts (recommended):**
+   ```bash
+   # PostgreSQL
+   npm run docker:postgres:exec     # Opens psql shell
+   npm run docker:postgres:backup   # Backup database
+   npm run docker:postgres:log      # View logs
+
+   # Redis
+   npm run docker:redis:exec        # Opens redis-cli
+   npm run docker:redis:log         # View logs
+   ```
+
+2. **Via direct docker exec:**
+   ```bash
+   # PostgreSQL
+   docker exec -it fastify-oauth-postgres psql -U postgres -d fastify_oauth_db
+
+   # Redis
+   docker exec -it fastify-oauth-redis redis-cli
+   ```
+
+3. **Via localhost (when containers expose ports):**
+   ```bash
+   # PostgreSQL (default port 5432)
+   psql postgresql://postgres:password@localhost:5432/fastify_oauth_db
+
+   # Redis (default port 6379)
+   redis-cli -h localhost -p 6379
+   ```
+
+4. **From host machine to container network:**
+   - Containers communicate via service names (e.g., `postgres`, `redis`)
+   - Host machine uses `localhost` with exposed ports
+   - Inside Docker network: `postgresql://postgres:password@postgres:5432/fastify_oauth_db`
+   - From host: `postgresql://postgres:password@localhost:5432/fastify_oauth_db`
+
 ## Database Practices
 
 **Drizzle Schema:**

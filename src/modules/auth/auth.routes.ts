@@ -2,9 +2,11 @@
  * OAuth Authentication Routes
  *
  * Registers all authentication endpoints:
- * - Google OAuth flow
- * - Apple OAuth flow
+ * - Google OAuth flow (regular users - mobile app)
+ * - Apple OAuth flow (regular users - mobile app)
+ * - Admin panel OAuth flows (existing admins only)
  * - Token management (refresh, verify, logout)
+ * - Session management
  */
 
 import type { FastifyInstance } from 'fastify';
@@ -14,6 +16,10 @@ import {
   handleGoogleCallback,
   handleAppleLogin,
   handleAppleCallback,
+  handleAdminGoogleLogin,
+  handleAdminGoogleCallback,
+  handleAdminAppleLogin,
+  handleAdminAppleCallback,
   handleRefreshToken,
   handleLogout,
   handleVerifyToken,
@@ -165,6 +171,86 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     handler: handleAppleCallback,
+  });
+
+  // Admin Panel OAuth Routes (admin-only, no user creation)
+  fastify.get('/admin/google', {
+    schema: {
+      description: 'Initiate Google OAuth flow for admin panel (admins only)',
+      tags: ['auth', 'admin'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                authUrl: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: handleAdminGoogleLogin,
+  });
+
+  fastify.get('/admin/google/callback', {
+    schema: {
+      description: 'Handle Google OAuth callback for admin panel',
+      tags: ['auth', 'admin'],
+      querystring: {
+        type: 'object',
+        properties: {
+          code: { type: 'string' },
+          state: { type: 'string' },
+          error: { type: 'string' },
+        },
+      },
+    },
+    handler: handleAdminGoogleCallback,
+  });
+
+  fastify.get('/admin/apple', {
+    schema: {
+      description: 'Initiate Apple OAuth flow for admin panel (admins only)',
+      tags: ['auth', 'admin'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                authUrl: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: handleAdminAppleLogin,
+  });
+
+  fastify.post('/admin/apple/callback', {
+    schema: {
+      description: 'Handle Apple OAuth callback for admin panel',
+      tags: ['auth', 'admin'],
+      body: {
+        type: 'object',
+        required: ['code', 'id_token'],
+        properties: {
+          code: { type: 'string' },
+          id_token: { type: 'string' },
+          state: { type: 'string' },
+          user: { type: 'string' },
+          error: { type: 'string' },
+        },
+      },
+    },
+    handler: handleAdminAppleCallback,
   });
 
   // Token Management Routes

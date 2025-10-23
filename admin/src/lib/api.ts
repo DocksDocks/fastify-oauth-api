@@ -11,7 +11,10 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 // API base URL (Vite proxy handles /api in dev, production uses same origin)
-const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:1337/api';
+// Use relative /api when in production OR when accessed via ngrok (non-localhost)
+const isLocalhost = typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const BASE_URL = import.meta.env.PROD || !isLocalhost ? '/api' : 'http://localhost:1337/api';
 
 // API key (from env or localStorage)
 const API_KEY = import.meta.env.VITE_ADMIN_PANEL_API_KEY || localStorage.getItem('api_key') || '';
@@ -75,9 +78,25 @@ api.interceptors.response.use(
 
         const { accessToken, refreshToken: newRefreshToken } = response.data.data;
 
-        // Store new tokens
+        // Store new tokens in localStorage
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('refresh_token', newRefreshToken);
+
+        // Update Zustand store with new tokens
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          const authStorage = {
+            state: {
+              user,
+              accessToken,
+              refreshToken: newRefreshToken,
+              isAuthenticated: true,
+            },
+            version: 0,
+          };
+          localStorage.setItem('auth-storage', JSON.stringify(authStorage));
+        }
 
         // Retry original request with new token
         originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
@@ -87,7 +106,8 @@ api.interceptors.response.use(
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        localStorage.removeItem('auth-storage'); // Clear Zustand persisted state
+        window.location.href = '/admin/login'; // Fixed: correct admin login path
         return Promise.reject(refreshError);
       }
     }
@@ -107,8 +127,15 @@ export function getErrorMessage(error: unknown): string {
 
 // API endpoints
 export const authApi = {
+  // Admin panel OAuth (existing admins only, no user creation)
+  adminGoogle: () => api.get('/auth/admin/google'),
+  adminApple: () => api.get('/auth/admin/apple'),
+
+  // Regular user OAuth (mobile app, creates new users)
   google: () => api.get('/auth/google'),
-  googleCallback: (code: string) => api.get(`/auth/google/callback?code=${code}`),
+  apple: () => api.get('/auth/apple'),
+
+  // Token management
   refresh: (refreshToken: string) => api.post('/auth/refresh', { refreshToken }),
   verify: () => api.get('/auth/verify'),
   logout: () => api.post('/auth/logout'),

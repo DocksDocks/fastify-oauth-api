@@ -4,6 +4,7 @@ import Fastify, {
   type FastifyRequest,
 } from 'fastify';
 import fastifySensible from '@fastify/sensible';
+import fastifyFormBody from '@fastify/formbody';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyCompress from '@fastify/compress';
@@ -58,6 +59,9 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   // Register essential plugins
   await app.register(fastifySensible);
+
+  // Register form body parser for OAuth callbacks (Apple sends form-encoded data)
+  await app.register(fastifyFormBody);
 
   await app.register(fastifyHelmet, {
     contentSecurityPolicy: {

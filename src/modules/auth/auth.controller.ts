@@ -7,12 +7,16 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { LoginResponse } from './auth.types';
+import env from '@/config/env';
 import {
   handleGoogleOAuth,
   handleAppleOAuth,
   handleOAuthCallback,
+  handleAdminOAuthCallback,
   getGoogleAuthUrl,
   getAppleAuthUrl,
+  getGoogleAuthUrlAdmin,
+  getAppleAuthUrlAdmin,
 } from './auth.service';
 import {
   generateTokens,
@@ -74,21 +78,17 @@ export async function handleGoogleCallback(
     // Check for OAuth errors
     if (error) {
       request.log.warn({ error }, 'Google OAuth error');
-      return reply.status(400).send({
-        success: false,
-        error: `Google OAuth error: ${error}`,
-      });
+      // Redirect to frontend with error
+      return reply.redirect(`/admin/auth/callback?error=${encodeURIComponent(error)}`);
     }
 
     if (!code) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Missing authorization code',
-      });
+      // Redirect to frontend with error
+      return reply.redirect('/admin/auth/callback?error=missing_code');
     }
 
     // Exchange code for user profile
-    const profile = await handleGoogleOAuth(code);
+    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_MOBILE!);
 
     // Create or update user
     const user = await handleOAuthCallback(profile);
@@ -101,27 +101,23 @@ export async function handleGoogleCallback(
       request.headers['user-agent']
     );
 
-    const response: LoginResponse = {
-      success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
-        },
-        tokens,
+    // Redirect to frontend with tokens in URL hash (not sent to server)
+    const tokenData = encodeURIComponent(JSON.stringify({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
       },
-    };
+      tokens,
+    }));
 
-    return reply.send(response);
+    return reply.redirect(`/admin/auth/callback#data=${tokenData}`);
   } catch (error) {
     request.log.error({ error }, 'Google callback failed');
-    return reply.status(500).send({
-      success: false,
-      error: 'Google authentication failed',
-    });
+    // Redirect to frontend with error
+    return reply.redirect('/admin/auth/callback?error=authentication_failed');
   }
 }
 
@@ -181,17 +177,13 @@ export async function handleAppleCallback(
     // Check for OAuth errors
     if (error) {
       request.log.warn({ error }, 'Apple OAuth error');
-      return reply.status(400).send({
-        success: false,
-        error: `Apple OAuth error: ${error}`,
-      });
+      // Redirect to frontend with error
+      return reply.redirect(`/admin/auth/callback?error=${encodeURIComponent(error)}`);
     }
 
     if (!code || !id_token) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Missing required Apple OAuth parameters',
-      });
+      // Redirect to frontend with error
+      return reply.redirect('/admin/auth/callback?error=missing_parameters');
     }
 
     // Verify ID token and get user profile
@@ -208,27 +200,220 @@ export async function handleAppleCallback(
       request.headers['user-agent']
     );
 
-    const response: LoginResponse = {
-      success: true,
-      data: {
-        user: {
-          id: userRecord.id,
-          email: userRecord.email,
-          name: userRecord.name,
-          avatar: userRecord.avatar,
-          role: userRecord.role,
-        },
-        tokens,
+    // Redirect to frontend with tokens in URL hash (not sent to server)
+    const tokenData = encodeURIComponent(JSON.stringify({
+      user: {
+        id: userRecord.id,
+        email: userRecord.email,
+        name: userRecord.name,
+        avatar: userRecord.avatar,
+        role: userRecord.role,
       },
-    };
+      tokens,
+    }));
 
-    return reply.send(response);
+    return reply.redirect(`/admin/auth/callback#data=${tokenData}`);
   } catch (error) {
     request.log.error({ error }, 'Apple callback failed');
+    // Redirect to frontend with error
+    return reply.redirect('/admin/auth/callback?error=authentication_failed');
+  }
+}
+
+/**
+ * Generate Google OAuth authorization URL for admin panel
+ * GET /api/auth/admin/google
+ */
+export async function handleAdminGoogleLogin(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    // Generate state for CSRF protection
+    const state = Buffer.from(
+      JSON.stringify({
+        provider: 'google',
+        admin: true,
+        timestamp: Date.now(),
+        nonce: Math.random().toString(36).substring(7),
+      }),
+    ).toString('base64');
+
+    const authUrl = getGoogleAuthUrlAdmin(state);
+
+    return reply.send({
+      success: true,
+      data: { authUrl },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Admin Google login failed');
     return reply.status(500).send({
       success: false,
-      error: 'Apple authentication failed',
+      error: 'Failed to generate Google OAuth URL',
     });
+  }
+}
+
+/**
+ * Handle Google OAuth callback for admin panel
+ * GET /api/auth/admin/google/callback?code=...&state=...
+ */
+export async function handleAdminGoogleCallback(
+  request: FastifyRequest<{
+    Querystring: { code: string; state?: string; error?: string };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { code, error } = request.query;
+
+    // Check for OAuth errors
+    if (error) {
+      request.log.warn({ error }, 'Admin Google OAuth error');
+      // Redirect to frontend with error
+      return reply.redirect(`/admin/auth/callback?error=${encodeURIComponent(error)}`);
+    }
+
+    if (!code) {
+      // Redirect to frontend with error
+      return reply.redirect('/admin/auth/callback?error=missing_code');
+    }
+
+    // Exchange code for user profile
+    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_ADMIN!);
+
+    // Validate user is existing admin/superadmin (does NOT create users)
+    const user = await handleAdminOAuthCallback(profile);
+
+    // Generate JWT tokens
+    const tokens = await generateTokens(
+      request.server,
+      user,
+      request.ip,
+      request.headers['user-agent']
+    );
+
+    // Redirect to frontend with tokens in URL hash (not sent to server)
+    const tokenData = encodeURIComponent(JSON.stringify({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+      },
+      tokens,
+    }));
+
+    return reply.redirect(`/admin/auth/callback#data=${tokenData}`);
+  } catch (error) {
+    request.log.error({ error }, 'Admin Google callback failed');
+    const err = error as Error;
+    // Use error message from handleAdminOAuthCallback for better UX
+    const errorMsg = encodeURIComponent(err.message || 'authentication_failed');
+    return reply.redirect(`/admin/auth/callback?error=${errorMsg}`);
+  }
+}
+
+/**
+ * Generate Apple OAuth authorization URL for admin panel
+ * GET /api/auth/admin/apple
+ */
+export async function handleAdminAppleLogin(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    // Generate state for CSRF protection
+    const state = Buffer.from(
+      JSON.stringify({
+        provider: 'apple',
+        admin: true,
+        timestamp: Date.now(),
+        nonce: Math.random().toString(36).substring(7),
+      }),
+    ).toString('base64');
+
+    const authUrl = getAppleAuthUrlAdmin(state);
+
+    return reply.send({
+      success: true,
+      data: { authUrl },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Admin Apple login failed');
+    return reply.status(500).send({
+      success: false,
+      error: 'Failed to generate Apple OAuth URL',
+    });
+  }
+}
+
+/**
+ * Handle Apple OAuth callback for admin panel
+ * POST /api/auth/admin/apple/callback
+ * Body: { code, id_token, state, user? }
+ */
+export async function handleAdminAppleCallback(
+  request: FastifyRequest<{
+    Body: {
+      code: string;
+      id_token: string;
+      state?: string;
+      user?: string;
+      error?: string;
+    };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { code, id_token, user, error } = request.body;
+
+    // Check for OAuth errors
+    if (error) {
+      request.log.warn({ error }, 'Admin Apple OAuth error');
+      // Redirect to frontend with error
+      return reply.redirect(`/admin/auth/callback?error=${encodeURIComponent(error)}`);
+    }
+
+    if (!code || !id_token) {
+      // Redirect to frontend with error
+      return reply.redirect('/admin/auth/callback?error=missing_parameters');
+    }
+
+    // Verify ID token and get user profile
+    const profile = await handleAppleOAuth(code, id_token, user);
+
+    // Validate user is existing admin/superadmin (does NOT create users)
+    const userRecord = await handleAdminOAuthCallback(profile);
+
+    // Generate JWT tokens
+    const tokens = await generateTokens(
+      request.server,
+      userRecord,
+      request.ip,
+      request.headers['user-agent']
+    );
+
+    // Redirect to frontend with tokens in URL hash (not sent to server)
+    const tokenData = encodeURIComponent(JSON.stringify({
+      user: {
+        id: userRecord.id,
+        email: userRecord.email,
+        name: userRecord.name,
+        avatar: userRecord.avatar,
+        role: userRecord.role,
+      },
+      tokens,
+    }));
+
+    return reply.redirect(`/admin/auth/callback#data=${tokenData}`);
+  } catch (error) {
+    request.log.error({ error }, 'Admin Apple callback failed');
+    const err = error as Error;
+    // Use error message from handleAdminOAuthCallback for better UX
+    const errorMsg = encodeURIComponent(err.message || 'authentication_failed');
+    return reply.redirect(`/admin/auth/callback?error=${errorMsg}`);
   }
 }
 
@@ -452,7 +637,7 @@ export async function handleGoogleMobileAuth(
     }
 
     // Exchange code for user profile (same as web flow)
-    const profile = await handleGoogleOAuth(code);
+    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_MOBILE!);
 
     // Create or update user
     const user = await handleOAuthCallback(profile);
