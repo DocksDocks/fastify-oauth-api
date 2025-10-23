@@ -1,4 +1,8 @@
-import Fastify, { type FastifyServerOptions, type FastifyInstance } from 'fastify';
+import Fastify, {
+  type FastifyServerOptions,
+  type FastifyInstance,
+  type FastifyRequest,
+} from 'fastify';
 import fastifySensible from '@fastify/sensible';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
@@ -20,6 +24,7 @@ import adminCollectionsRoutes from '@/routes/admin/collections';
 import { exercisesRoutes } from '@/modules/exercises/exercises.routes';
 import { workoutsRoutes } from '@/modules/workouts/workouts.routes';
 import { validateApiKey } from '@/middleware/api-key';
+import { decodeRequestToken, hasAnyRole } from '@/utils/jwt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,8 +73,13 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   await app.register(fastifyCompress);
 
   await app.register(fastifyRateLimit, {
-    max: Number(process.env.RATE_LIMIT_MAX) || 100,
+    max: Number(process.env.RATE_LIMIT_MAX) || 500,
     timeWindow: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
+    allowList: (request: FastifyRequest) => {
+      // Allow (skip rate limiting) for admin and superadmin users only
+      const decoded = decodeRequestToken(app, request);
+      return hasAnyRole(decoded, ['admin', 'superadmin']);
+    },
   });
 
   await app.register(fastifyCors, {

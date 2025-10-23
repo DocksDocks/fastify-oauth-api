@@ -22,6 +22,7 @@ import {
   revokeAllUserTokens,
   getUserSessions,
   revokeSession,
+  extractTokenFromHeader,
 } from './jwt.service';
 
 /**
@@ -329,16 +330,15 @@ export async function handleVerifyToken(
   reply: FastifyReply,
 ): Promise<void> {
   try {
-    const authHeader = request.headers.authorization;
+    const token = extractTokenFromHeader(request.headers.authorization);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return reply.status(401).send({
         success: false,
         error: 'Missing or invalid authorization header',
       });
     }
 
-    const token = authHeader.substring(7);
     const payload = await verifyToken(request.server, token);
 
     return reply.send({
