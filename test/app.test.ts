@@ -77,7 +77,7 @@ describe('App', () => {
 
       const body = JSON.parse(response.body);
 
-      expect(body.name).toBe('Fastify OAuth API - Gym Workout Tracker');
+      expect(body.name).toBe('Fastify OAuth API - Gym Workout Tracker + Admin Panel');
     });
 
     it('should have version information', async () => {
@@ -88,7 +88,7 @@ describe('App', () => {
 
       const body = JSON.parse(response.body);
 
-      expect(body.version).toBe('1.0.0');
+      expect(body.version).toBe('2.0.0');
     });
 
     it('should include environment information', async () => {

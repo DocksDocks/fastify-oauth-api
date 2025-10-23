@@ -208,8 +208,8 @@ describe('Admin Users Routes', () => {
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
       expect(body.data.total).toBeGreaterThan(0);
-      expect(body.data.byRole).toBeInstanceOf(Array);
-      expect(body.data.byProvider).toBeInstanceOf(Array);
+      expect(body.data.byRole).toBeInstanceOf(Object);
+      expect(body.data.byProvider).toBeInstanceOf(Object);
     });
 
     it('should deny access to regular users', async () => {

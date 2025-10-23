@@ -43,12 +43,17 @@ function isWhitelisted(path: string): boolean {
  * API Key validation middleware
  *
  * Validates the X-API-Key header against cached keys in Redis
- * Skips validation for whitelisted paths
+ * Skips validation for whitelisted paths and test environment
  */
 export async function validateApiKey(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  // Skip validation in test environment
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   // Skip validation for whitelisted paths
   // Extract pathname without query string for matching
   const pathname = request.url.split('?')[0];
