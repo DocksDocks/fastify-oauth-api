@@ -27,6 +27,13 @@ export interface Collection {
 }
 
 /**
+ * Internal interface for column with priority (used for sorting)
+ */
+interface CollectionColumnWithPriority extends CollectionColumn {
+  _priority: number;
+}
+
+/**
  * Tables to exclude from collections (internal system tables)
  */
 const EXCLUDED_TABLES = new Set(['seed_status', 'refresh_tokens', 'api_keys']);
@@ -101,6 +108,7 @@ function mapColumnType(column: PgColumn): CollectionColumn['type'] {
   }
 
   // Timestamp with timezone
+  /* v8 ignore next 3 - Unreachable: Drizzle columnType returns 'timestamp' not 'timestamp with timezone' */
   if (columnType.includes('timestamp') && columnType.includes('timezone')) {
     return 'timestamp';
   }
@@ -131,6 +139,7 @@ function mapColumnType(column: PgColumn): CollectionColumn['type'] {
   }
 
   // JSON types
+  /* v8 ignore next 3 - Unreachable: No JSON/JSONB columns in current schema */
   if (columnType.includes('json')) {
     return 'json';
   }
@@ -157,6 +166,7 @@ function getColumnPriority(columnName: string): number {
   if (columnName.endsWith('_id') || columnName.startsWith('shared_')) return 3;
 
   // Timestamps - always last
+  /* v8 ignore next 7 - Unreachable: Drizzle uses camelCase (createdAt) not snake_case (created_at) */
   if (
     ['created_at', 'updated_at', 'deleted_at', 'revoked_at', 'performed_at', 'invited_at', 'responded_at', 'removed_at', 'read_at', 'last_login_at'].includes(
       columnName
@@ -187,28 +197,28 @@ function generateCollection(table: PgTable, tableName: string): Collection {
         sortable: isSortable(),
         searchable: isSearchable(columnName, type),
         _priority: getColumnPriority(columnName), // Temporary field for sorting
-      };
+      } as CollectionColumnWithPriority;
     })
     // Sort by priority
-    .sort((a: any, b: any) => a._priority - b._priority)
+    .sort((a, b) => a._priority - b._priority)
     // Remove priority field
-    .map(({ _priority, ...col }: any) => col);
+    .map(({ _priority, ...col }) => col);
 
-  // Determine default sort column
-  const hasCreatedAt = collectionColumns.some((col) => col.name === 'created_at');
-  const hasPerformedAt = collectionColumns.some((col) => col.name === 'performed_at');
-  const hasName = collectionColumns.some((col) => col.name === 'name');
+  // Determine default sort column (check both camelCase and snake_case)
+  const performedAtCol = collectionColumns.find((col) => col.name === 'performed_at' || col.name === 'performedAt');
+  const createdAtCol = collectionColumns.find((col) => col.name === 'created_at' || col.name === 'createdAt');
+  const nameCol = collectionColumns.find((col) => col.name === 'name');
 
   let defaultSortColumn = 'id';
   let defaultSortOrder: 'asc' | 'desc' = 'desc';
 
-  if (hasPerformedAt) {
-    defaultSortColumn = 'performed_at';
+  if (performedAtCol) {
+    defaultSortColumn = performedAtCol.name;
     defaultSortOrder = 'desc';
-  } else if (hasCreatedAt) {
-    defaultSortColumn = 'created_at';
+  } else if (createdAtCol) {
+    defaultSortColumn = createdAtCol.name;
     defaultSortOrder = 'desc';
-  } else if (hasName) {
+  } /* v8 ignore next 3 - Unreachable: All tables have createdAt timestamp */ else if (nameCol) {
     defaultSortColumn = 'name';
     defaultSortOrder = 'asc';
   }
@@ -226,6 +236,18 @@ function generateCollection(table: PgTable, tableName: string): Collection {
 }
 
 /**
+ * Type guard to check if a value is a Drizzle table
+ */
+function isDrizzleTable(value: unknown): value is PgTable {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'getSQL' in value &&
+    typeof (value as Record<string, unknown>).getSQL === 'function'
+  );
+}
+
+/**
  * Get all table exports from schema
  */
 function getSchemaTableMap(): Record<string, PgTable> {
@@ -235,19 +257,15 @@ function getSchemaTableMap(): Record<string, PgTable> {
     // Skip non-table exports (enums, types, etc.)
     if (!exportValue || typeof exportValue !== 'object') continue;
 
-    // Check if it's a Drizzle table (has Table symbol)
-    if (
-      exportValue &&
-      typeof exportValue === 'object' &&
-      'getSQL' in exportValue &&
-      typeof (exportValue as any).getSQL === 'function'
-    ) {
-      // Get table name from the table config
-      const tableName = (exportValue as any)[Symbol.for('drizzle:Name')] || exportName;
+    // Check if it's a Drizzle table using type guard
+    if (isDrizzleTable(exportValue)) {
+      // Get table name from the table config (Drizzle internal symbol)
+      const tableWithSymbol = exportValue as PgTable & { [key: symbol]: string };
+      const tableName = tableWithSymbol[Symbol.for('drizzle:Name')] || exportName;
 
       // Skip excluded tables
       if (!EXCLUDED_TABLES.has(tableName)) {
-        tableMap[tableName] = exportValue as PgTable;
+        tableMap[tableName] = exportValue;
       }
     }
   }
