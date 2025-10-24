@@ -251,7 +251,7 @@ export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<U
 
   console.log(`[Admin OAuth] Admin login successful: ${email} (${provider}) - Role: ${user.role}`);
 
-  return updatedUser;
+  return updatedUser!; // Non-null assertion: update with returning always returns at least one row
 }
 
 /**

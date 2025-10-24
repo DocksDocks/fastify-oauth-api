@@ -6,7 +6,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { sql } from 'drizzle-orm';
+import { sql, type SQL } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { requireAdmin } from '@/middleware/authorize';
 import {
@@ -78,14 +78,14 @@ async function getCollectionMeta(
 /**
  * Build WHERE clause for search
  */
-function buildSearchClause(collection: Collection, search?: string): sql.SQL | undefined {
+function buildSearchClause(collection: Collection, search?: string): SQL | undefined {
   if (!search || search.trim() === '') {
     return undefined;
   }
 
   const searchableColumns = collection.columns
     .filter((col) => col.searchable)
-    .map((col) => col.name);
+    .map((col) => col.dbColumnName); // Use database column name for SQL
 
   if (searchableColumns.length === 0) {
     return undefined;
@@ -110,23 +110,28 @@ function buildOrderClause(
   collection: Collection,
   sortBy?: string,
   sortOrder?: 'asc' | 'desc',
-): sql.SQL {
+): SQL {
   // Use provided sort or default
   const column = sortBy || collection.defaultSort?.column || 'id';
   const order = sortOrder || collection.defaultSort?.order || 'desc';
 
-  // Validate column is sortable
+  // Validate column is sortable and get database column name
   const columnConfig = collection.columns.find((c) => c.name === column);
   if (!columnConfig || !columnConfig.sortable) {
     // Fall back to default
     const defaultColumn = collection.defaultSort?.column || 'id';
+    const defaultColumnConfig = collection.columns.find((c) => c.name === defaultColumn);
+    const defaultDbColumn = defaultColumnConfig?.dbColumnName || defaultColumn;
     const defaultOrder = collection.defaultSort?.order || 'desc';
     return defaultOrder === 'asc'
-      ? sql`${sql.identifier(defaultColumn)} ASC`
-      : sql`${sql.identifier(defaultColumn)} DESC`;
+      ? sql`${sql.identifier(defaultDbColumn)} ASC`
+      : sql`${sql.identifier(defaultDbColumn)} DESC`;
   }
 
-  return order === 'asc' ? sql`${sql.identifier(column)} ASC` : sql`${sql.identifier(column)} DESC`;
+  // Use database column name for SQL query
+  return order === 'asc'
+    ? sql`${sql.identifier(columnConfig.dbColumnName)} ASC`
+    : sql`${sql.identifier(columnConfig.dbColumnName)} DESC`;
 }
 
 /**
@@ -179,33 +184,29 @@ async function getCollectionData(
     const limit = requestedLimit || collection.defaultLimit || 20;
     const offset = (page - 1) * limit;
 
-    // Build query
-    let query = db.select().from(tableSchema);
+    // Build query - let TypeScript infer types
+    const baseQuery = db.select().from(tableSchema);
 
     // Add search filter
     const searchClause = buildSearchClause(collection, search);
-    if (searchClause) {
-      query = query.where(searchClause);
-    }
+    const queryWithSearch = searchClause ? baseQuery.where(searchClause) : baseQuery;
 
     // Add sorting
     const orderClause = buildOrderClause(collection, sortBy, sortOrder);
-    query = query.orderBy(orderClause);
+    const queryWithOrder = queryWithSearch.orderBy(orderClause);
 
     // Add pagination
-    query = query.limit(limit).offset(offset);
+    const queryWithPagination = queryWithOrder.limit(limit).offset(offset);
 
     // Execute query
-    const data = await query;
+    const data = await queryWithPagination;
 
     // Get total count
-    let countQuery = db
+    const baseCountQuery = db
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(tableSchema);
 
-    if (searchClause) {
-      countQuery = countQuery.where(searchClause);
-    }
+    const countQuery = searchClause ? baseCountQuery.where(searchClause) : baseCountQuery;
 
     const countResult = await countQuery;
     const total = countResult[0]?.count || 0;

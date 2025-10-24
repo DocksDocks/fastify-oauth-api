@@ -79,6 +79,7 @@ export interface JWTPayload {
   id: number;
   email: string;
   role: 'user' | 'coach' | 'admin' | 'superadmin';
+  jti?: string; // JWT ID (unique identifier for refresh tokens)
   iat?: number;
   exp?: number;
 }

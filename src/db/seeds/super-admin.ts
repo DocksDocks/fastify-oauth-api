@@ -69,7 +69,7 @@ async function getSystemUserId(): Promise<number> {
     .limit(1);
 
   if (existingUser.length > 0) {
-    return existingUser[0].id;
+    return existingUser[0]!.id; // Non-null assertion: we just checked length > 0
   }
 
   // Create system user (for seed operations)
@@ -84,7 +84,7 @@ async function getSystemUserId(): Promise<number> {
     })
     .returning({ id: users.id });
 
-  return systemUser.id;
+  return systemUser!.id; // Non-null assertion: returning always returns at least one row
 }
 
 /**

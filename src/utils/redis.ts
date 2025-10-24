@@ -12,7 +12,7 @@ import { logger } from '@/utils/logger';
 export const redis = new Redis({
   host: env.REDIS_HOST,
   port: env.REDIS_PORT,
-  password: env.REDIS_PASSWORD || undefined,
+  password: env.REDIS_PASSWORD,
   db: env.REDIS_DB,
   keyPrefix: env.REDIS_KEY_PREFIX,
   retryStrategy: (times: number) => {

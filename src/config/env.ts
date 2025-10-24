@@ -14,7 +14,10 @@ const envSchema = z.object({
   DATABASE_POOL_MAX: z.coerce.number().default(10),
 
   REDIS_HOST: z.string(),
-  REDIS_PORT: z.string(),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_DB: z.coerce.number().default(0),
+  REDIS_KEY_PREFIX: z.string().default('fastify:'),
 
   JWT_SECRET: z.string().min(32),
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default('15m'),

@@ -201,7 +201,7 @@ describe('Collections Configuration', () => {
         sortable: true,
       });
 
-      const isPublicColumn = exercises?.columns.find((c) => c.name === 'is_public');
+      const isPublicColumn = exercises?.columns.find((c) => c.name === 'isPublic');
       expect(isPublicColumn).toMatchObject({
         type: 'boolean',
         sortable: true,
@@ -215,8 +215,8 @@ describe('Collections Configuration', () => {
       expect(workouts?.name).toBe('Workouts');
       expect(workouts?.table).toBe('workouts');
 
-      // Workouts should have owner_id foreign key
-      const ownerIdColumn = workouts?.columns.find((c) => c.name === 'owner_id');
+      // Workouts should have ownerId foreign key (JavaScript property name)
+      const ownerIdColumn = workouts?.columns.find((c) => c.name === 'ownerId');
       expect(ownerIdColumn).toBeDefined();
       expect(ownerIdColumn?.type).toBe('number');
     });
@@ -323,10 +323,10 @@ describe('Collections Configuration', () => {
 
     it('should map integer foreign key columns to number type', () => {
       collections.forEach((collection) => {
-        // Only check integer foreign keys (excludes provider_id which is varchar)
+        // Only check integer foreign keys (excludes providerId which is varchar)
         const integerFkColumns = collection.columns.filter((c) =>
-          (c.name.endsWith('_id') || c.name.endsWith('Id')) &&
-          c.name !== 'provider_id' // provider_id is varchar, not integer
+          c.name.endsWith('Id') &&
+          c.name !== 'providerId' // providerId is varchar, not integer
         );
         integerFkColumns.forEach((fk) => {
           expect(fk.type).toBe('number');
@@ -335,7 +335,7 @@ describe('Collections Configuration', () => {
     });
 
     it('should map timestamp columns to date type', () => {
-      const timestampColumns = ['created_at', 'updated_at', 'deleted_at', 'revoked_at', 'last_login_at', 'createdAt', 'updatedAt', 'deletedAt', 'revokedAt', 'lastLoginAt'];
+      const timestampColumns = ['createdAt', 'updatedAt', 'deletedAt', 'revokedAt', 'lastLoginAt', 'usedAt', 'performedAt'];
 
       collections.forEach((collection) => {
         collection.columns
@@ -348,7 +348,7 @@ describe('Collections Configuration', () => {
     });
 
     it('should map boolean columns correctly', () => {
-      const booleanColumnNames = ['is_public', 'is_coach', 'is_revoked', 'is_used', 'is_template', 'is_locked'];
+      const booleanColumnNames = ['isPublic', 'isCoach', 'isRevoked', 'isUsed', 'isTemplate', 'isLocked', 'isRead', 'isWarmup', 'isFailure', 'isPR'];
 
       collections.forEach((collection) => {
         collection.columns
@@ -372,7 +372,7 @@ describe('Collections Configuration', () => {
    */
   describe('Column Searchability', () => {
     it('should make text columns searchable except excluded patterns', () => {
-      const excludedPatterns = ['id', '_id', 'created_at', 'updated_at', 'deleted_at'];
+      const excludedPatterns = ['id', 'Id', 'createdAt', 'updatedAt', 'deletedAt'];
 
       collections.forEach((collection) => {
         collection.columns
@@ -538,10 +538,10 @@ describe('Collections Configuration', () => {
     it('should handle single word column names', () => {
       collections.forEach((collection) => {
         collection.columns
-          .filter((c) => !c.name.includes('_'))
+          .filter((c) => !c.dbColumnName.includes('_'))
           .forEach((col) => {
-            // Single word should just be capitalized
-            const expected = col.name.charAt(0).toUpperCase() + col.name.slice(1).toLowerCase();
+            // Single word db column name should just be capitalized
+            const expected = col.dbColumnName.charAt(0).toUpperCase() + col.dbColumnName.slice(1).toLowerCase();
             expect(col.label).toBe(expected);
           });
       });

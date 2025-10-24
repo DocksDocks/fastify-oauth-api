@@ -10,7 +10,8 @@ import type { PgTable, PgColumn } from 'drizzle-orm/pg-core';
 import * as schema from '@/db/schema';
 
 export interface CollectionColumn {
-  name: string;
+  name: string; // JavaScript property name (for frontend row access)
+  dbColumnName: string; // Database column name (for SQL queries)
   label: string;
   type: 'text' | 'number' | 'date' | 'timestamp' | 'boolean' | 'enum' | 'json';
   sortable?: boolean;
@@ -190,14 +191,15 @@ function generateCollection(table: PgTable, tableName: string): Collection {
   const collectionColumns: CollectionColumn[] = columnEntries
     .map(([columnName, column]) => {
       const type = mapColumnType(column as PgColumn);
-      const dbColumnName = (column as PgColumn).name; // Database column name (snake_case)
+      const dbColName = (column as PgColumn).name; // Database column name (snake_case)
       return {
-        name: dbColumnName, // Use database column name for SQL queries
-        label: toTitleCase(dbColumnName), // Better formatting: "Created At" instead of "Createdat"
+        name: columnName, // JavaScript property name (camelCase - matches Drizzle ORM output)
+        dbColumnName: dbColName, // Database column name (snake_case - for SQL queries)
+        label: toTitleCase(dbColName), // Better formatting: "Created At" instead of "Createdat"
         type,
         sortable: isSortable(),
-        searchable: isSearchable(dbColumnName, type),
-        _priority: getColumnPriority(dbColumnName), // Temporary field for sorting
+        searchable: isSearchable(dbColName, type),
+        _priority: getColumnPriority(dbColName), // Temporary field for sorting
       } as CollectionColumnWithPriority;
     })
     // Sort by priority
@@ -205,9 +207,9 @@ function generateCollection(table: PgTable, tableName: string): Collection {
     // Remove priority field
     .map(({ _priority, ...col }) => col);
 
-  // Determine default sort column (check both camelCase and snake_case)
-  const performedAtCol = collectionColumns.find((col) => col.name === 'performed_at' || col.name === 'performedAt');
-  const createdAtCol = collectionColumns.find((col) => col.name === 'created_at' || col.name === 'createdAt');
+  // Determine default sort column (using JavaScript property names)
+  const performedAtCol = collectionColumns.find((col) => col.name === 'performedAt');
+  const createdAtCol = collectionColumns.find((col) => col.name === 'createdAt');
   const nameCol = collectionColumns.find((col) => col.name === 'name');
 
   let defaultSortColumn = 'id';
@@ -261,8 +263,8 @@ function getSchemaTableMap(): Record<string, PgTable> {
     // Check if it's a Drizzle table using type guard
     if (isDrizzleTable(exportValue)) {
       // Get table name from the table config (Drizzle internal symbol)
-      const tableWithSymbol = exportValue as PgTable & { [key: symbol]: string };
-      const tableName = tableWithSymbol[Symbol.for('drizzle:Name')] || exportName;
+      const drizzleNameSymbol = Symbol.for('drizzle:Name');
+      const tableName = (exportValue as unknown as Record<symbol, unknown>)[drizzleNameSymbol] as string || exportName;
 
       // Skip excluded tables
       if (!EXCLUDED_TABLES.has(tableName)) {

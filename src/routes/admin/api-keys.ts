@@ -7,7 +7,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { eq, isNull, desc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { db } from '@/db/client';
@@ -103,7 +103,7 @@ async function generateNewApiKey(
       .where(eq(apiKeys.name, keyName))
       .limit(1);
 
-    if (existingKey.length > 0 && !existingKey[0].revokedAt) {
+    if (existingKey.length > 0 && !existingKey[0]!.revokedAt) {
       return reply.status(409).send({
         success: false,
         error: `API key for platform '${platform}' already exists. Use regenerate to create a new one, or revoke it first.`,
@@ -131,13 +131,13 @@ async function generateNewApiKey(
     // Refresh Redis cache
     await refreshApiKeyCache();
 
-    request.log.info({ apiKeyId: newKey.id, name: newKey.name }, 'API key generated');
+    request.log.info({ apiKeyId: newKey!.id, name: newKey!.name }, 'API key generated');
 
     // Return plain key (ONLY TIME IT'S VISIBLE!)
     return reply.send({
       success: true,
       data: {
-        key: newKey,
+        key: newKey!,
         plainKey, // WARNING: Store this securely! It won't be shown again.
       },
       message: 'API key generated successfully. Store it securely - it will not be shown again.',
@@ -179,7 +179,7 @@ async function regenerateApiKey(
       });
     }
 
-    if (existingKey[0].revokedAt) {
+    if (existingKey[0]!.revokedAt) {
       return reply.status(400).send({
         success: false,
         error: 'Cannot regenerate revoked key. Create a new one instead.',
@@ -208,13 +208,13 @@ async function regenerateApiKey(
     // Refresh Redis cache
     await refreshApiKeyCache();
 
-    request.log.info({ apiKeyId: id, name: existingKey[0].name }, 'API key regenerated');
+    request.log.info({ apiKeyId: id, name: existingKey[0]!.name }, 'API key regenerated');
 
     // Return new plain key (ONLY TIME IT'S VISIBLE!)
     return reply.send({
       success: true,
       data: {
-        key: updatedKey,
+        key: updatedKey!,
         plainKey, // WARNING: Store this securely! It won't be shown again.
       },
       message: 'API key regenerated successfully. Update your apps with the new key.',
@@ -255,7 +255,7 @@ async function revokeApiKey(
       });
     }
 
-    if (existingKey[0].revokedAt) {
+    if (existingKey[0]!.revokedAt) {
       return reply.status(400).send({
         success: false,
         error: 'API key is already revoked',
@@ -274,7 +274,7 @@ async function revokeApiKey(
     // Refresh Redis cache
     await refreshApiKeyCache();
 
-    request.log.info({ apiKeyId: id, name: existingKey[0].name }, 'API key revoked');
+    request.log.info({ apiKeyId: id, name: existingKey[0]!.name }, 'API key revoked');
 
     return reply.send({
       success: true,
@@ -369,6 +369,22 @@ export default async function apiKeyRoutes(fastify: FastifyInstance): Promise<vo
       description: 'Get API key statistics',
       tags: ['admin', 'api-keys'],
       security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                total: { type: 'number' },
+                active: { type: 'number' },
+                revoked: { type: 'number' },
+              },
+            },
+          },
+        },
+      },
     },
     handler: getApiKeyStats,
   });

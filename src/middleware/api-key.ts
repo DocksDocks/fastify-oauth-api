@@ -56,7 +56,7 @@ export async function validateApiKey(
 
   // Skip validation for whitelisted paths
   // Extract pathname without query string for matching
-  const pathname = request.url.split('?')[0];
+  const pathname = request.url.split('?')[0]!; // Non-null assertion: split always returns at least one element
   if (isWhitelisted(pathname)) {
     return;
   }
