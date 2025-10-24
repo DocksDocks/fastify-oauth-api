@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table';
 import { adminApi } from '@/lib/api';
 import type { Collection, CollectionMeta } from '@/types';
-import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown, Eye } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown, Eye, Loader2 } from 'lucide-react';
 import { ViewContentModal } from '@/components/ViewContentModal';
 
 export function Collections() {
@@ -26,6 +26,7 @@ export function Collections() {
   const [selectedCollection, setSelectedCollection] = useState<CollectionMeta | null>(null);
   const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPaginating, setIsPaginating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Pagination state
@@ -75,9 +76,15 @@ export function Collections() {
     }
   }, []);
 
-  const fetchData = useCallback(async (collection: CollectionMeta) => {
+  const fetchData = useCallback(async (collection: CollectionMeta, isInitialLoad = false) => {
     try {
-      setLoading(true);
+      // Use different loading states based on operation type
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsPaginating(true);
+      }
+
       const response = await adminApi.getCollectionData(
         collection.table,
         page,
@@ -94,6 +101,7 @@ export function Collections() {
       setError(error.response?.data?.error?.message || 'Failed to load data');
     } finally {
       setLoading(false);
+      setIsPaginating(false);
     }
   }, [page, searchTerm, sortColumn, sortOrder]);
 
@@ -120,11 +128,21 @@ export function Collections() {
     }
   }, [table, collections, fetchCollectionMeta]);
 
+  // Initial load when collection changes
   useEffect(() => {
     if (selectedCollection) {
-      fetchData(selectedCollection);
+      fetchData(selectedCollection, true);
     }
-  }, [selectedCollection, fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCollection]);
+
+  // Pagination/search/sort changes (not initial load)
+  useEffect(() => {
+    if (selectedCollection && (page !== 1 || searchTerm || sortColumn)) {
+      fetchData(selectedCollection, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, searchTerm, sortColumn, sortOrder]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -219,19 +237,21 @@ export function Collections() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {loading ? (
-                    <div className="space-y-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                    </div>
-                  ) : data.length === 0 ? (
-                    <div className="text-center py-8 text-(--color-text-muted)">
-                      No records found
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
+                  <div className="min-h-[600px] flex items-center justify-center">
+                    {loading || isPaginating ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-(--color-text-muted)" />
+                        <p className="text-(--color-text-muted) text-sm">
+                          {loading ? 'Loading collection...' : 'Loading data...'}
+                        </p>
+                      </div>
+                    ) : data.length === 0 ? (
+                      <div className="text-center py-8 text-(--color-text-muted)">
+                        No records found
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
                         <TableHeader>
                           <TableRow className="hover:shadow-md transition-shadow">
                             {selectedCollection?.columns?.map((column, colIndex) => (
@@ -313,7 +333,8 @@ export function Collections() {
                         </TableBody>
                       </Table>
                     </div>
-                  )}
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -322,13 +343,17 @@ export function Collections() {
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-text-secondary">
                     Page {page} of {totalPages}
+                    {isPaginating && (
+                      <span className="ml-2 text-(--color-text-muted) text-xs">Loading...</span>
+                    )}
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => setPage(page - 1)}
-                      disabled={page === 1}
+                      disabled={page === 1 || isPaginating}
+                      className={isPaginating ? 'opacity-60 cursor-wait' : ''}
                     >
                       <ChevronLeft className="h-4 w-4" />
                       Previous
@@ -337,7 +362,8 @@ export function Collections() {
                       variant="secondary"
                       size="sm"
                       onClick={() => setPage(page + 1)}
-                      disabled={page === totalPages}
+                      disabled={page === totalPages || isPaginating}
+                      className={isPaginating ? 'opacity-60 cursor-wait' : ''}
                     >
                       Next
                       <ChevronRight className="h-4 w-4" />
