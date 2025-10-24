@@ -25,7 +25,12 @@ const navigation = [
   { name: 'API Keys', href: '/admin/api-keys', icon: Key },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobileMenuOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProps = {}) {
   const location = useLocation();
   const { user, clearAuth } = useAuthStore();
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -69,8 +74,23 @@ export function Sidebar() {
     }
   };
 
+  // Helper to close mobile menu when clicking links
+  const handleLinkClick = () => {
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   return (
-    <div className="flex h-screen w-64 flex-col bg-background text-primary-foreground" style={{ filter: 'drop-shadow(6px 0 12px rgba(0, 0, 0, 0.25))' }}>
+    <div
+      className={cn(
+        "flex h-screen w-64 flex-col bg-background text-primary-foreground transition-transform duration-300 ease-in-out",
+        // Mobile: fixed position, slide from left
+        "fixed inset-y-0 left-0 z-40 md:relative md:translate-x-0",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}
+      style={{ filter: 'drop-shadow(6px 0 12px rgba(0, 0, 0, 0.25))' }}
+    >
       {/* Logo */}
       <div className="flex h-16 items-center px-6">
         <h1 className="text-xl font-bold text-white">Admin Panel</h1>
@@ -84,6 +104,7 @@ export function Sidebar() {
             <Link
               key={item.name}
               to={item.href}
+              onClick={handleLinkClick}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
                 isActive
@@ -125,6 +146,7 @@ export function Sidebar() {
                 <Link
                   key={collection.table}
                   to={`/admin/collections/${collection.table}`}
+                  onClick={handleLinkClick}
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer',
                     isActive
