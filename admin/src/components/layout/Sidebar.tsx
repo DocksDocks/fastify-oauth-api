@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Key, Database, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Key, Database, ChevronDown, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState, useEffect } from 'react';
@@ -10,6 +10,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -18,7 +27,7 @@ const navigation = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
 
@@ -42,10 +51,28 @@ export function Sidebar() {
     }
   };
 
+  const handleLogout = () => {
+    clearAuth();
+    window.location.href = '/admin/login';
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'superadmin':
+        return 'destructive';
+      case 'admin':
+        return 'default';
+      case 'coach':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-primary text-primary-foreground">
+    <div className="flex h-screen w-64 flex-col bg-background text-primary-foreground" style={{ filter: 'drop-shadow(6px 0 12px rgba(0, 0, 0, 0.25))' }}>
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-primary-foreground/20 px-6">
+      <div className="flex h-16 items-center px-6">
         <h1 className="text-xl font-bold text-white">Admin Panel</h1>
       </div>
 
@@ -114,16 +141,37 @@ export function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-white/20 p-4">
-        <div className="flex items-center gap-3">
-          {user?.avatar && (
-            <img src={user.avatar} alt={user.name || 'User'} className="h-8 w-8 rounded-full ring-2 ring-white/20" />
-          )}
-          <div className="flex-1 overflow-hidden">
-            <p className="truncate text-sm font-medium text-white">{user?.name || 'User'}</p>
-            <p className="truncate text-xs text-white/60">{user?.email}</p>
-          </div>
-        </div>
+      <div className="p-4" style={{ boxShadow: 'var(--shadow-sidebar-user-top)' }}>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-white/10 cursor-pointer">
+            {user?.avatar && (
+              <img src={user.avatar} alt={user.name || 'User'} className="h-8 w-8 rounded-full ring-2 ring-white/20" />
+            )}
+            <div className="flex-1 overflow-hidden text-left">
+              <p className="truncate text-sm font-medium text-white">{user?.name || 'User'}</p>
+              <p className="truncate text-xs text-white/60">{user?.email}</p>
+            </div>
+            <ChevronDown className="h-4 w-4 text-white/60 shrink-0" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex flex-col space-y-2">
+                <p className="text-sm font-medium leading-none text-(--color-text-primary)">{user?.name || 'User'}</p>
+                <p className="text-xs leading-none text-(--color-text-muted)">{user?.email}</p>
+                {user?.role && (
+                  <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize w-fit">
+                    {user.role}
+                  </Badge>
+                )}
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span className="text-(--color-text-secondary)">Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

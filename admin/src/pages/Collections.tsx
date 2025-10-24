@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/table';
 import { adminApi } from '@/lib/api';
 import type { Collection, CollectionMeta } from '@/types';
-import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown, Eye } from 'lucide-react';
+import { ViewContentModal } from '@/components/ViewContentModal';
 
 export function Collections() {
   const { table } = useParams();
@@ -37,6 +38,12 @@ export function Collections() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Modal state for viewing full content
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState('');
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalType, setModalType] = useState('text');
 
   const fetchCollections = useCallback(async () => {
     try {
@@ -134,6 +141,13 @@ export function Collections() {
     setPage(1);
   };
 
+  const handleViewContent = (row: Record<string, unknown>) => {
+    setModalContent(JSON.stringify(row));
+    setModalTitle('Record Details');
+    setModalType('row');
+    setModalOpen(true);
+  };
+
   const formatValue = (value: unknown, type: string): string => {
     if (value === null || value === undefined) return '-';
 
@@ -219,11 +233,11 @@ export function Collections() {
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
+                          <TableRow className="hover:shadow-md transition-shadow">
                             {selectedCollection?.columns?.map((column, colIndex) => (
                               <TableHead
                                 key={column.name}
-                                className={`${colIndex % 2 === 0 ? 'bg-primary/5' : 'bg-primary/3'}`}
+                                className={`${colIndex % 2 === 0 ? 'bg-primary/20' : 'bg-primary/3'}`}
                               >
                                 <div className="flex items-center gap-1">
                                   <span className="text-text-secondary font-semibold">{column.label}</span>
@@ -250,30 +264,50 @@ export function Collections() {
                         </TableHeader>
                         <TableBody>
                           {data.map((row, rowIndex) => (
-                            <TableRow key={rowIndex}>
-                              {selectedCollection?.columns?.map((column, colIndex) => (
-                                <TableCell
-                                  key={column.name}
-                                  className={`max-w-xs ${colIndex % 2 === 0 ? 'bg-primary/5' : 'bg-primary/3'}`}
-                                >
-                                  {column.name === 'role' ? (
-                                    <Badge variant="outline" className="capitalize">
-                                      {String(row[column.name] ?? '')}
-                                    </Badge>
-                                  ) : column.type === 'boolean' ? (
-                                    <Badge variant={row[column.name] ? 'success' : 'outline'}>
-                                      {formatValue(row[column.name], column.type)}
-                                    </Badge>
-                                  ) : (
-                                    <span
-                                      className={`block truncate text-(--color-text-primary) ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
-                                      title={formatValue(row[column.name], column.type)}
-                                    >
-                                      {formatValue(row[column.name], column.type)}
-                                    </span>
-                                  )}
-                                </TableCell>
-                              ))}
+                            <TableRow key={rowIndex} className="hover:shadow-md transition-shadow">
+                              {selectedCollection?.columns?.map((column, colIndex) => {
+                                const value = row[column.name];
+                                const formattedValue = formatValue(value, column.type);
+                                const isFirstColumn = colIndex === 0;
+
+                                return (
+                                  <TableCell
+                                    key={column.name}
+                                    className={`max-w-xs ${colIndex % 2 === 0 ? 'bg-primary/20' : 'bg-primary/3'}`}
+                                  >
+                                    {isFirstColumn ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className="block truncate text-(--color-text-primary)">
+                                          {formattedValue}
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 shrink-0"
+                                          onClick={() => handleViewContent(row)}
+                                        >
+                                          <Eye className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    ) : column.name === 'role' ? (
+                                      <Badge variant="outline" className="capitalize">
+                                        {String(value ?? '')}
+                                      </Badge>
+                                    ) : column.type === 'boolean' ? (
+                                      <Badge variant={value ? 'success' : 'destructive'}>
+                                        {formattedValue}
+                                      </Badge>
+                                    ) : (
+                                      <span
+                                        className={`block truncate text-(--color-text-primary) ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
+                                        title={formattedValue}
+                                      >
+                                        {formattedValue}
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                );
+                              })}
                             </TableRow>
                           ))}
                         </TableBody>
@@ -314,6 +348,15 @@ export function Collections() {
             </>
           )}
       </div>
+
+      {/* Modal for viewing full content */}
+      <ViewContentModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        content={modalContent}
+        title={modalTitle}
+        type={modalType}
+      />
     </div>
   );
 }

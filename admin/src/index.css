@@ -78,6 +78,32 @@
   --color-ring: #7c3aed;
 
   /* ============================================
+     SHADOWS
+     ============================================ */
+  --color-shadow: rgba(109, 40, 217, 0.1);
+  --color-shadow-hover: rgba(109, 40, 217, 0.15);
+
+  /* Shadow Definitions */
+  --shadow-sm: 0 1px 2px 0 rgba(109, 40, 217, 0.05);
+  --shadow: 0 1px 3px 0 rgba(109, 40, 217, 0.1), 0 1px 2px -1px rgba(109, 40, 217, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(109, 40, 217, 0.1), 0 2px 4px -2px rgba(109, 40, 217, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(109, 40, 217, 0.1), 0 4px 6px -4px rgba(109, 40, 217, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(109, 40, 217, 0.1), 0 8px 10px -6px rgba(109, 40, 217, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(109, 40, 217, 0.25);
+
+  /* Component-Specific Shadows */
+  --shadow-sidebar-right: 6px 0 24px -2px rgba(0, 0, 0, 0.2);
+  --shadow-sidebar-user-top: 0 -4px 12px -2px rgba(0, 0, 0, 0.3);
+  --shadow-header-bottom: 0 4px 12px -2px rgba(109, 40, 217, 0.15);
+
+  /* ============================================
+     SCROLLBAR
+     ============================================ */
+  --color-scrollbar-track: #f3e8ff;
+  --color-scrollbar-thumb: #c4b5fd;
+  --color-scrollbar-thumb-hover: #a78bfa;
+
+  /* ============================================
      RADIUS
      ============================================ */
   --radius: 0.5rem;
@@ -127,5 +153,62 @@
     --color-border: #2e2a5c;
     --color-input: #2e2a5c;
     --color-ring: #0f172a;
+
+    /* Shadows - Dark Theme */
+    --color-shadow: rgba(139, 92, 246, 0.15);
+    --color-shadow-hover: rgba(139, 92, 246, 0.25);
+
+    /* Shadow Definitions - Dark Mode */
+    --shadow-sm: 0 1px 2px 0 rgba(139, 92, 246, 0.1);
+    --shadow: 0 1px 3px 0 rgba(139, 92, 246, 0.15), 0 1px 2px -1px rgba(139, 92, 246, 0.15);
+    --shadow-md: 0 4px 6px -1px rgba(139, 92, 246, 0.15), 0 2px 4px -2px rgba(139, 92, 246, 0.15);
+    --shadow-lg: 0 10px 15px -3px rgba(139, 92, 246, 0.2), 0 4px 6px -4px rgba(139, 92, 246, 0.2);
+    --shadow-xl: 0 20px 25px -5px rgba(139, 92, 246, 0.2), 0 8px 10px -6px rgba(139, 92, 246, 0.2);
+    --shadow-2xl: 0 25px 50px -12px rgba(139, 92, 246, 0.3);
+
+    /* Component-Specific Shadows - Dark Mode */
+    --shadow-sidebar-right: 6px 0 24px -2px rgba(0, 0, 0, 0.4);
+    --shadow-sidebar-user-top: 0 -4px 12px -2px rgba(0, 0, 0, 0.5);
+    --shadow-header-bottom: 0 4px 12px -2px rgba(139, 92, 246, 0.25);
+
+    /* Scrollbar - Dark Theme */
+    --color-scrollbar-track: #2e2a5c;
+    --color-scrollbar-thumb: #6d28d9;
+    --color-scrollbar-thumb-hover: #8b5cf6;
   }
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR STYLING
+   ============================================ */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+}
+
+/* Chrome, Edge, Safari */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--color-scrollbar-track);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--color-scrollbar-track);
 }

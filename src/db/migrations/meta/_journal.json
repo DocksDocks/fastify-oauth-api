@@ -36,6 +36,13 @@
       "when": 1761157713340,
       "tag": "0004_slim_adam_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1761335141715,
+      "tag": "0005_outstanding_earthquake",
+      "breakpoints": true
     }
   ]
 }
