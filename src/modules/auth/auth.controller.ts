@@ -451,7 +451,7 @@ export async function handleRefreshToken(
       data: tokens,
     });
   } catch (error) {
-    request.log.error({ error }, 'Token refresh failed');
+    request.log.error(error, 'Token refresh failed');
     const err = error as Error;
     return reply.status(401).send({
       success: false,

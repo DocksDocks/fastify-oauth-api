@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Key, Database, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Key, Database, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState, useEffect } from 'react';
@@ -18,7 +18,7 @@ const navigation = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { user, clearAuth } = useAuthStore();
+  const { user } = useAuthStore();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
 
@@ -40,11 +40,6 @@ export function Sidebar() {
     } catch (error) {
       console.error('Failed to fetch collections:', error);
     }
-  };
-
-  const handleLogout = () => {
-    clearAuth();
-    window.location.href = '/admin/login';
   };
 
   return (
@@ -120,7 +115,7 @@ export function Sidebar() {
 
       {/* User section */}
       <div className="border-t border-white/20 p-4">
-        <div className="mb-3 flex items-center gap-3">
+        <div className="flex items-center gap-3">
           {user?.avatar && (
             <img src={user.avatar} alt={user.name || 'User'} className="h-8 w-8 rounded-full ring-2 ring-white/20" />
           )}
@@ -129,13 +124,6 @@ export function Sidebar() {
             <p className="truncate text-xs text-white/60">{user?.email}</p>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-        >
-          <LogOut className="h-4 w-4" />
-          Logout
-        </button>
       </div>
     </div>
   );

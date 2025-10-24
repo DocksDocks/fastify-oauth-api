@@ -48,6 +48,10 @@ api.interceptors.request.use(
   }
 );
 
+// Token refresh lock to prevent concurrent refresh attempts (race condition fix)
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
+
 // Response interceptor: Handle token refresh on 401
 api.interceptors.response.use(
   (response) => response,
@@ -58,57 +62,81 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = localStorage.getItem('refresh_token');
-
-        if (!refreshToken) {
-          // No refresh token, redirect to login
-          window.location.href = '/admin/login';
+      // If already refreshing, wait for that refresh to complete
+      if (isRefreshing && refreshPromise) {
+        try {
+          const newAccessToken = await refreshPromise;
+          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
+        } catch {
+          // Refresh failed, let it redirect to login
           return Promise.reject(error);
         }
+      }
 
-        // Try to refresh access token
-        const response = await axios.post(`${BASE_URL}/auth/refresh`, {
-          refreshToken,
-        }, {
-          headers: {
-            'X-API-Key': API_KEY,
-          },
-        });
+      // Start new refresh
+      isRefreshing = true;
+      refreshPromise = (async () => {
+        try {
+          const refreshToken = localStorage.getItem('refresh_token');
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+          if (!refreshToken) {
+            throw new Error('No refresh token');
+          }
 
-        // Store new tokens in localStorage
-        localStorage.setItem('access_token', accessToken);
-        localStorage.setItem('refresh_token', newRefreshToken);
-
-        // Update Zustand store with new tokens
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          const authStorage = {
-            state: {
-              user,
-              accessToken,
-              refreshToken: newRefreshToken,
-              isAuthenticated: true,
+          // Try to refresh access token
+          const response = await axios.post(`${BASE_URL}/auth/refresh`, {
+            refreshToken,
+          }, {
+            headers: {
+              'X-API-Key': API_KEY,
             },
-            version: 0,
-          };
-          localStorage.setItem('auth-storage', JSON.stringify(authStorage));
-        }
+          });
 
-        // Retry original request with new token
-        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+
+          // Store new tokens in localStorage
+          localStorage.setItem('access_token', accessToken);
+          localStorage.setItem('refresh_token', newRefreshToken);
+
+          // Update Zustand store with new tokens
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            const authStorage = {
+              state: {
+                user,
+                accessToken,
+                refreshToken: newRefreshToken,
+                isAuthenticated: true,
+              },
+              version: 0,
+            };
+            localStorage.setItem('auth-storage', JSON.stringify(authStorage));
+          }
+
+          return accessToken;
+        } catch (refreshError) {
+          // Refresh failed, clear tokens and redirect to login
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('auth-storage');
+          window.location.href = '/admin/login';
+          throw refreshError;
+        } finally {
+          // Reset lock after refresh completes (success or failure)
+          isRefreshing = false;
+          refreshPromise = null;
+        }
+      })();
+
+      try {
+        const newAccessToken = await refreshPromise;
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
         return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('auth-storage'); // Clear Zustand persisted state
-        window.location.href = '/admin/login'; // Fixed: correct admin login path
-        return Promise.reject(refreshError);
+      } catch {
+        return Promise.reject(error);
       }
     }
 

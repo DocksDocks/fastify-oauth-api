@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,25 +18,35 @@ interface Stats {
     active: number;
     revoked: number;
   };
+  collections: {
+    total: number;
+  };
 }
 
 export function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    // Prevent double fetch in React StrictMode (dev only)
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const [usersResponse, apiKeysResponse] = await Promise.all([
+        const [usersResponse, apiKeysResponse, collectionsResponse] = await Promise.all([
           adminApi.getUserStats(),
           adminApi.getApiKeyStats(),
+          adminApi.getCollections(),
         ]);
 
         setStats({
-          users: usersResponse.data,
-          apiKeys: apiKeysResponse.data,
+          users: usersResponse.data.data,
+          apiKeys: apiKeysResponse.data.data,
+          collections: { total: collectionsResponse.data.data.total },
         });
       } catch (err: unknown) {
         if (isAxiosError(err) && err.response?.data?.error) {
@@ -144,7 +154,7 @@ export function Dashboard() {
             <Database className="h-4 w-4 text-(--color-text-tertiary)" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-(--color-text-primary)">5</div>
+            <div className="text-2xl font-bold text-(--color-text-primary)">{stats.collections.total}</div>
             <p className="text-xs text-(--color-text-muted)">Available tables</p>
           </CardContent>
         </Card>
