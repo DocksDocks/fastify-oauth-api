@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 import AppleSignIn from 'apple-signin-auth';
 import { db } from '@/db/client';
-import { users, type User } from '@/db/schema/users';
+import { users, type User, authorizedAdmins } from '@/db/schema';
 import env from '@/config/env';
 import type { OAuthProfile, GoogleUserInfo, AppleIdTokenClaims, OAuthError } from './auth.types';
 
@@ -31,10 +31,25 @@ function getAdminEmails(): string[] {
 
 /**
  * Check if email should be auto-promoted to admin
+ * Checks both environment variables and database
  */
-function isAdminEmail(email: string): boolean {
+async function isAdminEmail(email: string): Promise<boolean> {
+  const normalizedEmail = email.toLowerCase();
+
+  // Check environment variables
   const adminEmails = getAdminEmails();
-  return adminEmails.includes(email.toLowerCase());
+  if (adminEmails.includes(normalizedEmail)) {
+    return true;
+  }
+
+  // Check database
+  const [authorizedAdmin] = await db
+    .select()
+    .from(authorizedAdmins)
+    .where(eq(authorizedAdmins.email, normalizedEmail))
+    .limit(1);
+
+  return !!authorizedAdmin;
 }
 
 /**
@@ -156,7 +171,7 @@ export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> 
 
   // Determine role based on super admin and admin emails
   const shouldBeSuperAdmin = isSuperAdminEmail(email);
-  const shouldBeAdmin = isAdminEmail(email);
+  const shouldBeAdmin = await isAdminEmail(email);
   const assignedRole = shouldBeSuperAdmin ? 'superadmin' : shouldBeAdmin ? 'admin' : 'user';
 
   if (user) {

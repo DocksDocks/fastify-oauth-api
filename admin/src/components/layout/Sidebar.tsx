@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Key, Database, ChevronDown, LogOut } from 'lucide-react';
+import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState, useEffect } from 'react';
@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'API Keys', href: '/admin/api-keys', icon: Key },
+  { name: 'Authorized Admins', href: '/admin/authorized-admins', icon: ShieldCheck },
 ];
 
 interface SidebarProps {

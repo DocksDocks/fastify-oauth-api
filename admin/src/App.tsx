@@ -6,6 +6,7 @@ import { OAuthCallback } from '@/pages/OAuthCallback';
 import { Dashboard } from '@/pages/Dashboard';
 import { ApiKeys } from '@/pages/ApiKeys';
 import { Collections } from '@/pages/Collections';
+import { AuthorizedAdmins } from '@/pages/AuthorizedAdmins';
 import { useAuthStore } from '@/store/auth';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="api-keys" element={<ApiKeys />} />
+          <Route path="authorized-admins" element={<AuthorizedAdmins />} />
           <Route path="collections" element={<Collections />} />
           <Route path="collections/:table" element={<Collections />} />
         </Route>

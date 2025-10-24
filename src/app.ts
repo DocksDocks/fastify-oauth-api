@@ -22,6 +22,7 @@ import profileRoutes from '@/routes/profile';
 import adminUserRoutes from '@/routes/admin/users';
 import adminApiKeysRoutes from '@/routes/admin/api-keys';
 import adminCollectionsRoutes from '@/routes/admin/collections';
+import { authorizedAdminsRoutes } from '@/routes/admin/authorized-admins';
 import { exercisesRoutes } from '@/modules/exercises/exercises.routes';
 import { workoutsRoutes } from '@/modules/workouts/workouts.routes';
 import { validateApiKey } from '@/middleware/api-key';
@@ -150,6 +151,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   await app.register(adminUserRoutes, { prefix: '/api/admin/users' });
   await app.register(adminApiKeysRoutes, { prefix: '/api/admin/api-keys' });
   await app.register(adminCollectionsRoutes, { prefix: '/api/admin/collections' });
+  await app.register(authorizedAdminsRoutes, { prefix: '/api/admin/authorized-admins' });
 
   // Serve admin panel static files (production only)
   if (isProduction) {
@@ -201,6 +203,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           users: '/api/admin/users',
           apiKeys: '/api/admin/api-keys',
           collections: '/api/admin/collections',
+          authorizedAdmins: '/api/admin/authorized-admins',
           panel: isProduction ? '/admin' : 'http://localhost:5173',
         },
       },

@@ -88,3 +88,12 @@ export interface AuthTokens {
   refreshToken: string;
   expiresIn: number;
 }
+
+export interface AuthorizedAdmin {
+  id: number;
+  email: string;
+  createdAt: string;
+  createdBy: number;
+  createdByEmail: string | null;
+  createdByName: string | null;
+}

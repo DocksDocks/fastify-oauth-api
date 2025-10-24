@@ -193,6 +193,11 @@ export const adminApi = {
   ) => api.get(`/admin/collections/${table}/data`, {
     params: { page, limit, search, sortBy, sortOrder },
   }),
+
+  // Authorized Admins (superadmin only)
+  getAuthorizedAdmins: () => api.get('/admin/authorized-admins'),
+  addAuthorizedAdmin: (email: string) => api.post('/admin/authorized-admins', { email }),
+  removeAuthorizedAdmin: (id: number) => api.delete(`/admin/authorized-admins/${id}`),
 };
 
 export default api;

@@ -303,25 +303,35 @@ npm run type-check               # TypeScript
 - Keep files under 300 lines
 - Use barrel exports (index.ts) for modules
 
-**Admin Panel Styling:**
+**Admin Panel Styling (Tailwind CSS v4):**
 - ALWAYS use theme color variables defined in `admin/src/index.css`
-- Use semantic color classes: `text-(--color-text-primary)`, `text-(--color-text-secondary)`, `text-(--color-text-tertiary)`, `text-(--color-text-muted)`
+- **Text Colors** - Use semantic text classes (Tailwind v4 shorthand):
+  - `text-text-primary` - Main headings and important content
+  - `text-text-secondary` - Subheadings and descriptions
+  - `text-text-tertiary` - Labels and subtle content
+  - `text-text-muted` - Placeholder and disabled text
+- **Borders**: Use `border-border` instead of generic colors
+- **Backgrounds**: Use `bg-primary`, `bg-secondary`, `bg-muted` with opacity modifiers (e.g., `bg-primary/20`)
 - NEVER use generic Tailwind colors like `text-foreground`, `text-gray-500`, `text-slate-600`
-- For backgrounds: use `bg-primary`, `bg-secondary`, `bg-muted` with opacity modifiers (e.g., `bg-primary/20`)
-- For borders: use `border-(--color-border)` instead of `border-gray-300`
 - Theme colors automatically adapt to light/dark mode
-- All text colors, borders, and backgrounds MUST reference theme variables for consistency
+- **ALL text in components MUST use theme colors**: Dialog titles, descriptions, labels, inputs, buttons, alerts, cards, etc.
 - Example correct usage:
   ```tsx
-  <p className="text-(--color-text-primary)">Main text</p>
-  <span className="text-(--color-text-secondary)">Secondary text</span>
-  <div className="border-(--color-border) bg-primary/5">Content</div>
+  <DialogTitle className="text-text-primary">Title</DialogTitle>
+  <DialogDescription className="text-text-secondary">Description</DialogDescription>
+  <Label className="text-text-primary">Email</Label>
+  <Input className="text-text-primary" />
+  <p className="text-text-secondary">Subheading</p>
+  <div className="border-border bg-primary/5">Content</div>
   ```
 - Example incorrect usage:
   ```tsx
-  <p className="text-foreground">Main text</p>  // ❌ Wrong
-  <span className="text-gray-600">Secondary</span>  // ❌ Wrong
-  <div className="border-gray-200">Content</div>  // ❌ Wrong
+  <DialogTitle>Title</DialogTitle>  // ❌ Missing text color
+  <Label>Email</Label>  // ❌ Missing text color
+  <p className="text-foreground">Main text</p>  // ❌ Wrong - use text-text-primary
+  <span className="text-gray-600">Secondary</span>  // ❌ Wrong - use text-text-secondary
+  <div className="border-gray-200">Content</div>  // ❌ Wrong - use border-border
+  <p className="text-(--color-text-primary)">Text</p>  // ❌ Old syntax - use text-text-primary
   ```
 
 ## OAuth & JWT Authentication

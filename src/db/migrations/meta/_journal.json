@@ -43,6 +43,13 @@
       "when": 1761335141715,
       "tag": "0005_outstanding_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1761341044821,
+      "tag": "0006_melted_talkback",
+      "breakpoints": true
     }
   ]
 }
