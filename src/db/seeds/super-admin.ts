@@ -167,7 +167,7 @@ export async function runSuperAdminSeed(): Promise<void> {
     console.log('⚠️  IMPORTANT: Store the API keys above securely!');
     console.log('   They will not be shown again.\n');
     console.log('   Add them to your .env file:\n');
-    console.log('   ADMIN_PANEL_API_KEY=<admin_panel_api_key>');
+    console.log('   VITE_ADMIN_PANEL_API_KEY=<admin_panel_api_key>');
     console.log('   IOS_API_KEY=<ios_api_key>');
     console.log('   ANDROID_API_KEY=<android_api_key>\n');
   } catch (error) {

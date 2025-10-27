@@ -103,7 +103,7 @@ npm run db:seed:superadmin
 
    Add them to your .env file:
 
-   ADMIN_PANEL_API_KEY=<admin_panel_api_key>
+   VITE_ADMIN_PANEL_API_KEY=<admin_panel_api_key>
    IOS_API_KEY=<ios_api_key>
    ANDROID_API_KEY=<android_api_key>
 ```
@@ -128,7 +128,7 @@ nano .env
 
 # Add these lines (replace with actual keys from Step 2):
 SUPER_ADMIN_EMAIL=your-email@gmail.com
-ADMIN_PANEL_API_KEY=<paste_admin_panel_api_key>
+VITE_ADMIN_PANEL_API_KEY=<paste_admin_panel_api_key>
 IOS_API_KEY=<paste_ios_api_key>
 ANDROID_API_KEY=<paste_android_api_key>
 ```

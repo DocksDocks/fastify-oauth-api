@@ -171,7 +171,7 @@ SUPER_ADMIN_EMAIL=youremail@gmail.com
 
 ### Step 2: Verify Admin Panel API Key
 
-Ensure `admin/.env` has your API key:
+Ensure root `.env` has your API key:
 
 ```bash
 VITE_ADMIN_PANEL_API_KEY=your_admin_panel_api_key_here
@@ -260,8 +260,8 @@ npm run dev
 
 **Fix**:
 ```bash
-# Verify API key is set in admin/.env
-cat admin/.env | grep VITE_ADMIN_PANEL_API_KEY
+# Verify API key is set in root .env
+cat .env | grep VITE_ADMIN_PANEL_API_KEY
 
 # If empty, run seed and copy the key
 npm run db:seed:superadmin

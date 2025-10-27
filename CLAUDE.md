@@ -54,6 +54,7 @@ fastify-oauth-api/
 │   ├── system/                  # System-wide scripts (start-all, stop-all, restart-all, health-check, logs-all, remove-all, remove-volumes, setup-swap)
 │   └── start.sh                 # Quick start script
 ├── scripts/                     # Utility scripts
+│   ├── dev-init.sh              # Complete dev environment setup (services + migrations + seeds)
 │   └── test-db/                 # Test database management (create, drop, reset, migrate, setup)
 ├── admin/                       # Admin panel (Vite + React)
 │   ├── src/
@@ -220,6 +221,13 @@ fastify-oauth-api/
 
 **Essential Commands:**
 ```bash
+# First-time setup (recommended for new developers)
+npm run dev:init                 # Complete dev environment setup
+                                 # - Starts PostgreSQL + Redis
+                                 # - Runs migrations on dev database
+                                 # - Seeds superadmin + API keys
+                                 # - Sets up test database
+
 # Start entire stack
 npm run docker:start              # or bash scripts-docker/start.sh
 
@@ -464,9 +472,10 @@ This script reads `ADMIN_EMAIL` and `ADMIN_EMAILS_ADDITIONAL` from `.env`, finds
    - `android_api_key` - For Android mobile app
    - `admin_panel_api_key` - For admin web interface
 
-4. Store `admin_panel_api_key` in `admin/.env`:
+4. Add `admin_panel_api_key` to root `.env` (VITE_ prefix required):
    ```bash
-   echo "VITE_ADMIN_PANEL_API_KEY=<key>" > admin/.env
+   # Add to .env file
+   VITE_ADMIN_PANEL_API_KEY=<key>
    ```
 
 5. Login via Google OAuth to activate superadmin role:
@@ -570,7 +579,7 @@ All API routes (except whitelisted paths) require `X-API-Key` header.
 **API Key Setup:**
 1. Run super admin seed: `npm run db:seed:superadmin`
 2. Copy displayed API keys (only shown once)
-3. Store `admin_panel_api_key` in `admin/.env`:
+3. Add `admin_panel_api_key` to root `.env` (VITE_ prefix required):
    ```
    VITE_ADMIN_PANEL_API_KEY=your_key_here
    ```
@@ -664,12 +673,9 @@ Edit `src/config/collections.ts` to add/modify database tables visible in the ad
 - `SUPER_ADMIN_EMAIL` - Super admin email(s) for initial setup
 
 **API Keys (Generated via seed script):**
-- `IOS_API_KEY` - API key for iOS mobile app
-- `ANDROID_API_KEY` - API key for Android mobile app
-- `ADMIN_PANEL_API_KEY` - API key for admin web interface
-
-**Frontend (`admin/.env`):**
-- `VITE_ADMIN_PANEL_API_KEY` - Same as backend ADMIN_PANEL_API_KEY
+- `IOS_API_KEY` - API key for iOS mobile app (stored in mobile apps)
+- `ANDROID_API_KEY` - API key for Android mobile app (stored in mobile apps)
+- `VITE_ADMIN_PANEL_API_KEY` - API key for admin web interface (VITE_ prefix required for frontend)
 
 **Caddy (Reverse Proxy):**
 - `CADDY_DOMAIN` - Domain name (localhost for dev, real domain for prod)
@@ -1082,7 +1088,7 @@ docker compose logs api
 ```
 
 **"API key is required" error:**
-1. Ensure `VITE_ADMIN_PANEL_API_KEY` is set in `admin/.env`
+1. Ensure `VITE_ADMIN_PANEL_API_KEY` is set in root `.env`
 2. Rebuild admin panel: `npm run build:admin`
 3. Restart dev server: `npm run dev`
 
@@ -1169,15 +1175,26 @@ Before deploying to production, verify (see Environment Variables section for de
 ## Development Guide
 
 **Getting Started:**
+
+**Quick Setup (Recommended):**
 1. Clone repository and copy `.env.example` to `.env`
 2. Configure environment variables (see Production Deployment Checklist)
 3. Set up OAuth credentials (Google OAuth Console, Apple Developer Portal)
-4. Start Docker stack: `npm run docker:start` or `bash scripts-docker/start.sh`
+4. Initialize development environment: `npm run dev:init`
+   - Starts PostgreSQL + Redis containers
+   - Runs migrations on development database
+   - Seeds superadmin + API keys (copy to admin/.env)
+   - Sets up test database
+5. Start development: `npm run dev`
+6. Test endpoints: `curl http://localhost:3000/health`
+
+**Manual Setup (Alternative):**
+1-3. Same as above
+4. Start services: `npm run docker:postgres` and `npm run docker:redis`
 5. Run migrations: `npm run db:migrate`
-6. Seed admin users: `npm run db:seed`
+6. Seed superadmin: `npm run db:seed:superadmin`
 7. Setup test database: `npm run test:db:setup`
-8. Run tests: `npm test`
-9. Test endpoints: `curl http://localhost:3000/health`
+8. Start development: `npm run dev`
 
 **For Raspberry Pi deployment, see [RASPBERRY_PI.md](./RASPBERRY_PI.md)**:
 - SWAP configuration for 4GB RAM (`scripts-docker/system/setup-swap.sh`)

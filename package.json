@@ -9,6 +9,7 @@
   },
   "scripts": {
     "postinstall": "cd admin && npm install",
+    "dev:init": "bash scripts/dev-init.sh",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:admin\" --names \"API,ADMIN\" --prefix-colors \"cyan,magenta\" --kill-others",
     "dev:api": "dotenvx run -- tsx watch src/server.ts",
     "dev:admin": "cd admin && npm run dev",
