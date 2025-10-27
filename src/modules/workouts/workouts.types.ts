@@ -48,20 +48,30 @@ export interface UpdateWorkoutBody {
 export interface CreateWorkoutExerciseBody {
   exerciseId: number;
   orderIndex: number;
-  sets?: number;
   reps?: number;
   weight?: string; // Decimal as string
-  restSeconds?: number;
   notes?: string;
+  // Set type configuration (0-10 sets per type)
+  warmupSetsCount?: number;
+  warmupRestSeconds?: number;
+  prepSetsCount?: number;
+  prepRestSeconds?: number;
+  workingSetsCount?: number;
+  workingRestSeconds?: number;
 }
 
 export interface UpdateWorkoutExerciseBody {
-  sets?: number;
   reps?: number;
   weight?: string;
-  restSeconds?: number;
   notes?: string;
   orderIndex?: number;
+  // Set type configuration (0-10 sets per type)
+  warmupSetsCount?: number;
+  warmupRestSeconds?: number;
+  prepSetsCount?: number;
+  prepRestSeconds?: number;
+  workingSetsCount?: number;
+  workingRestSeconds?: number;
 }
 
 export interface ShareWorkoutBody {

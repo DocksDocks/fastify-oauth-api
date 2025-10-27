@@ -1,6 +1,8 @@
-import { pgTable, serial, integer, text, timestamp, decimal, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, timestamp, decimal, boolean, pgEnum } from 'drizzle-orm/pg-core';
 import { workoutLogs } from './workout-logs';
 import { exercises } from './exercises';
+
+export const setTypeEnum = pgEnum('set_type', ['warmup', 'prep', 'working']);
 
 export const setLogs = pgTable('set_logs', {
   id: serial('id').primaryKey(),
@@ -10,13 +12,14 @@ export const setLogs = pgTable('set_logs', {
   exerciseId: integer('exercise_id')
     .notNull()
     .references(() => exercises.id, { onDelete: 'restrict' }),
-  setNumber: integer('set_number').notNull(), // 1, 2, 3, ...
+  setNumber: integer('set_number').notNull(), // Overall set number: 1, 2, 3, ...
+  setType: setTypeEnum('set_type').notNull(), // warmup, prep, or working
+  setNumberWithinType: integer('set_number_within_type').notNull(), // 1st warmup, 2nd warmup, etc.
   reps: integer('reps').notNull(), // Actual reps performed
   weight: decimal('weight', { precision: 10, scale: 2 }), // Actual weight used (NULL for bodyweight)
   rpe: integer('rpe'), // Rate of Perceived Exertion (1-10 scale)
   restSeconds: integer('rest_seconds'), // Actual rest taken
   notes: text('notes'),
-  isWarmup: boolean('is_warmup').notNull().default(false), // Exclude from progressive overload calculations
   isFailure: boolean('is_failure').notNull().default(false), // Did the set go to failure?
   isPR: boolean('is_pr').notNull().default(false), // Personal record flag
   volume: decimal('volume', { precision: 12, scale: 2 }), // Calculated: reps × weight (for progressive overload)

@@ -310,14 +310,16 @@ describe('Workouts Routes', () => {
             {
               exerciseId: exercise1.id,
               orderIndex: 0,
-              sets: 3,
               reps: 10,
+              workingSetsCount: 3,
+              workingRestSeconds: 120,
             },
             {
               exerciseId: exercise2.id,
               orderIndex: 1,
-              sets: 4,
               reps: 12,
+              workingSetsCount: 4,
+              workingRestSeconds: 120,
             },
           ],
         },
@@ -525,8 +527,9 @@ describe('Workouts Routes', () => {
             {
               exerciseId: exercise1.id,
               orderIndex: 0,
-              sets: 3,
               reps: 10,
+              workingSetsCount: 3,
+              workingRestSeconds: 120,
             },
           ],
         },
@@ -583,6 +586,10 @@ describe('Workouts Routes', () => {
         workoutId: workout.id,
         exerciseId: exercise1.id,
         orderIndex: 0,
+        warmupSetsCount: 2,
+        warmupRestSeconds: 60,
+        workingSetsCount: 3,
+        workingRestSeconds: 120,
       });
 
       const response = await app.inject({

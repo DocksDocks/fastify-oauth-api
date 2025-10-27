@@ -25,6 +25,7 @@ import adminCollectionsRoutes from '@/routes/admin/collections';
 import { authorizedAdminsRoutes } from '@/routes/admin/authorized-admins';
 import { exercisesRoutes } from '@/modules/exercises/exercises.routes';
 import { workoutsRoutes } from '@/modules/workouts/workouts.routes';
+import { workoutSessionsRoutes } from '@/modules/workout-sessions/workout-sessions.routes';
 import { validateApiKey } from '@/middleware/api-key';
 import { decodeRequestToken, hasAnyRole } from '@/utils/jwt';
 
@@ -147,6 +148,9 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   // Workout routes (protected, RBAC, sharing)
   await app.register(workoutsRoutes, { prefix: '/api/workouts' });
 
+  // Workout session routes (protected)
+  await app.register(workoutSessionsRoutes, { prefix: '/api/sessions' });
+
   // Admin routes (admin only)
   await app.register(adminUserRoutes, { prefix: '/api/admin/users' });
   await app.register(adminApiKeysRoutes, { prefix: '/api/admin/api-keys' });
@@ -199,6 +203,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
         profile: '/api/profile',
         exercises: '/api/exercises',
         workouts: '/api/workouts',
+        sessions: '/api/sessions',
         admin: {
           users: '/api/admin/users',
           apiKeys: '/api/admin/api-keys',

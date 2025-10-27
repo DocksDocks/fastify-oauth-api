@@ -88,11 +88,15 @@ export async function createWorkoutExercise(
       workoutId: overrides.workoutId!,
       exerciseId: overrides.exerciseId!,
       orderIndex: overrides.orderIndex !== undefined ? overrides.orderIndex : 1,
-      sets: overrides.sets !== undefined ? overrides.sets : 3,
       reps: overrides.reps !== undefined ? overrides.reps : 10,
       weight: overrides.weight || null,
-      restSeconds: overrides.restSeconds !== undefined ? overrides.restSeconds : 60,
       notes: overrides.notes || null,
+      warmupSetsCount: overrides.warmupSetsCount !== undefined ? overrides.warmupSetsCount : 2,
+      warmupRestSeconds: overrides.warmupRestSeconds !== undefined ? overrides.warmupRestSeconds : 60,
+      prepSetsCount: overrides.prepSetsCount !== undefined ? overrides.prepSetsCount : 0,
+      prepRestSeconds: overrides.prepRestSeconds || null,
+      workingSetsCount: overrides.workingSetsCount !== undefined ? overrides.workingSetsCount : 3,
+      workingRestSeconds: overrides.workingRestSeconds !== undefined ? overrides.workingRestSeconds : 120,
       ...overrides,
     })
     .returning();

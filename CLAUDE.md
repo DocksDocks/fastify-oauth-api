@@ -53,6 +53,8 @@ fastify-oauth-api/
 │   ├── caddy/                   # Proxy-specific scripts (run, stop, log, exec, reload, remove)
 │   ├── system/                  # System-wide scripts (start-all, stop-all, restart-all, health-check, logs-all, remove-all, remove-volumes, setup-swap)
 │   └── start.sh                 # Quick start script
+├── scripts/                     # Utility scripts
+│   └── test-db/                 # Test database management (create, drop, reset, migrate, setup)
 ├── admin/                       # Admin panel (Vite + React)
 │   ├── src/
 │   │   ├── components/          # React components
@@ -120,7 +122,7 @@ fastify-oauth-api/
 │   │   └── response.ts          # Response formatters
 │   ├── app.ts                   # Fastify app factory
 │   └── server.ts                # Server entry point
-├── test/                        # Comprehensive test suite (410 tests, 100% coverage)
+├── test/                        # Comprehensive test suite (454 tests, 100% coverage)
 ├── keys/                        # OAuth private keys (gitignored)
 ├── docker-compose.yml           # Single orchestration file
 ├── .env.example                 # Environment template
@@ -196,7 +198,7 @@ fastify-oauth-api/
 - [x] Graceful shutdown
 
 **Testing:**
-- [x] Comprehensive test suite (410 tests)
+- [x] Comprehensive test suite (454 tests)
 - [x] 100% coverage (lines, functions, statements)
 - [x] Unit tests for all services
 - [x] Integration tests for all routes
@@ -209,6 +211,12 @@ fastify-oauth-api/
 - [ ] Swagger/OpenAPI documentation
 
 ## Development Workflow
+
+**Docker Usage Clarification:**
+- **Development**: Run on host machine (`npm run dev`) - enables hot reload and direct code access
+- **Services**: Run in Docker containers (PostgreSQL, Redis, Caddy via `docker-compose.yml`)
+- **Production**: Entire app runs in Docker container (built via `docker/server/server.Dockerfile`)
+- **Testing**: Run on host machine with Docker services available (`npm test`)
 
 **Essential Commands:**
 ```bash
@@ -240,6 +248,13 @@ npm run db:seed                  # Seed admin users
 # Testing
 npm test                         # Run tests with Vitest
 npm run test:coverage            # Coverage report
+
+# Test Database Management
+npm run test:db:setup            # Complete test DB setup (recommended)
+npm run test:db:create           # Create test database
+npm run test:db:drop             # Drop test database
+npm run test:db:reset            # Drop and recreate (clean slate)
+npm run test:db:migrate          # Apply migrations to test DB
 
 # Code Quality
 npm run lint                     # ESLint
@@ -710,11 +725,13 @@ Edit `src/config/collections.ts` to add/modify database tables visible in the ad
 - No 'version' field (deprecated in Docker Compose v2.39.4+)
 
 **Dockerfile Requirements:**
+- **Production builds only** - Development runs on host machine (`npm run dev`)
 - Multi-stage builds MANDATORY
 - Non-root user REQUIRED (nodejs:nodejs 1001:1001)
 - Health checks on ALL services
 - Pinned base images (node:22-alpine, postgres:15-alpine, NEVER :latest)
 - .dockerignore includes node_modules, .git, .env
+- NO development or testing stages (services needed, run on host)
 
 **Container Naming Convention:**
 - Use environment variables for container names
@@ -844,7 +861,7 @@ npm run docker:postgres:backup   # Backup database
 
 **Test Framework:**
 - Vitest 3.2.4 with V8 coverage provider
-- 410 comprehensive tests across 16 test files
+- 454 comprehensive tests across 17 test files
 - 100% coverage (lines, functions, statements) + 89% branches
 - Tests run automatically during Docker build
 
@@ -882,17 +899,72 @@ if (!match) {
 }
 ```
 
-**Database Automation:**
-- Test database (`fastify_oauth_db_test`) auto-created during Docker initialization
-- No manual setup required
-- Migrations run automatically via `test/helper/setup.ts`
+**Test Database Management:**
+- Test database: `fastify_oauth_db_test` (auto-created during Docker initialization)
+- Dedicated management scripts in `scripts/test-db/` directory
+- **Quick setup**: `npm run test:db:setup` (creates DB + runs migrations + verifies)
+- **Clean slate**: `npm run test:db:reset` (drops and recreates database)
+- Migrations run automatically via `test/helper/setup.ts` during test execution
 - Tables truncated between tests for isolation
+- All scripts use Docker exec (no manual psql commands needed)
 
-**Docker Build Integration:**
-- Tests run during multi-stage Docker build (Stage 3: Testing)
-- Build fails if any test fails or coverage drops below thresholds
-- Ensures production images only built from tested code
-- Run manually: `npm run test:coverage`
+**Test Database Scripts:**
+```bash
+npm run test:db:setup    # Complete setup (create + migrate + verify)
+npm run test:db:create   # Create test database with extensions
+npm run test:db:drop     # Drop test database (terminates connections)
+npm run test:db:reset    # Drop and recreate (clean slate)
+npm run test:db:migrate  # Apply migrations to test database
+```
+
+**Typical Workflow:**
+```bash
+# 1. Start PostgreSQL container
+npm run docker:postgres
+
+# 2. Setup test database (one-time or after schema changes)
+npm run test:db:setup
+
+# 3. Run tests
+npm test
+
+# 4. After migration changes
+npm run test:db:migrate
+```
+
+**Testing Workflow (Best Practice):**
+- Tests do **NOT** run during Docker build (no service dependencies available)
+- Docker build = compile/bundle code only
+- Tests = separate step with proper dependencies (PostgreSQL, Redis)
+
+**Local Testing:**
+```bash
+# 1. Start services
+npm run docker:postgres
+
+# 2. Setup test database (one-time or after schema changes)
+npm run test:db:setup
+
+# 3. Run tests
+npm test
+
+# 4. Build Docker image (after tests pass)
+docker build -t fastify-oauth-api .
+```
+
+**CI/CD Testing:**
+```bash
+# 1. Start services (docker-compose or CI services)
+# 2. Run tests with coverage: npm run test:coverage
+# 3. Build Docker image ONLY if tests pass
+# 4. Deploy image
+```
+
+**Why Tests Don't Run in Docker Build:**
+- Docker build stages are isolated (no PostgreSQL/Redis available)
+- Service dependencies required for tests to connect to database
+- Separating test + build follows industry best practices
+- Faster builds (tests run once in CI/CD, not per build)
 
 **Test Best Practices:**
 - Test factories for realistic data (`test/helper/factories.ts`)
@@ -1029,9 +1101,36 @@ docker compose logs api
 2. Check column names in collection config
 3. Ensure user has admin/superadmin role
 
+**Test database issues:**
+```bash
+# Test database doesn't exist
+npm run test:db:create
+
+# Migrations not applied to test DB
+npm run test:db:migrate
+
+# Schema out of sync (common after migrations)
+npm run test:db:reset
+npm run test:db:migrate
+
+# Complete reset (recommended for clean slate)
+npm run test:db:setup
+
+# Tests fail with "column does not exist"
+# Ensure migrations are applied to test database:
+npm run test:db:migrate
+```
+
+**Test failures after schema changes:**
+1. Apply migrations to test database: `npm run test:db:migrate`
+2. Or reset test database: `npm run test:db:reset && npm run test:db:migrate`
+3. Update test factories if schema changed (test/helper/factories.ts)
+4. Update test cases to use new schema fields
+
 **Scripts permission denied:**
 ```bash
 find scripts-docker -name "*.sh" -exec chmod +x {} \;
+find scripts -name "*.sh" -exec chmod +x {} \;
 ```
 
 **TypeScript path alias errors:**
@@ -1076,7 +1175,9 @@ Before deploying to production, verify (see Environment Variables section for de
 4. Start Docker stack: `npm run docker:start` or `bash scripts-docker/start.sh`
 5. Run migrations: `npm run db:migrate`
 6. Seed admin users: `npm run db:seed`
-7. Test endpoints: `curl http://localhost:3000/health`
+7. Setup test database: `npm run test:db:setup`
+8. Run tests: `npm test`
+9. Test endpoints: `curl http://localhost:3000/health`
 
 **For Raspberry Pi deployment, see [RASPBERRY_PI.md](./RASPBERRY_PI.md)**:
 - SWAP configuration for 4GB RAM (`scripts-docker/system/setup-swap.sh`)
@@ -1085,7 +1186,7 @@ Before deploying to production, verify (see Environment Variables section for de
 - Backup strategies
 
 **For comprehensive testing documentation, see [test/README.md](./test/README.md)**:
-- Test structure (410 tests)
+- Test structure (454 tests)
 - Running tests locally
 - Coverage reports
 - V8 ignore patterns
@@ -1109,4 +1210,4 @@ Before deploying to production, verify (see Environment Variables section for de
 
 **Last Updated:** October 2025
 **Maintainer:** Infrastructure Team
-**Version:** 9.0 (Production-Ready OAuth + RBAC + 100% Test Coverage)
+**Version:** 9.1 (Production-Ready OAuth + RBAC + 100% Test Coverage + Test DB Management)

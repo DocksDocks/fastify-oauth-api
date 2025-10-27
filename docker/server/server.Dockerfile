@@ -1,5 +1,37 @@
 ARG NODE_VERSION=22-alpine
 
+#==============================================================================
+# IMPORTANT: Development & Testing Strategy
+#==============================================================================
+# This Dockerfile is for PRODUCTION builds only.
+#
+# Development:
+#   - Run on host machine: npm run dev
+#   - Hot reload with tsx watch
+#   - Direct access to source code
+#   - Services run in Docker: postgres, redis
+#
+# Testing:
+#   - Tests do NOT run during Docker build (no service dependencies)
+#   - Run on host machine BEFORE building Docker image
+#   - Tests require PostgreSQL + Redis (via docker-compose)
+#
+# Workflow:
+#   Local Development:
+#     1. Start services: npm run docker:postgres
+#     2. Setup test DB: npm run test:db:setup
+#     3. Run tests: npm test
+#     4. Build production image: docker build ...
+#
+#   CI/CD Pipeline:
+#     1. Start services (docker-compose or CI services)
+#     2. Run tests with coverage
+#     3. Build Docker image ONLY if tests pass
+#
+# Test database management: npm run test:db:setup
+# See scripts/test-db/ for database management
+#==============================================================================
+
 #------------------------------------------------------------------------------
 # Stage 1: Dependencies
 #------------------------------------------------------------------------------
@@ -37,23 +69,7 @@ COPY src ./src
 RUN npm run build:prod
 
 #------------------------------------------------------------------------------
-# Stage 3: Testing & Coverage Validation
-#------------------------------------------------------------------------------
-FROM builder AS testing
-
-# Copy test files and configuration
-COPY test ./test
-COPY vitest.config.ts ./
-
-# Run full test suite with coverage
-# This ensures 100% coverage threshold is met before production build
-RUN npm run test:coverage
-
-# Display success message
-RUN echo "✓ All 410 tests passed with 100% coverage threshold"
-
-#------------------------------------------------------------------------------
-# Stage 4: Admin Panel Builder
+# Stage 3: Admin Panel Builder
 #------------------------------------------------------------------------------
 FROM node:${NODE_VERSION} AS admin-builder
 
@@ -73,7 +89,7 @@ COPY admin/ ./
 RUN npm run build
 
 #------------------------------------------------------------------------------
-# Stage 5: Production
+# Stage 4: Production
 #------------------------------------------------------------------------------
 FROM node:${NODE_VERSION} AS production
 
@@ -125,50 +141,3 @@ ENTRYPOINT ["dumb-init", "--"]
 
 # Start application
 CMD ["node", "dist/server.js"]
-
-#------------------------------------------------------------------------------
-# Stage 6: Development (optional)
-#------------------------------------------------------------------------------
-FROM node:${NODE_VERSION} AS development
-
-# Install tools for development
-RUN apk add --no-cache \
-    dumb-init \
-    wget \
-    curl \
-    bash
-
-WORKDIR /app
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 -G nodejs
-
-# Copy package files
-COPY --chown=nodejs:nodejs package.json package-lock.json* ./
-
-# Install all dependencies
-RUN npm ci && \
-    npm cache clean --force
-
-# Copy source code
-COPY --chown=nodejs:nodejs . .
-
-# Create keys directory
-RUN mkdir -p /app/keys && \
-    chown -R nodejs:nodejs /app/keys
-
-# Switch to non-root user
-USER nodejs
-
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=40s \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
-
-# Use dumb-init
-ENTRYPOINT ["dumb-init", "--"]
-
-# Development with hot reload
-CMD ["npm", "run", "dev"]

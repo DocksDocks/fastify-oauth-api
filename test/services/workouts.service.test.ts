@@ -107,15 +107,17 @@ describe('WorkoutsService', () => {
         workoutId: workout1.id,
         exerciseId: exercise1.id,
         orderIndex: 1,
-        sets: 4,
         reps: 8,
+        workingSetsCount: 4,
+        workingRestSeconds: 120,
       });
       await createWorkoutExercise({
         workoutId: workout1.id,
         exerciseId: exercise2.id,
         orderIndex: 2,
-        sets: 3,
         reps: 10,
+        workingSetsCount: 3,
+        workingRestSeconds: 120,
       });
 
       const workout2 = await createWorkout({ name: 'Pull Day', ownerId: user.id });
@@ -123,8 +125,9 @@ describe('WorkoutsService', () => {
         workoutId: workout2.id,
         exerciseId: exercise3.id,
         orderIndex: 1,
-        sets: 5,
         reps: 5,
+        workingSetsCount: 5,
+        workingRestSeconds: 180,
       });
 
       // List workouts - should trigger batch exercise loading with grouping
@@ -247,8 +250,8 @@ describe('WorkoutsService', () => {
           name: 'New Workout',
           description: 'Test workout',
           exercises: [
-            { exerciseId: exercise1.id, orderIndex: 1, sets: 3, reps: 10 },
-            { exerciseId: exercise2.id, orderIndex: 2, sets: 4, reps: 8 },
+            { exerciseId: exercise1.id, orderIndex: 1, reps: 10, workingSetsCount: 3, workingRestSeconds: 120 },
+            { exerciseId: exercise2.id, orderIndex: 2, reps: 8, workingSetsCount: 4, workingRestSeconds: 120 },
           ],
         },
         user.id
@@ -332,7 +335,7 @@ describe('WorkoutsService', () => {
 
       await workoutsService.addExercisesToWorkout(
         workout.id,
-        [{ exerciseId: exercise.id, orderIndex: 1, sets: 3, reps: 10 }],
+        [{ exerciseId: exercise.id, orderIndex: 1, reps: 10, workingSetsCount: 3, workingRestSeconds: 120 }],
         user.id
       );
 
@@ -349,7 +352,7 @@ describe('WorkoutsService', () => {
       await expect(
         workoutsService.addExercisesToWorkout(
           workout.id,
-          [{ exerciseId: exercise.id, orderIndex: 1, sets: 3, reps: 10 }],
+          [{ exerciseId: exercise.id, orderIndex: 1, reps: 10, workingSetsCount: 3, workingRestSeconds: 120 }],
           otherUser.id
         )
       ).rejects.toThrow(ForbiddenError);
@@ -373,7 +376,7 @@ describe('WorkoutsService', () => {
       await expect(
         workoutsService.addExercisesToWorkout(
           workoutB.id,
-          [{ exerciseId: privateExercise.id, orderIndex: 1 }],
+          [{ exerciseId: privateExercise.id, orderIndex: 1, workingSetsCount: 3, workingRestSeconds: 120 }],
           userB.id
         )
       ).rejects.toThrow(ForbiddenError);
@@ -396,7 +399,7 @@ describe('WorkoutsService', () => {
 
       await workoutsService.addExercisesToWorkout(
         workoutB.id,
-        [{ exerciseId: publicExercise.id, orderIndex: 1 }],
+        [{ exerciseId: publicExercise.id, orderIndex: 1, workingSetsCount: 3, workingRestSeconds: 120 }],
         userB.id
       );
 
@@ -419,7 +422,7 @@ describe('WorkoutsService', () => {
 
       await workoutsService.addExercisesToWorkout(
         workout.id,
-        [{ exerciseId: privateExercise.id, orderIndex: 1 }],
+        [{ exerciseId: privateExercise.id, orderIndex: 1, workingSetsCount: 3, workingRestSeconds: 120 }],
         user.id
       );
 
@@ -521,6 +524,176 @@ describe('WorkoutsService', () => {
       );
 
       expect(updated.permission).toBe('copy');
+    });
+  });
+
+  describe('set type validation', () => {
+    it('should throw BadRequestError when all set counts are 0', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workout.id,
+          [{
+            exerciseId: exercise.id,
+            orderIndex: 1,
+            warmupSetsCount: 0,
+            prepSetsCount: 0,
+            workingSetsCount: 0,
+          }],
+          user.id
+        )
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should throw BadRequestError when warmup rest time is provided but warmup sets count is 0', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workout.id,
+          [{
+            exerciseId: exercise.id,
+            orderIndex: 1,
+            warmupSetsCount: 0,
+            warmupRestSeconds: 60,
+            workingSetsCount: 3,
+            workingRestSeconds: 120,
+          }],
+          user.id
+        )
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should throw BadRequestError when set count exceeds maximum (10)', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workout.id,
+          [{
+            exerciseId: exercise.id,
+            orderIndex: 1,
+            workingSetsCount: 11,
+            workingRestSeconds: 120,
+          }],
+          user.id
+        )
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should throw BadRequestError when set count is negative', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workout.id,
+          [{
+            exerciseId: exercise.id,
+            orderIndex: 1,
+            workingSetsCount: -1,
+            workingRestSeconds: 120,
+          }],
+          user.id
+        )
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should throw BadRequestError when rest seconds exceed maximum (3600)', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workout.id,
+          [{
+            exerciseId: exercise.id,
+            orderIndex: 1,
+            workingSetsCount: 3,
+            workingRestSeconds: 3601,
+          }],
+          user.id
+        )
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should throw BadRequestError when rest seconds is negative', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await expect(
+        workoutsService.addExercisesToWorkout(
+          workout.id,
+          [{
+            exerciseId: exercise.id,
+            orderIndex: 1,
+            workingSetsCount: 3,
+            workingRestSeconds: -1,
+          }],
+          user.id
+        )
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('should allow valid set type configuration', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await workoutsService.addExercisesToWorkout(
+        workout.id,
+        [{
+          exerciseId: exercise.id,
+          orderIndex: 1,
+          warmupSetsCount: 2,
+          warmupRestSeconds: 60,
+          prepSetsCount: 1,
+          prepRestSeconds: 90,
+          workingSetsCount: 3,
+          workingRestSeconds: 120,
+        }],
+        user.id
+      );
+
+      const updated = await workoutsService.getWorkoutById(workout.id, user.id);
+      expect(updated.exercises).toHaveLength(1);
+      expect(updated.exercises[0].warmupSetsCount).toBe(2);
+      expect(updated.exercises[0].prepSetsCount).toBe(1);
+      expect(updated.exercises[0].workingSetsCount).toBe(3);
+    });
+
+    it('should allow null rest time when set count is 0', async () => {
+      const user = await createUser();
+      const workout = await createWorkout({ ownerId: user.id });
+      const exercise = await createExercise();
+
+      await workoutsService.addExercisesToWorkout(
+        workout.id,
+        [{
+          exerciseId: exercise.id,
+          orderIndex: 1,
+          warmupSetsCount: 0,
+          warmupRestSeconds: null,
+          prepSetsCount: 0,
+          prepRestSeconds: null,
+          workingSetsCount: 3,
+          workingRestSeconds: 120,
+        }],
+        user.id
+      );
+
+      const updated = await workoutsService.getWorkoutById(workout.id, user.id);
+      expect(updated.exercises).toHaveLength(1);
     });
   });
 

@@ -18,6 +18,14 @@ import type {
 } from './workouts.types';
 import { BadRequestError, NotFoundError, ForbiddenError } from '@/utils/errors';
 
+// Validation constants
+const MAX_WORKOUTS_PER_USER = 5;
+const MAX_EXERCISES_PER_WORKOUT = 8;
+const MIN_SETS_PER_TYPE = 0;
+const MAX_SETS_PER_TYPE = 10;
+const MIN_REST_SECONDS = 0;
+const MAX_REST_SECONDS = 3600; // 1 hour
+
 export class WorkoutsService {
   /**
    * Check if user can access a workout
@@ -238,12 +246,80 @@ export class WorkoutsService {
   }
 
   /**
+   * Validate set type configuration
+   */
+  private validateSetTypeConfig(exercise: CreateWorkoutExerciseBody): void {
+    const { warmupSetsCount = 0, warmupRestSeconds, prepSetsCount = 0, prepRestSeconds, workingSetsCount = 0, workingRestSeconds } = exercise;
+
+    // Validate set counts
+    if (warmupSetsCount < MIN_SETS_PER_TYPE || warmupSetsCount > MAX_SETS_PER_TYPE) {
+      throw new BadRequestError(`Warmup sets must be between ${MIN_SETS_PER_TYPE} and ${MAX_SETS_PER_TYPE}`);
+    }
+    if (prepSetsCount < MIN_SETS_PER_TYPE || prepSetsCount > MAX_SETS_PER_TYPE) {
+      throw new BadRequestError(`Prep sets must be between ${MIN_SETS_PER_TYPE} and ${MAX_SETS_PER_TYPE}`);
+    }
+    if (workingSetsCount < MIN_SETS_PER_TYPE || workingSetsCount > MAX_SETS_PER_TYPE) {
+      throw new BadRequestError(`Working sets must be between ${MIN_SETS_PER_TYPE} and ${MAX_SETS_PER_TYPE}`);
+    }
+
+    // Validate rest times
+    if (warmupSetsCount === 0 && warmupRestSeconds !== undefined && warmupRestSeconds !== null) {
+      throw new BadRequestError('Warmup rest seconds must be null when warmup sets count is 0');
+    }
+    if (warmupSetsCount > 0 && warmupRestSeconds !== undefined && warmupRestSeconds !== null) {
+      if (warmupRestSeconds < MIN_REST_SECONDS || warmupRestSeconds > MAX_REST_SECONDS) {
+        throw new BadRequestError(`Warmup rest seconds must be between ${MIN_REST_SECONDS} and ${MAX_REST_SECONDS}`);
+      }
+    }
+
+    if (prepSetsCount === 0 && prepRestSeconds !== undefined && prepRestSeconds !== null) {
+      throw new BadRequestError('Prep rest seconds must be null when prep sets count is 0');
+    }
+    if (prepSetsCount > 0 && prepRestSeconds !== undefined && prepRestSeconds !== null) {
+      if (prepRestSeconds < MIN_REST_SECONDS || prepRestSeconds > MAX_REST_SECONDS) {
+        throw new BadRequestError(`Prep rest seconds must be between ${MIN_REST_SECONDS} and ${MAX_REST_SECONDS}`);
+      }
+    }
+
+    if (workingSetsCount === 0 && workingRestSeconds !== undefined && workingRestSeconds !== null) {
+      throw new BadRequestError('Working rest seconds must be null when working sets count is 0');
+    }
+    if (workingSetsCount > 0 && workingRestSeconds !== undefined && workingRestSeconds !== null) {
+      if (workingRestSeconds < MIN_REST_SECONDS || workingRestSeconds > MAX_REST_SECONDS) {
+        throw new BadRequestError(`Working rest seconds must be between ${MIN_REST_SECONDS} and ${MAX_REST_SECONDS}`);
+      }
+    }
+
+    // Ensure at least one set type has sets
+    if (warmupSetsCount === 0 && prepSetsCount === 0 && workingSetsCount === 0) {
+      throw new BadRequestError('At least one set type must have a count greater than 0');
+    }
+  }
+
+  /**
+   * Check if user has reached the maximum workout limit
+   */
+  private async checkWorkoutLimit(userId: number): Promise<void> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(workouts)
+      .where(eq(workouts.ownerId, userId));
+
+    const count = result?.count || 0;
+    if (count >= MAX_WORKOUTS_PER_USER) {
+      throw new BadRequestError(`Maximum ${MAX_WORKOUTS_PER_USER} workouts per user allowed`);
+    }
+  }
+
+  /**
    * Create a new workout
    */
   async createWorkout(
     body: CreateWorkoutBody,
     ownerId: number
   ): Promise<WorkoutWithDetails> {
+    // Check workout limit
+    await this.checkWorkoutLimit(ownerId);
     // Create workout
     const [workout] = await db
       .insert(workouts)
@@ -452,6 +528,22 @@ export class WorkoutsService {
       throw new ForbiddenError('Only the workout owner can add exercises');
     }
 
+    // Check current exercise count
+    const [currentCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, workoutId));
+
+    const existingCount = currentCount?.count || 0;
+    if (existingCount + exercisesToAdd.length > MAX_EXERCISES_PER_WORKOUT) {
+      throw new BadRequestError(`Maximum ${MAX_EXERCISES_PER_WORKOUT} exercises per workout allowed`);
+    }
+
+    // Validate set type config for each exercise
+    for (const exercise of exercisesToAdd) {
+      this.validateSetTypeConfig(exercise);
+    }
+
     // Verify all exercise IDs exist and user has access to them
     const exerciseIds = exercisesToAdd.map(e => e.exerciseId);
     const existingExercises = await db
@@ -476,11 +568,15 @@ export class WorkoutsService {
         workoutId,
         exerciseId: e.exerciseId,
         orderIndex: e.orderIndex,
-        sets: e.sets || null,
         reps: e.reps || null,
         weight: e.weight || null,
-        restSeconds: e.restSeconds || null,
         notes: e.notes || null,
+        warmupSetsCount: e.warmupSetsCount ?? 0,
+        warmupRestSeconds: e.warmupRestSeconds || null,
+        prepSetsCount: e.prepSetsCount ?? 0,
+        prepRestSeconds: e.prepRestSeconds || null,
+        workingSetsCount: e.workingSetsCount ?? 0,
+        workingRestSeconds: e.workingRestSeconds || null,
       }))
     );
   }
