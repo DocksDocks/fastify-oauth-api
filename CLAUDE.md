@@ -28,15 +28,6 @@
 - Role hierarchy: user → coach → admin → superadmin
 - Global API key authentication for all routes
 
-**Admin Panel (Frontend):**
-- Vite 5.x + React 19
-- TypeScript with path aliases
-- shadcn/ui component library
-- TailwindCSS for styling
-- Zustand for state management
-- React Router for client-side routing
-- Axios with request/response interceptors
-
 ## Project Architecture
 
 ```
@@ -183,7 +174,7 @@ fastify-oauth-api/
 
 **Authorization (RBAC):**
 - [x] Role-based access control
-- [x] Three roles: user, admin, superadmin
+- [x] Four roles: user, coach, admin, superadmin
 - [x] Authorization middleware
 - [x] Role-based route protection
 
@@ -236,7 +227,9 @@ npm run docker:api:log           # API only
 npm run docker:postgres:log      # PostgreSQL only
 
 # Development (local machine, Docker for DB/Redis)
-npm run dev                      # Hot reload with tsx
+npm run dev                      # Start both API + Admin panel
+npm run dev:api                  # Start API only (backend)
+npm run dev:admin                # Start admin panel only (frontend)
 
 # Database
 npm run db:generate              # Generate migrations
@@ -305,34 +298,12 @@ npm run type-check               # TypeScript
 
 **Admin Panel Styling (Tailwind CSS v4):**
 - ALWAYS use theme color variables defined in `admin/src/index.css`
-- **Text Colors** - Use semantic text classes (Tailwind v4 shorthand):
-  - `text-text-primary` - Main headings and important content
-  - `text-text-secondary` - Subheadings and descriptions
-  - `text-text-tertiary` - Labels and subtle content
-  - `text-text-muted` - Placeholder and disabled text
-- **Borders**: Use `border-border` instead of generic colors
-- **Backgrounds**: Use `bg-primary`, `bg-secondary`, `bg-muted` with opacity modifiers (e.g., `bg-primary/20`)
-- NEVER use generic Tailwind colors like `text-foreground`, `text-gray-500`, `text-slate-600`
+- **Text Colors**: `text-text-primary` (headings), `text-text-secondary` (descriptions), `text-text-tertiary` (labels), `text-text-muted` (placeholders)
+- **Borders**: `border-border` (never generic colors like `border-gray-200`)
+- **Backgrounds**: `bg-primary`, `bg-secondary`, `bg-muted` with opacity modifiers (e.g., `bg-primary/20`)
+- NEVER use generic Tailwind colors: `text-foreground`, `text-gray-500`, `text-slate-600`
+- ALL text components MUST have explicit theme color classes
 - Theme colors automatically adapt to light/dark mode
-- **ALL text in components MUST use theme colors**: Dialog titles, descriptions, labels, inputs, buttons, alerts, cards, etc.
-- Example correct usage:
-  ```tsx
-  <DialogTitle className="text-text-primary">Title</DialogTitle>
-  <DialogDescription className="text-text-secondary">Description</DialogDescription>
-  <Label className="text-text-primary">Email</Label>
-  <Input className="text-text-primary" />
-  <p className="text-text-secondary">Subheading</p>
-  <div className="border-border bg-primary/5">Content</div>
-  ```
-- Example incorrect usage:
-  ```tsx
-  <DialogTitle>Title</DialogTitle>  // ❌ Missing text color
-  <Label>Email</Label>  // ❌ Missing text color
-  <p className="text-foreground">Main text</p>  // ❌ Wrong - use text-text-primary
-  <span className="text-gray-600">Secondary</span>  // ❌ Wrong - use text-text-secondary
-  <div className="border-gray-200">Content</div>  // ❌ Wrong - use border-border
-  <p className="text-(--color-text-primary)">Text</p>  // ❌ Old syntax - use text-text-primary
-  ```
 
 ## OAuth & JWT Authentication
 
@@ -348,17 +319,9 @@ npm run type-check               # TypeScript
 3. User authenticates with provider (redirect)
 4. Provider redirects to callback with authorization code
 5. Server exchanges code for user info (Google) or verifies ID token (Apple)
-6. Server creates or updates user in database
-7. Server checks if user email matches `ADMIN_EMAIL` → auto-promote to admin
-8. Server generates JWT access + refresh tokens
-9. Client stores tokens and uses access token for subsequent requests
-
-**Auto-Admin Promotion:**
-- Set `ADMIN_EMAIL=your-email@gmail.com` in `.env`
-- Set `ADMIN_EMAILS_ADDITIONAL=email1@gmail.com,email2@gmail.com` for multiple admins
-- When user signs in via OAuth, email is checked against these lists
-- If match found, user is automatically promoted to admin role
-- Also works for existing users (upgrades user → admin on next login)
+6. Server creates or updates user in database (with auto-promotion if email matches admin list)
+7. Server generates JWT access + refresh tokens
+8. Client stores tokens and uses access token for subsequent requests
 
 ### JWT Implementation
 
@@ -371,7 +334,7 @@ npm run type-check               # TypeScript
 interface JWTPayload {
   id: number;          // User ID
   email: string;       // User email
-  role: 'user' | 'admin' | 'superadmin';  // For RBAC
+  role: 'user' | 'coach' | 'admin' | 'superadmin';  // For RBAC
   iat?: number;        // Issued at
   exp?: number;        // Expires at
 }
@@ -401,19 +364,20 @@ interface JWTPayload {
 ### Role Hierarchy
 
 ```
-user → admin → superadmin
+user → coach → admin → superadmin
 ```
 
 **Permissions:**
 - **user**: Access own profile, use public endpoints
-- **admin**: All user permissions + manage other users, view stats
-- **superadmin**: All admin permissions + promote to superadmin, delete superadmins
+- **coach**: User permissions + view assigned users' profiles/data, manage training content and workouts, view analytics for assigned clients
+- **admin**: User and coach permissions + manage all users, view all stats, modify any user role
+- **superadmin**: All admin permissions + promote to superadmin, delete superadmins, system-wide control
 
 ### Database Schema
 
 ```typescript
 // src/db/schema/users.ts
-export const roleEnum = pgEnum('role', ['user', 'admin', 'superadmin']);
+export const roleEnum = pgEnum('role', ['user', 'coach', 'admin', 'superadmin']);
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -431,65 +395,73 @@ export const users = pgTable('users', {
 
 ### Authorization Middleware
 
-**`src/middleware/authorize.ts`** provides these middleware functions:
+**`src/middleware/authorize.ts`** provides role-based middleware:
 
-**`requireAdmin`** - Requires admin or superadmin role
+- **`requireAdmin`** - Requires admin or superadmin role
+- **`requireSuperadmin`** - Requires superadmin role only
+- **`requireRole(allowedRoles)`** - Requires one of specified roles
+- **`requireSelfOrAdmin(allowAdmin)`** - Requires user to be themselves or admin
+- **`optionalAuth`** - Attaches user if authenticated (doesn't require auth)
+
+**Example Usage:**
 ```typescript
 fastify.get('/api/admin/users', {
   preHandler: requireAdmin,
   handler: listUsers
 });
-```
 
-**`requireSuperadmin`** - Requires superadmin role only
-```typescript
-fastify.patch('/api/admin/promote-superadmin/:id', {
-  preHandler: requireSuperadmin,
-  handler: promoteSuperadmin
-});
-```
-
-**`requireRole(allowedRoles)`** - Requires one of specified roles
-```typescript
 fastify.get('/api/reports', {
-  preHandler: requireRole(['admin', 'superadmin']),
+  preHandler: requireRole(['coach', 'admin', 'superadmin']),
   handler: getReports
 });
 ```
 
-**`requireSelfOrAdmin(allowAdmin)`** - Requires user to be themselves or admin
-```typescript
-fastify.patch('/api/users/:id', {
-  preHandler: requireSelfOrAdmin(true),
-  handler: updateUser
-});
-```
+### Admin Setup & Seeding
 
-**`optionalAuth`** - Attaches user if authenticated, but doesn't require it
-```typescript
-fastify.get('/api/public-data', {
-  preHandler: optionalAuth,
-  handler: getPublicData  // request.user may or may not exist
-});
-```
+**Auto-Promotion (Recommended):**
+Users are automatically promoted to admin role during OAuth login if their email matches:
+- `ADMIN_EMAIL` - Primary admin email in `.env`
+- `ADMIN_EMAILS_ADDITIONAL` - Comma-separated list of additional admin emails
+- Implemented in `src/modules/auth/auth.service.ts` → `handleOAuthCallback()`
+- Works for new signups and existing users (upgrades on next login)
 
-### Admin Seeding
-
-**Manual Promotion:**
+**Manual Admin Promotion:**
+Promote existing users to admin role:
 ```bash
 npm run db:seed
 ```
+This script reads `ADMIN_EMAIL` and `ADMIN_EMAILS_ADDITIONAL` from `.env`, finds users by email, and updates their role to admin.
 
-This script:
-1. Reads `ADMIN_EMAIL` and `ADMIN_EMAILS_ADDITIONAL` from `.env`
-2. Finds users by email in database
-3. Updates role from `user` to `admin` if not already admin
-4. Logs results
+**Super Admin Initial Setup:**
+1. Set `SUPER_ADMIN_EMAIL` in `.env`:
+   ```bash
+   SUPER_ADMIN_EMAIL=your-email@gmail.com
+   ```
 
-**Auto-Promotion:**
-- Happens automatically on OAuth login
-- Implemented in `src/modules/auth/auth.service.ts` → `handleOAuthCallback()`
-- No manual script needed
+2. Run migrations and super admin seed:
+   ```bash
+   npm run db:migrate
+   npm run db:seed:superadmin
+   ```
+
+3. **Important:** Copy the 3 API keys displayed in console:
+   - `ios_api_key` - For iOS mobile app
+   - `android_api_key` - For Android mobile app
+   - `admin_panel_api_key` - For admin web interface
+
+4. Store `admin_panel_api_key` in `admin/.env`:
+   ```bash
+   echo "VITE_ADMIN_PANEL_API_KEY=<key>" > admin/.env
+   ```
+
+5. Login via Google OAuth to activate superadmin role:
+   - Navigate to `http://localhost:5173` (dev) or `/admin` (prod)
+   - Sign in with super admin email
+   - Automatically promoted to superadmin role
+
+**Additional Admins/Superadmins:**
+- Add emails to `ADMIN_EMAILS_ADDITIONAL` or `SUPER_ADMIN_EMAIL` (comma-separated)
+- Or promote via admin panel (future feature)
 
 ## Admin Panel
 
@@ -595,25 +567,6 @@ All API routes (except whitelisted paths) require `X-API-Key` header.
 - Keys stored in database with creator tracking
 - Soft delete (revokedAt timestamp)
 
-### Development Workflow
-
-**Start Both API + Admin:**
-```bash
-npm run dev
-```
-
-This runs:
-- Backend API on `http://localhost:3000`
-- Admin panel on `http://localhost:5173`
-- Vite proxy forwards `/api/*` requests to backend
-- Hot module replacement for instant feedback
-
-**Separate Commands:**
-```bash
-npm run dev:api      # Start API only
-npm run dev:admin    # Start admin only (in admin/ directory)
-```
-
 ### Production Deployment
 
 **Build Admin Panel:**
@@ -636,128 +589,82 @@ The Dockerfile includes a multi-stage build:
 - Development: `http://localhost:5173`
 - Production: `https://yourdomain.com/admin`
 
-### Super Admin Setup
-
-**Initial Setup:**
-1. Set `SUPER_ADMIN_EMAIL` in `.env`:
-   ```bash
-   SUPER_ADMIN_EMAIL=your-email@gmail.com
-   ```
-
-2. Run migrations:
-   ```bash
-   npm run db:migrate
-   ```
-
-3. Run super admin seed:
-   ```bash
-   npm run db:seed:superadmin
-   ```
-
-4. **Important:** Copy the 3 API keys displayed in console:
-   - `ios_api_key`
-   - `android_api_key`
-   - `admin_panel_api_key`
-
-5. Store `admin_panel_api_key` in `admin/.env`:
-   ```bash
-   echo "VITE_ADMIN_PANEL_API_KEY=<key>" > admin/.env
-   ```
-
-6. Login via Google OAuth:
-   - Navigate to `http://localhost:5173` (dev) or `/admin` (prod)
-   - Click "Continue with Google"
-   - Sign in with super admin email
-   - Automatically promoted to superadmin role
-
-**Additional Super Admins:**
-- First super admin can promote others via admin panel (future feature)
-- Or add more emails to `SUPER_ADMIN_EMAIL` (comma-separated)
-
 ### Collections Configuration
 
-**Manual Configuration:**
-Edit `src/config/collections.ts` to add/modify tables:
+**Configuration:**
+Edit `src/config/collections.ts` to add/modify database tables visible in the admin panel.
 
-```typescript
-export const collections: Collection[] = [
-  {
-    name: 'Users',          // Display name
-    table: 'users',         // Database table name
-    columns: [
-      {
-        name: 'id',         // Column name in DB
-        label: 'ID',        // Display label
-        type: 'number',     // Data type for formatting
-        sortable: true,     // Enable sorting
-        searchable: false,  // Exclude from search
-      },
-      {
-        name: 'email',
-        label: 'Email',
-        type: 'text',
-        sortable: true,
-        searchable: true,   // Include in search
-      },
-      // ... more columns
-    ],
-    defaultSort: {
-      column: 'createdAt',
-      order: 'desc',
-    },
-  },
-  // ... more collections
-];
-```
-
-**Column Types:**
-- `text`: Plain text
-- `number`: Numeric values
-- `boolean`: Yes/No with badge
-- `timestamp`: Formatted date/time
-- `json`: Syntax-highlighted JSON
+**Column Configuration:**
+- `name` - Database column name
+- `label` - Display label
+- `type` - Data type (`text`, `number`, `boolean`, `timestamp`, `json`)
+- `sortable` - Enable column sorting
+- `searchable` - Include in search queries
 
 **Security:**
 - Read-only access (no create/update/delete)
-- Manual configuration prevents accidental exposure
-- Admin/superadmin role required
+- Manual configuration required (prevents accidental exposure)
+- Requires admin/superadmin role
 
-### Environment Variables
+## Environment Variables
 
-**Backend (root `.env`):**
-```bash
-SUPER_ADMIN_EMAIL=your-email@gmail.com
-ADMIN_PANEL_API_KEY=<generated_key>
-IOS_API_KEY=<generated_key>
-ANDROID_API_KEY=<generated_key>
-```
+**Application:**
+- `NODE_ENV` - Environment (development/production)
+- `HOST_URL` - Application URL for OAuth redirects
+- `PORT` - Server port (default: 1337)
+- `HOST` - Server host (default: 0.0.0.0)
+
+**Database (PostgreSQL):**
+- `DATABASE_HOST` - Database host (localhost or postgres service name)
+- `DATABASE_PORT` - Database port (default: 5432)
+- `DATABASE_USER` - Database username
+- `DATABASE_PASSWORD` - Database password (min 16 chars for production)
+- `DATABASE_NAME` - Database name
+- `DATABASE_SSL` - Enable SSL (true for production if exposed)
+
+**Redis:**
+- `REDIS_HOST` - Redis host (localhost or redis service name)
+- `REDIS_PORT` - Redis port (default: 6379)
+- `REDIS_PASSWORD` - Redis password (required for production)
+- `REDIS_KEY_PREFIX` - Key prefix (default: fastify:)
+
+**Authentication:**
+- `JWT_SECRET` - JWT signing secret (min 32 chars random)
+- `JWT_ACCESS_TOKEN_EXPIRATION` - Access token lifetime (default: 15m)
+- `JWT_REFRESH_TOKEN_EXPIRATION` - Refresh token lifetime (default: 7d)
+- `SESSION_SECRET` - Session secret (min 32 chars random)
+
+**OAuth Providers:**
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `GOOGLE_REDIRECT_URI` - Google OAuth callback URL
+- `APPLE_CLIENT_ID` - Apple OAuth service ID
+- `APPLE_TEAM_ID` - Apple Developer Team ID
+- `APPLE_KEY_ID` - Apple Sign-In key ID
+- `APPLE_REDIRECT_URI` - Apple OAuth callback URL
+
+**Admin Setup:**
+- `ADMIN_EMAIL` - Primary admin email for auto-promotion
+- `ADMIN_EMAILS_ADDITIONAL` - Additional admin emails (comma-separated)
+- `SUPER_ADMIN_EMAIL` - Super admin email(s) for initial setup
+
+**API Keys (Generated via seed script):**
+- `IOS_API_KEY` - API key for iOS mobile app
+- `ANDROID_API_KEY` - API key for Android mobile app
+- `ADMIN_PANEL_API_KEY` - API key for admin web interface
 
 **Frontend (`admin/.env`):**
-```bash
-VITE_ADMIN_PANEL_API_KEY=<same_as_backend_ADMIN_PANEL_API_KEY>
-```
+- `VITE_ADMIN_PANEL_API_KEY` - Same as backend ADMIN_PANEL_API_KEY
 
-### Troubleshooting
+**Caddy (Reverse Proxy):**
+- `CADDY_DOMAIN` - Domain name (localhost for dev, real domain for prod)
+- `CADDY_EMAIL` - Email for Let's Encrypt certificates
+- `CADDY_ACME_CA` - ACME CA URL (staging for dev, production for prod)
 
-**"API key is required" error:**
-1. Ensure `VITE_ADMIN_PANEL_API_KEY` is set in `admin/.env`
-2. Rebuild admin panel: `npm run build:admin`
-3. Restart dev server: `npm run dev`
-
-**401 Unauthorized after login:**
-1. Check user role in database (must be admin or superadmin)
-2. Verify JWT_SECRET matches between requests
-3. Check browser localStorage for access_token
-
-**Collections not showing data:**
-1. Verify table name matches database exactly
-2. Check column names in collection config
-3. Ensure user has admin/superadmin role
-
-**OAuth redirect not working:**
-1. Check `GOOGLE_REDIRECT_URI` in backend `.env`
-2. Ensure redirect URI matches Google Cloud Console
-3. For development, use `http://localhost:3000/api/auth/google/callback`
+**Other:**
+- `LOG_PRETTY_PRINT` - Pretty print logs (true for dev, false for prod)
+- `CORS_ORIGIN` - CORS allowed origins (comma-separated, * for dev only)
+- `SWAGGER_ENABLED` - Enable Swagger docs (false or protect in production)
 
 ## API Endpoints Reference
 
@@ -827,43 +734,18 @@ VITE_ADMIN_PANEL_API_KEY=<same_as_backend_ADMIN_PANEL_API_KEY>
 - **Total: ~1.5GB RAM, ~3 CPUs**
 
 **Docker Database & Redis Access:**
-Both PostgreSQL and Redis run inside Docker containers and are accessible via:
 
-1. **Via npm scripts (recommended):**
-   ```bash
-   # PostgreSQL
-   npm run docker:postgres:exec     # Opens psql shell
-   npm run docker:postgres:backup   # Backup database
-   npm run docker:postgres:log      # View logs
+**Recommended (npm scripts):**
+```bash
+npm run docker:postgres:exec     # PostgreSQL psql shell
+npm run docker:redis:exec        # Redis CLI
+npm run docker:postgres:backup   # Backup database
+```
 
-   # Redis
-   npm run docker:redis:exec        # Opens redis-cli
-   npm run docker:redis:log         # View logs
-   ```
-
-2. **Via direct docker exec:**
-   ```bash
-   # PostgreSQL
-   docker exec -it fastify-oauth-postgres psql -U postgres -d fastify_oauth_db
-
-   # Redis
-   docker exec -it fastify-oauth-redis redis-cli
-   ```
-
-3. **Via localhost (when containers expose ports):**
-   ```bash
-   # PostgreSQL (default port 5432)
-   psql postgresql://postgres:password@localhost:5432/fastify_oauth_db
-
-   # Redis (default port 6379)
-   redis-cli -h localhost -p 6379
-   ```
-
-4. **From host machine to container network:**
-   - Containers communicate via service names (e.g., `postgres`, `redis`)
-   - Host machine uses `localhost` with exposed ports
-   - Inside Docker network: `postgresql://postgres:password@postgres:5432/fastify_oauth_db`
-   - From host: `postgresql://postgres:password@localhost:5432/fastify_oauth_db`
+**Alternative methods:**
+- Direct docker exec: `docker exec -it fastify-oauth-postgres psql -U postgres -d fastify_oauth_db`
+- Via localhost: `psql postgresql://postgres:password@localhost:5432/fastify_oauth_db`
+- Container network: Use service names (`postgres`, `redis`) instead of `localhost`
 
 ## Database Practices
 
@@ -913,7 +795,6 @@ Both PostgreSQL and Redis run inside Docker containers and are accessible via:
 - CORS restricted to known origins (production)
 - Helmet for security headers
 - HTTPS only in production (Caddy handles)
-- JWT tokens expire (15m access, 7d refresh)
 
 **Authentication:**
 - OAuth tokens validated server-side
@@ -1103,13 +984,7 @@ export default defineConfig({
 - Use indexes on foreign keys and email
 - Monitor slow query log
 
-**Container Resources:**
-- API: 512MB RAM, 1 CPU
-- PostgreSQL: 512MB RAM, 1 CPU
-- Redis: 256MB RAM, 0.5 CPU
-- Caddy: 256MB RAM, 0.5 CPU
-
-## Troubleshooting Quick Reference
+## Troubleshooting
 
 **Services won't start:**
 ```bash
@@ -1134,6 +1009,26 @@ curl http://localhost:3000/health
 docker compose logs api
 ```
 
+**"API key is required" error:**
+1. Ensure `VITE_ADMIN_PANEL_API_KEY` is set in `admin/.env`
+2. Rebuild admin panel: `npm run build:admin`
+3. Restart dev server: `npm run dev`
+
+**401 Unauthorized after login:**
+1. Check user role in database (must be admin or superadmin)
+2. Verify JWT_SECRET matches between requests
+3. Check browser localStorage for access_token
+
+**OAuth redirect not working:**
+1. Check `GOOGLE_REDIRECT_URI` in backend `.env`
+2. Ensure redirect URI matches Google Cloud Console
+3. For development, use `http://localhost:3000/api/auth/google/callback`
+
+**Collections not showing data:**
+1. Verify table name matches database exactly
+2. Check column names in collection config
+3. Ensure user has admin/superadmin role
+
 **Scripts permission denied:**
 ```bash
 find scripts-docker -name "*.sh" -exec chmod +x {} \;
@@ -1150,7 +1045,7 @@ npm run type-check
 
 ## Production Deployment Checklist
 
-Before deploying to production, verify:
+Before deploying to production, verify (see Environment Variables section for details):
 
 - [ ] `NODE_ENV=production` in .env
 - [ ] Strong `JWT_SECRET` (min 32 chars random)
