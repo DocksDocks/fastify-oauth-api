@@ -33,29 +33,7 @@ export async function exercisesRoutes(fastify: FastifyInstance): Promise<void> {
             onlyPublic: { type: 'boolean' },
           },
         },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'boolean' },
-              data: {
-                type: 'object',
-                properties: {
-                  exercises: { type: 'array' },
-                  pagination: {
-                    type: 'object',
-                    properties: {
-                      page: { type: 'integer' },
-                      limit: { type: 'integer' },
-                      total: { type: 'integer' },
-                      totalPages: { type: 'integer' },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+        // Remove response schema validation - let Fastify serialize naturally
       },
     },
     async (request, reply) => exercisesController.listExercises(request as any, reply)

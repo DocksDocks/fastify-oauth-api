@@ -18,6 +18,7 @@ import {
   getGoogleAuthUrlAdmin,
   getAppleAuthUrlAdmin,
   verifyGoogleIdToken,
+  getUserById,
 } from './auth.service';
 import {
   generateTokens,
@@ -529,12 +530,31 @@ export async function handleVerifyToken(
 
     const payload = await verifyToken(request.server, token);
 
+    // Fetch full user object from database
+    const user = await getUserById(payload.id);
+
+    if (!user) {
+      return reply.status(401).send({
+        success: false,
+        error: 'User not found',
+      });
+    }
+
     return reply.send({
       success: true,
       data: {
-        id: payload.id,
-        email: payload.email,
-        role: payload.role,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          role: user.role,
+          provider: user.provider,
+          providerId: user.providerId,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+          lastLoginAt: user.lastLoginAt?.toISOString() || null,
+        },
       },
     });
   } catch (error) {
