@@ -63,14 +63,84 @@ function isSuperAdminEmail(email: string): boolean {
 }
 
 /**
+ * Verify Google ID token from native SDK
+ * @param idToken - ID token from Google Sign-In SDK
+ */
+export async function verifyGoogleIdToken(idToken: string): Promise<OAuthProfile> {
+  try {
+    // Use web client ID for verification (same as what the SDK was configured with)
+    const oauth2Client = new OAuth2Client(env.GOOGLE_CLIENT_ID_ADMIN);
+
+    console.log('[Google ID Token] Verifying ID token');
+
+    // Verify the ID token
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken,
+      audience: env.GOOGLE_CLIENT_ID_ADMIN, // Web client ID
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+      throw new Error('Invalid ID token payload');
+    }
+
+    console.log('[Google ID Token] Token verified successfully');
+
+    return {
+      provider: 'google',
+      providerId: payload.sub,
+      email: payload.email!.toLowerCase(),
+      name: payload.name,
+      avatar: payload.picture,
+      emailVerified: payload.email_verified || false,
+    };
+  } catch (error) {
+    const err = error as Error;
+    throw {
+      provider: 'google',
+      message: `Google ID token verification failed: ${err.message}`,
+      code: 'GOOGLE_ID_TOKEN_ERROR',
+    } as OAuthError;
+  }
+}
+
+/**
  * Google OAuth: Exchange authorization code for user info
  * Works for both web and mobile flows
+ * @param platform - 'web' | 'ios' | 'android' - determines which OAuth client to use
  */
-export async function handleGoogleOAuth(code: string, redirectUri: string): Promise<OAuthProfile> {
+export async function handleGoogleOAuth(
+  code: string,
+  redirectUri: string,
+  platform: 'web' | 'ios' | 'android' = 'web'
+): Promise<OAuthProfile> {
   try {
+    // Select appropriate client ID based on platform
+    let clientId: string | undefined;
+    let clientSecret: string | undefined;
+
+    if (platform === 'web') {
+      clientId = env.GOOGLE_CLIENT_ID_ADMIN;
+      clientSecret = env.GOOGLE_CLIENT_SECRET_ADMIN;
+    } else if (platform === 'ios') {
+      clientId = env.GOOGLE_CLIENT_ID_IOS;
+      // iOS native apps don't use client secret
+    } else if (platform === 'android') {
+      clientId = env.GOOGLE_CLIENT_ID_ANDROID;
+      // Android native apps don't use client secret
+    }
+
+    console.log('[Google OAuth] Exchanging code with:', {
+      platform,
+      clientId,
+      redirectUri,
+      codeLength: code.length,
+    });
+
     const oauth2Client = new OAuth2Client(
-      env.GOOGLE_CLIENT_ID,
-      env.GOOGLE_CLIENT_SECRET,
+      clientId,
+      clientSecret,
       redirectUri,
     );
 
@@ -271,12 +341,14 @@ export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<U
 
 /**
  * Generate OAuth authorization URL for Google (Mobile - regular users)
+ * Note: Mobile apps using expo-auth-session generate their own OAuth URL
+ * This function is kept for reference/testing purposes
  */
 export function getGoogleAuthUrl(state?: string): string {
   const oauth2Client = new OAuth2Client(
-    env.GOOGLE_CLIENT_ID,
-    env.GOOGLE_CLIENT_SECRET,
-    env.GOOGLE_REDIRECT_URI_MOBILE,
+    env.GOOGLE_CLIENT_ID_IOS,
+    undefined, // iOS apps don't use client secret
+    env.GOOGLE_REDIRECT_URI_IOS,
   );
 
   const scopes = env.GOOGLE_SCOPES.split(' ');
@@ -296,8 +368,8 @@ export function getGoogleAuthUrl(state?: string): string {
  */
 export function getGoogleAuthUrlAdmin(state?: string): string {
   const oauth2Client = new OAuth2Client(
-    env.GOOGLE_CLIENT_ID,
-    env.GOOGLE_CLIENT_SECRET,
+    env.GOOGLE_CLIENT_ID_ADMIN,
+    env.GOOGLE_CLIENT_SECRET_ADMIN,
     env.GOOGLE_REDIRECT_URI_ADMIN,
   );
 

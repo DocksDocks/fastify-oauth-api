@@ -27,11 +27,17 @@ const envSchema = z.object({
   ADMIN_EMAILS_ADDITIONAL: z.string().optional().default(''),
   SUPER_ADMIN_EMAIL: z.string().email().optional(),
 
-  // Google OAuth
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_REDIRECT_URI_ADMIN: z.string().optional(), // Admin panel OAuth
-  GOOGLE_REDIRECT_URI_MOBILE: z.string().optional(), // Mobile app OAuth
+  // Google OAuth - Admin Panel (Web Application)
+  GOOGLE_CLIENT_ID_ADMIN: z.string(),
+  GOOGLE_CLIENT_SECRET_ADMIN: z.string(),
+  GOOGLE_REDIRECT_URI_ADMIN: z.string(),
+
+  // Google OAuth - Mobile Apps (iOS/Android)
+  GOOGLE_CLIENT_ID_IOS: z.string().optional(),
+  GOOGLE_REDIRECT_URI_IOS: z.string().optional(), // iOS URL scheme
+  GOOGLE_CLIENT_ID_ANDROID: z.string().optional(),
+  GOOGLE_REDIRECT_URI_ANDROID: z.string().optional(), // Android URL scheme
+
   GOOGLE_SCOPES: z.string().default('openid email profile'),
 
   // Apple OAuth

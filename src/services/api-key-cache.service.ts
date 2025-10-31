@@ -11,8 +11,10 @@ import { db } from '@/db/client';
 import { apiKeys } from '@/db/schema/api-keys';
 import { redis } from '@/utils/redis';
 import { logger } from '@/utils/logger';
+import env from '@/config/env';
 
-const CACHE_KEY_PREFIX = 'api_keys';
+// Build full cache key prefix (includes Redis global prefix)
+const CACHE_KEY_PREFIX = `${env.REDIS_KEY_PREFIX}api_keys`;
 const CACHE_TTL = 3600; // 1 hour
 
 interface CachedApiKey {
@@ -38,6 +40,37 @@ async function getAllActiveApiKeys(): Promise<CachedApiKey[]> {
 }
 
 /**
+ * Get all cache keys using SCAN
+ * When using keyPrefix in ioredis, we need to scan for the pattern WITH the prefix
+ * because scanStream applies the prefix automatically
+ */
+async function getAllCacheKeys(): Promise<string[]> {
+  const keys: string[] = [];
+  const stream = redis.scanStream({
+    match: `${CACHE_KEY_PREFIX}:*`,
+    count: 100,
+  });
+
+  return new Promise((resolve, reject) => {
+    stream.on('data', (resultKeys: string[]) => {
+      // resultKeys are returned WITHOUT the keyPrefix by scanStream
+      keys.push(...resultKeys);
+    });
+    stream.on('end', () => {
+      logger.debug({
+        keysFound: keys.length,
+        keys: keys
+      }, '[API Key Cache] SCAN completed');
+      resolve(keys);
+    });
+    stream.on('error', (err: Error) => {
+      logger.error({ err }, '[API Key Cache] SCAN error');
+      reject(err);
+    });
+  });
+}
+
+/**
  * Load all active API keys into Redis cache
  */
 export async function refreshApiKeyCache(): Promise<void> {
@@ -45,7 +78,7 @@ export async function refreshApiKeyCache(): Promise<void> {
     const keys = await getAllActiveApiKeys();
 
     // Clear existing cache
-    const existingKeys = await redis.keys(`${CACHE_KEY_PREFIX}:*`);
+    const existingKeys = await getAllCacheKeys();
     if (existingKeys.length > 0) {
       await redis.del(...existingKeys);
     }
@@ -54,10 +87,13 @@ export async function refreshApiKeyCache(): Promise<void> {
     for (const key of keys) {
       const cacheKey = `${CACHE_KEY_PREFIX}:${key.name}`;
       await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(key));
+      logger.debug({ cacheKey }, '[API Key Cache] Stored key in Redis');
     }
 
+    // Verify keys were stored
+    const verifyKeys = await getAllCacheKeys();
     logger.info(
-      { count: keys.length },
+      { count: keys.length, cachedCount: verifyKeys.length, keyNames: verifyKeys },
       `[API Key Cache] Refreshed ${keys.length} active API keys`,
     );
   } catch (error) {
@@ -70,15 +106,27 @@ export async function refreshApiKeyCache(): Promise<void> {
  * Validate API key against cached keys
  * Returns true if key is valid, false otherwise
  */
-export async function validateApiKey(providedKey: string): Promise<boolean> {
+export async function validateApiKey(providedKey: string, retried = false): Promise<boolean> {
   try {
-    // Get all cached keys
-    const cachedKeyNames = await redis.keys(`${CACHE_KEY_PREFIX}:*`);
+    // Get all cached keys using SCAN (works with keyPrefix)
+    const cachedKeyNames = await getAllCacheKeys();
+
+    logger.debug({
+      cachedKeyNamesCount: cachedKeyNames.length,
+      pattern: `${CACHE_KEY_PREFIX}:*`,
+      retried
+    }, '[API Key Cache] Searching for cached keys');
 
     if (cachedKeyNames.length === 0) {
+      if (retried) {
+        // Already tried refreshing once, fail to prevent infinite loop
+        logger.error('[API Key Cache] No keys found after refresh, validation failed');
+        return false;
+      }
+
       logger.warn('[API Key Cache] No keys in cache, refreshing...');
       await refreshApiKeyCache();
-      return validateApiKey(providedKey); // Retry after refresh
+      return validateApiKey(providedKey, true); // Retry once after refresh
     }
 
     // Check against each cached key

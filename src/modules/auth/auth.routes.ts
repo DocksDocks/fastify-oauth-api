@@ -24,6 +24,7 @@ import {
   handleLogout,
   handleVerifyToken,
   handleGoogleMobileAuth,
+  handleGoogleIdTokenAuth,
   handleAppleMobileAuth,
   handleGetSessions,
   handleRevokeSession,
@@ -343,15 +344,19 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   // Mobile OAuth Routes
   fastify.post('/google/mobile', {
     schema: {
-      description: 'Handle Google OAuth for mobile apps',
+      description: 'Handle Google OAuth for mobile apps (legacy code flow)',
       tags: ['auth', 'mobile'],
       body: {
         type: 'object',
-        required: ['code'],
+        required: ['code', 'redirectUri'],
         properties: {
           code: {
             type: 'string',
             description: 'Authorization code received from Google OAuth redirect',
+          },
+          redirectUri: {
+            type: 'string',
+            description: 'Redirect URI used to obtain the authorization code (must match)',
           },
         },
       },
@@ -388,6 +393,55 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       },
     },
     handler: handleGoogleMobileAuth,
+  });
+
+  fastify.post('/google/id-token', {
+    schema: {
+      description: 'Handle Google OAuth for mobile apps with ID token (native SDK)',
+      tags: ['auth', 'mobile'],
+      body: {
+        type: 'object',
+        required: ['idToken'],
+        properties: {
+          idToken: {
+            type: 'string',
+            description: 'ID token from Google Sign-In SDK',
+          },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    email: { type: 'string' },
+                    name: { type: 'string', nullable: true },
+                    avatar: { type: 'string', nullable: true },
+                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+                  },
+                },
+                tokens: {
+                  type: 'object',
+                  properties: {
+                    accessToken: { type: 'string' },
+                    refreshToken: { type: 'string' },
+                    expiresIn: { type: 'number' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: handleGoogleIdTokenAuth,
   });
 
   fastify.post('/apple/mobile', {

@@ -17,6 +17,7 @@ import {
   getAppleAuthUrl,
   getGoogleAuthUrlAdmin,
   getAppleAuthUrlAdmin,
+  verifyGoogleIdToken,
 } from './auth.service';
 import {
   generateTokens,
@@ -87,8 +88,10 @@ export async function handleGoogleCallback(
       return reply.redirect('/admin/auth/callback?error=missing_code');
     }
 
-    // Exchange code for user profile
-    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_MOBILE!);
+    // Exchange code for user profile (legacy callback - not used by mobile app)
+    // Mobile app now uses POST /api/auth/google/mobile instead
+    // This endpoint is only for web-based callbacks
+    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_ADMIN, 'web');
 
     // Create or update user
     const user = await handleOAuthCallback(profile);
@@ -279,8 +282,8 @@ export async function handleAdminGoogleCallback(
       return reply.redirect('/admin/auth/callback?error=missing_code');
     }
 
-    // Exchange code for user profile
-    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_ADMIN!);
+    // Exchange code for user profile (admin panel web flow)
+    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_ADMIN!, 'web');
 
     // Validate user is existing admin/superadmin (does NOT create users)
     const user = await handleAdminOAuthCallback(profile);
@@ -622,12 +625,12 @@ export async function handleRevokeSession(
  */
 export async function handleGoogleMobileAuth(
   request: FastifyRequest<{
-    Body: { code: string };
+    Body: { code: string; redirectUri: string };
   }>,
   reply: FastifyReply,
 ): Promise<void> {
   try {
-    const { code } = request.body;
+    const { code, redirectUri } = request.body;
 
     if (!code) {
       return reply.status(400).send({
@@ -636,8 +639,20 @@ export async function handleGoogleMobileAuth(
       });
     }
 
-    // Exchange code for user profile (same as web flow)
-    const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_MOBILE!);
+    if (!redirectUri) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Missing redirect URI',
+      });
+    }
+
+    // Log the redirect URI for debugging
+    console.log('[Google Mobile Auth] Using redirect URI:', redirectUri);
+
+    // Exchange code for user profile (mobile flow with webClientId)
+    // When webClientId is provided to expo-auth-session, Google expects web client for exchange
+    // Use the redirect URI provided by the client (must match what was used to obtain the code)
+    const profile = await handleGoogleOAuth(code, redirectUri, 'web');
 
     // Create or update user
     const user = await handleOAuthCallback(profile);
@@ -670,6 +685,75 @@ export async function handleGoogleMobileAuth(
     return reply.status(500).send({
       success: false,
       error: 'Google mobile authentication failed',
+    });
+  }
+}
+
+/**
+ * Handle Google OAuth with ID token for mobile apps (native SDK)
+ * POST /api/auth/google/id-token
+ * Body: { idToken: string }
+ *
+ * Native SDK flow:
+ * 1. App uses @react-native-google-signin/google-signin
+ * 2. SDK handles OAuth natively (no redirect)
+ * 3. SDK returns ID token
+ * 4. App sends ID token to this endpoint
+ * 5. Backend verifies ID token with Google
+ * 6. Backend returns JWT
+ */
+export async function handleGoogleIdTokenAuth(
+  request: FastifyRequest<{
+    Body: { idToken: string };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { idToken } = request.body;
+
+    if (!idToken) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Missing ID token',
+      });
+    }
+
+    console.log('[Google ID Token Auth] Verifying ID token');
+
+    // Verify ID token with Google
+    const profile = await verifyGoogleIdToken(idToken);
+
+    // Create or update user
+    const user = await handleOAuthCallback(profile);
+
+    // Generate JWT tokens
+    const tokens = await generateTokens(
+      request.server,
+      user,
+      request.ip,
+      request.headers['user-agent']
+    );
+
+    const response: LoginResponse = {
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          role: user.role,
+        },
+        tokens,
+      },
+    };
+
+    return reply.send(response);
+  } catch (error) {
+    request.log.error({ error }, 'Google ID token auth failed');
+    return reply.status(500).send({
+      success: false,
+      error: 'Google ID token authentication failed',
     });
   }
 }

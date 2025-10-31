@@ -9,12 +9,14 @@ import { env } from '@/config/env';
 import { logger } from '@/utils/logger';
 
 // Create Redis client instance
+// Note: keyPrefix removed because redis.keys() and scanStream() don't work properly with it
+// Prefix should be added manually to keys where needed
 export const redis = new Redis({
   host: env.REDIS_HOST,
   port: env.REDIS_PORT,
   password: env.REDIS_PASSWORD,
   db: env.REDIS_DB,
-  keyPrefix: env.REDIS_KEY_PREFIX,
+  // keyPrefix: env.REDIS_KEY_PREFIX, // Removed - add manually to keys instead
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
