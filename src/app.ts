@@ -76,7 +76,11 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
     },
   });
 
-  await app.register(fastifyCompress);
+  // Conditional compression: ngrok corrupts gzip responses in development
+  // Only enable compression in production where ngrok isn't used
+  if (isProduction) {
+    await app.register(fastifyCompress)
+  }
 
   await app.register(fastifyRateLimit, {
     max: Number(process.env.RATE_LIMIT_MAX) || 500,
