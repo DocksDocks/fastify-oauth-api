@@ -10,11 +10,10 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-// API base URL (Vite proxy handles /api in dev, production uses same origin)
-// Use relative /api when in production OR when accessed via ngrok (non-localhost)
-const isLocalhost = typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const BASE_URL = import.meta.env.PROD || !isLocalhost ? '/api' : 'http://localhost:1337/api';
+// API base URL - use VITE_API_URL from .env if available, otherwise fallback to relative /api
+const BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
 
 // API key (from env or localStorage)
 const API_KEY = import.meta.env.VITE_ADMIN_PANEL_API_KEY || localStorage.getItem('api_key') || '';

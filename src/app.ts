@@ -92,13 +92,18 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
     },
   });
 
+  // Parse CORS origins from comma-separated string
+  const corsOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+    : [];
+
   await app.register(fastifyCors, {
     origin: isProduction
-      ? process.env.CORS_ORIGIN || '*'
+      ? corsOrigins.length > 0 ? corsOrigins : '*'
       : [
           'http://localhost:5173', // Vite dev server
           'http://127.0.0.1:5173',
-          process.env.CORS_ORIGIN || '*',
+          ...corsOrigins,
         ],
     credentials: true,
   });
