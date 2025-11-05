@@ -2,13 +2,11 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { users } from '@/db/schema/users';
 import env from '@/config/env';
-import { seedExercises } from './exercises';
 
 /**
  * Database Seed Script
  *
  * Seeds the database with:
- * - System exercises (gym exercise library)
  * - Admin users (promotes users to admin role based on .env)
  *
  * Usage:
@@ -91,19 +89,9 @@ async function seedAdmins(): Promise<void> {
   }
 }
 
-// Run all seeds
-async function runSeeds(): Promise<void> {
-  console.log('\n' + '='.repeat(60));
-  console.log('🌱 FASTIFY OAUTH API - DATABASE SEEDING');
-  console.log('='.repeat(60) + '\n');
+// Run seed
+console.log('\n' + '='.repeat(60));
+console.log('🌱 FASTIFY OAUTH API - DATABASE SEEDING');
+console.log('='.repeat(60) + '\n');
 
-  // Seed exercises first (independent of users)
-  await seedExercises();
-
-  console.log('\n');
-
-  // Then seed admins (requires existing users from OAuth)
-  await seedAdmins();
-}
-
-runSeeds();
+seedAdmins();

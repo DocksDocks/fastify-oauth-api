@@ -20,7 +20,7 @@ import type { JWTPayload } from '@/modules/auth/auth.types';
  *   });
  */
 
-export type UserRole = 'user' | 'coach' | 'admin' | 'superadmin';
+export type UserRole = 'user' | 'admin' | 'superadmin';
 
 /**
  * Extended FastifyRequest with user information from JWT
@@ -33,7 +33,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
  * Role hierarchy for permission checks
  * Higher index = higher privilege
  */
-const ROLE_HIERARCHY: UserRole[] = ['user', 'coach', 'admin', 'superadmin'];
+const ROLE_HIERARCHY: UserRole[] = ['user', 'admin', 'superadmin'];
 
 /**
  * Check if a role has sufficient privileges

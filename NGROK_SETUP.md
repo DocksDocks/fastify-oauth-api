@@ -149,13 +149,13 @@ Open `.env` file and update these variables:
 # ==========================================
 # NGROK OAUTH CONFIGURATION
 # ==========================================
-# Set HOST_URL to your ngrok URL - all redirect URIs use this automatically!
-HOST_URL=https://abc123def456.ngrok-free.app
+# Set API_URL to your ngrok URL - all redirect URIs use this automatically!
+API_URL=https://abc123def456.ngrok-free.app
 
-# OAuth redirect URIs automatically use ${HOST_URL}:
-# GOOGLE_REDIRECT_URI=${HOST_URL}/api/auth/google/callback
-# APPLE_REDIRECT_URI=${HOST_URL}/api/auth/apple/callback
-# CORS_ORIGIN=http://localhost:3000,${HOST_URL}
+# OAuth redirect URIs automatically use ${API_URL}:
+# GOOGLE_REDIRECT_URI=${API_URL}/api/auth/google/callback
+# APPLE_REDIRECT_URI=${API_URL}/api/auth/apple/callback
+# CORS_ORIGIN=http://localhost:3000,${API_URL}
 
 # Apple OAuth credentials
 APPLE_CLIENT_ID=com.yourcompany.fastifyoauth.signin
@@ -167,7 +167,7 @@ APPLE_PRIVATE_KEY_PATH=./keys/apple-private-key.p8
 SUPER_ADMIN_EMAIL=youremail@gmail.com
 ```
 
-**💡 Pro Tip:** You only need to update `HOST_URL`! The redirect URIs automatically use `${HOST_URL}` variable interpolation, so changing one variable updates all OAuth configurations.
+**💡 Pro Tip:** You only need to update `API_URL`! The redirect URIs automatically use `${API_URL}` variable interpolation, so changing one variable updates all OAuth configurations.
 
 ### Step 2: Verify Admin Panel API Key
 
@@ -333,15 +333,15 @@ ngrok http 3000
 ```bash
 npm run ngrok:update
 # Enter your new ngrok URL when prompted
-# Script automatically updates HOST_URL and shows checklist
+# Script automatically updates API_URL and shows checklist
 ```
 
 **Option B: Manual update**
 ```bash
 # Open .env and update just ONE line:
-HOST_URL=https://xyz789new123.ngrok-free.app
+API_URL=https://xyz789new123.ngrok-free.app
 
-# That's it! The redirect URIs automatically update via ${HOST_URL}
+# That's it! The redirect URIs automatically update via ${API_URL}
 ```
 
 ### Step 5: Restart API
@@ -410,8 +410,8 @@ curl http://localhost:4040/api/tunnels
 
 ### Environment Variables to Update
 ```bash
-# Just update this ONE variable - everything else uses ${HOST_URL} interpolation!
-HOST_URL=https://YOUR-NGROK-URL
+# Just update this ONE variable - everything else uses ${API_URL} interpolation!
+API_URL=https://YOUR-NGROK-URL
 
 # Apple credentials (set once, don't change)
 APPLE_CLIENT_ID=com.yourcompany.yourapp.signin

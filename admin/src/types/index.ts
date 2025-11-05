@@ -25,7 +25,7 @@ export interface User {
   email: string;
   name: string | null;
   avatar: string | null;
-  role: 'user' | 'coach' | 'admin' | 'superadmin';
+  role: 'user' | 'admin' | 'superadmin';
   provider: string;
   providerId?: string;
   createdAt: string;

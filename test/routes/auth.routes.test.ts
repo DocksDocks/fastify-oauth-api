@@ -146,9 +146,9 @@ describe('Auth Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.id).toBe(user.id);
-      expect(body.data.email).toBe(user.email);
-      expect(body.data.role).toBe(user.role);
+      expect(body.data.user.id).toBe(user.id);
+      expect(body.data.user.email).toBe(user.email);
+      expect(body.data.user.role).toBe(user.role);
     });
 
     it('should fail with invalid access token', async () => {

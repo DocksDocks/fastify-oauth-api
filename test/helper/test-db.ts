@@ -27,24 +27,30 @@ export async function runMigrations(): Promise<void> {
 
 /**
  * Truncate all tables in test database
+ * Dynamically queries for all tables and truncates them
  */
 export async function truncateAllTables(): Promise<void> {
   try {
-    // Use raw client for TRUNCATE to avoid Drizzle ORM issues
-    await client`
-      TRUNCATE TABLE
-        notifications,
-        refresh_tokens,
-        set_logs,
-        workout_logs,
-        user_coaches,
-        workout_shares,
-        workout_exercises,
-        workouts,
-        exercises,
-        users
-      RESTART IDENTITY CASCADE
+    // Get all table names from the public schema (excluding Drizzle internal tables)
+    const tables = await client<Array<{ tablename: string }>>`
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
+        AND tablename NOT LIKE '__drizzle%'
     `;
+
+    if (tables.length === 0) {
+      return; // No tables to truncate
+    }
+
+    // Build comma-separated list of table names
+    const tableNames = tables.map((t) => t.tablename).join(', ');
+
+    // Truncate all tables in one command
+    await client.unsafe(`
+      TRUNCATE TABLE ${tableNames}
+      RESTART IDENTITY CASCADE
+    `);
   } catch (error) {
     console.error('Failed to truncate tables:', error);
     throw error;

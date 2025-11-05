@@ -31,8 +31,7 @@ describe('Collections Configuration', () => {
       const tableNames = collections.map((c) => c.table);
 
       expect(tableNames).toContain('users');
-      expect(tableNames).toContain('exercises');
-      expect(tableNames).toContain('workouts');
+      expect(tableNames).toContain('authorized_admins');
     });
 
     it('should exclude internal system tables', () => {
@@ -178,48 +177,6 @@ describe('Collections Configuration', () => {
         sortable: true,
       });
     });
-
-    it('should correctly configure exercises collection', () => {
-      const exercises = getCollectionByTable('exercises');
-
-      expect(exercises).toBeDefined();
-      expect(exercises?.name).toBe('Exercises');
-      expect(exercises?.table).toBe('exercises');
-
-      // Check specific columns
-      const nameColumn = exercises?.columns.find((c) => c.name === 'name');
-      expect(nameColumn).toMatchObject({
-        type: 'text',
-        searchable: true,
-        sortable: true,
-      });
-
-      const codeColumn = exercises?.columns.find((c) => c.name === 'code');
-      expect(codeColumn).toMatchObject({
-        type: 'text',
-        searchable: true,
-        sortable: true,
-      });
-
-      const isPublicColumn = exercises?.columns.find((c) => c.name === 'isPublic');
-      expect(isPublicColumn).toMatchObject({
-        type: 'boolean',
-        sortable: true,
-      });
-    });
-
-    it('should correctly configure workouts collection', () => {
-      const workouts = getCollectionByTable('workouts');
-
-      expect(workouts).toBeDefined();
-      expect(workouts?.name).toBe('Workouts');
-      expect(workouts?.table).toBe('workouts');
-
-      // Workouts should have ownerId foreign key (JavaScript property name)
-      const ownerIdColumn = workouts?.columns.find((c) => c.name === 'ownerId');
-      expect(ownerIdColumn).toBeDefined();
-      expect(ownerIdColumn?.type).toBe('number');
-    });
   });
 
   /**
@@ -279,8 +236,7 @@ describe('Collections Configuration', () => {
 
         // Should have main tables
         expect(tableMap).toHaveProperty('users');
-        expect(tableMap).toHaveProperty('exercises');
-        expect(tableMap).toHaveProperty('workouts');
+        expect(tableMap).toHaveProperty('authorized_admins');
       });
 
       it('should not include excluded tables in map', () => {

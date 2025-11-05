@@ -25,7 +25,7 @@
 - JWT with role-based access control (RBAC)
 - google-auth-library for Google OAuth
 - apple-signin-auth for Apple OAuth
-- Role hierarchy: user → coach → admin → superadmin
+- Role hierarchy: user → admin → superadmin
 - Global API key authentication for all routes
 
 ## Project Architecture
@@ -177,7 +177,7 @@ fastify-oauth-api/
 
 **Authorization (RBAC):**
 - [x] Role-based access control
-- [x] Four roles: user, coach, admin, superadmin
+- [x] Three roles: user, admin, superadmin
 - [x] Authorization middleware
 - [x] Role-based route protection
 
@@ -357,7 +357,7 @@ npm run type-check               # TypeScript
 interface JWTPayload {
   id: number;          // User ID
   email: string;       // User email
-  role: 'user' | 'coach' | 'admin' | 'superadmin';  // For RBAC
+  role: 'user' | 'admin' | 'superadmin';  // For RBAC
   iat?: number;        // Issued at
   exp?: number;        // Expires at
 }
@@ -387,20 +387,19 @@ interface JWTPayload {
 ### Role Hierarchy
 
 ```
-user → coach → admin → superadmin
+user → admin → superadmin
 ```
 
 **Permissions:**
 - **user**: Access own profile, use public endpoints
-- **coach**: User permissions + view assigned users' profiles/data, manage training content and workouts, view analytics for assigned clients
-- **admin**: User and coach permissions + manage all users, view all stats, modify any user role
+- **admin**: User permissions + manage all users, view all stats, modify any user role
 - **superadmin**: All admin permissions + promote to superadmin, delete superadmins, system-wide control
 
 ### Database Schema
 
 ```typescript
 // src/db/schema/users.ts
-export const roleEnum = pgEnum('role', ['user', 'coach', 'admin', 'superadmin']);
+export const roleEnum = pgEnum('role', ['user', 'admin', 'superadmin']);
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -433,9 +432,9 @@ fastify.get('/api/admin/users', {
   handler: listUsers
 });
 
-fastify.get('/api/reports', {
-  preHandler: requireRole(['coach', 'admin', 'superadmin']),
-  handler: getReports
+fastify.get('/api/admin/stats', {
+  preHandler: requireRole(['admin', 'superadmin']),
+  handler: getStats
 });
 ```
 
@@ -634,7 +633,7 @@ Edit `src/config/collections.ts` to add/modify database tables visible in the ad
 
 **Application:**
 - `NODE_ENV` - Environment (development/production)
-- `HOST_URL` - Application URL for OAuth redirects
+- `API_URL` - Application URL for OAuth redirects
 - `PORT` - Server port (default: 1337)
 - `HOST` - Server host (default: 0.0.0.0)
 

@@ -49,8 +49,6 @@ describe('App', () => {
       expect(body.endpoints).toHaveProperty('api');
       expect(body.endpoints).toHaveProperty('auth');
       expect(body.endpoints).toHaveProperty('profile');
-      expect(body.endpoints).toHaveProperty('exercises');
-      expect(body.endpoints).toHaveProperty('workouts');
       expect(body.endpoints).toHaveProperty('admin');
     });
 
@@ -77,7 +75,7 @@ describe('App', () => {
 
       const body = JSON.parse(response.body);
 
-      expect(body.name).toBe('Fastify OAuth API - Gym Workout Tracker + Admin Panel');
+      expect(body.name).toBe('Fastify OAuth API + Admin Panel');
     });
 
     it('should have version information', async () => {

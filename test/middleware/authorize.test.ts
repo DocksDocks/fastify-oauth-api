@@ -124,36 +124,6 @@ describe('Authorization Middleware', () => {
         },
       });
     });
-
-    it('should work with coach role', async () => {
-      const request = createMockRequest({
-        id: 1,
-        email: 'coach@test.com',
-        role: 'coach',
-      });
-      const reply = createMockReply();
-
-      const middleware = requireRole('coach');
-      await middleware(request, reply);
-
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
-    });
-
-    it('should allow admin to access coach routes (higher role)', async () => {
-      const request = createMockRequest({
-        id: 1,
-        email: 'admin@test.com',
-        role: 'admin',
-      });
-      const reply = createMockReply();
-
-      const middleware = requireRole('coach');
-      await middleware(request, reply);
-
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
-    });
   });
 
   describe('requireAdmin', () => {
@@ -203,19 +173,6 @@ describe('Authorization Middleware', () => {
           message: 'Access denied. Required role: admin',
         },
       });
-    });
-
-    it('should deny coach access', async () => {
-      const request = createMockRequest({
-        id: 1,
-        email: 'coach@test.com',
-        role: 'coach',
-      });
-      const reply = createMockReply();
-
-      await requireAdmin(request, reply);
-
-      expect((reply as any).statusCode).toBe(403);
     });
   });
 
@@ -347,30 +304,6 @@ describe('Authorization Middleware', () => {
       });
     });
 
-    it('should deny coach accessing other user data when allowAdmin is false', async () => {
-      const request = createMockRequest(
-        {
-          id: 5,
-          email: 'coach@test.com',
-          role: 'coach',
-        },
-        { id: '999' }
-      );
-      const reply = createMockReply();
-
-      const middleware = requireSelfOrAdmin(false);
-      await middleware(request, reply);
-
-      expect((reply as any).statusCode).toBe(403);
-      expect((reply as any).payload).toEqual({
-        success: false,
-        error: {
-          code: 'FORBIDDEN',
-          message: 'You can only access your own data',
-        },
-      });
-    });
-
     it('should deny unauthenticated request', async () => {
       const request = createMockRequest(undefined, { id: '123' });
       const reply = createMockReply();
@@ -439,22 +372,7 @@ describe('Authorization Middleware', () => {
       });
       const reply = createMockReply();
 
-      const middleware = requireAnyRole(['admin', 'coach']);
-      await middleware(request, reply);
-
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
-    });
-
-    it('should allow user with one of the allowed roles (coach)', async () => {
-      const request = createMockRequest({
-        id: 1,
-        email: 'coach@test.com',
-        role: 'coach',
-      });
-      const reply = createMockReply();
-
-      const middleware = requireAnyRole(['admin', 'coach']);
+      const middleware = requireAnyRole(['admin', 'superadmin']);
       await middleware(request, reply);
 
       expect((reply as any).statusCode).toBeUndefined();
@@ -469,7 +387,7 @@ describe('Authorization Middleware', () => {
       });
       const reply = createMockReply();
 
-      const middleware = requireAnyRole(['user', 'coach']);
+      const middleware = requireAnyRole(['user', 'admin']);
       await middleware(request, reply);
 
       expect((reply as any).statusCode).toBeUndefined();
@@ -484,7 +402,7 @@ describe('Authorization Middleware', () => {
       });
       const reply = createMockReply();
 
-      const middleware = requireAnyRole(['admin', 'coach']);
+      const middleware = requireAnyRole(['admin', 'superadmin']);
       await middleware(request, reply);
 
       expect((reply as any).statusCode).toBe(403);
@@ -492,10 +410,10 @@ describe('Authorization Middleware', () => {
         success: false,
         error: {
           code: 'FORBIDDEN',
-          message: 'Access denied. Required roles: admin, coach',
+          message: 'Access denied. Required roles: admin, superadmin',
           details: {
             userRole: 'user',
-            allowedRoles: ['admin', 'coach'],
+            allowedRoles: ['admin', 'superadmin'],
           },
         },
       });

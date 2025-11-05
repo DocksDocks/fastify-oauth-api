@@ -5,57 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1760978727400,
-      "tag": "0000_powerful_vulcan",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1760996684611,
-      "tag": "0001_long_charles_xavier",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1761000057788,
-      "tag": "0002_premium_kronos",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1761060271888,
-      "tag": "0003_sad_mikhail_rasputin",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1761157713340,
-      "tag": "0004_slim_adam_destine",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1761335141715,
-      "tag": "0005_outstanding_earthquake",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1761341044821,
-      "tag": "0006_melted_talkback",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1730054400000,
-      "tag": "0007_add_workout_session_tracking",
+      "when": 1762373695298,
+      "tag": "0000_gifted_phalanx",
       "breakpoints": true
     }
   ]

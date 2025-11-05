@@ -299,9 +299,21 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
             data: {
               type: 'object',
               properties: {
-                id: { type: 'number' },
-                email: { type: 'string' },
-                role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    email: { type: 'string' },
+                    name: { type: ['string', 'null'] },
+                    avatar: { type: ['string', 'null'] },
+                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+                    provider: { type: 'string' },
+                    providerId: { type: 'string' },
+                    createdAt: { type: 'string' },
+                    updatedAt: { type: 'string' },
+                    lastLoginAt: { type: ['string', 'null'] },
+                  },
+                },
               },
             },
           },
