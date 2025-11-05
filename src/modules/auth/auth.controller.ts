@@ -275,12 +275,12 @@ export async function handleAdminGoogleCallback(
     if (error) {
       request.log.warn({ error }, 'Admin Google OAuth error');
       // Redirect to frontend with error
-      return reply.redirect(`/admin/auth/callback?error=${encodeURIComponent(error)}`);
+      return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${encodeURIComponent(error)}`);
     }
 
     if (!code) {
       // Redirect to frontend with error
-      return reply.redirect('/admin/auth/callback?error=missing_code');
+      return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=missing_code`);
     }
 
     // Exchange code for user profile (admin panel web flow)
@@ -309,13 +309,13 @@ export async function handleAdminGoogleCallback(
       tokens,
     }));
 
-    return reply.redirect(`/admin/auth/callback#data=${tokenData}`);
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback#data=${tokenData}`);
   } catch (error) {
     request.log.error({ error }, 'Admin Google callback failed');
     const err = error as Error;
     // Use error message from handleAdminOAuthCallback for better UX
     const errorMsg = encodeURIComponent(err.message || 'authentication_failed');
-    return reply.redirect(`/admin/auth/callback?error=${errorMsg}`);
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${errorMsg}`);
   }
 }
 
@@ -377,12 +377,12 @@ export async function handleAdminAppleCallback(
     if (error) {
       request.log.warn({ error }, 'Admin Apple OAuth error');
       // Redirect to frontend with error
-      return reply.redirect(`/admin/auth/callback?error=${encodeURIComponent(error)}`);
+      return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${encodeURIComponent(error)}`);
     }
 
     if (!code || !id_token) {
       // Redirect to frontend with error
-      return reply.redirect('/admin/auth/callback?error=missing_parameters');
+      return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=missing_parameters`);
     }
 
     // Verify ID token and get user profile
@@ -411,13 +411,13 @@ export async function handleAdminAppleCallback(
       tokens,
     }));
 
-    return reply.redirect(`/admin/auth/callback#data=${tokenData}`);
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback#data=${tokenData}`);
   } catch (error) {
     request.log.error({ error }, 'Admin Apple callback failed');
     const err = error as Error;
     // Use error message from handleAdminOAuthCallback for better UX
     const errorMsg = encodeURIComponent(err.message || 'authentication_failed');
-    return reply.redirect(`/admin/auth/callback?error=${errorMsg}`);
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${errorMsg}`);
   }
 }
 

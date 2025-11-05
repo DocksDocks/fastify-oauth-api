@@ -12,7 +12,7 @@
     "dev:init": "bash scripts/dev-init.sh",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:admin\" --names \"API,ADMIN\" --prefix-colors \"cyan,magenta\" --kill-others",
     "dev:api": "dotenvx run -- tsx watch src/server.ts",
-    "dev:admin": "cd admin && npm run dev",
+    "dev:admin": "cd admin && npx dotenvx run --env-file=../.env -- npm run dev",
     "build": "npm run build:admin && tsc",
     "build:prod": "npm run build:admin && tsup",
     "build:admin": "cd admin && npm run build",
