@@ -135,7 +135,6 @@ fastify-oauth-api/
 ├── package.json                 # Dependencies
 ├── CLAUDE.md                    # This file
 ├── IMPLEMENTATION_GUIDE.md      # Setup and configuration guide
-├── RASPBERRY_PI.md              # RPi deployment guide
 └── README.md                    # Project overview
 ```
 
@@ -748,13 +747,6 @@ Edit `src/config/collections.ts` to add/modify database tables visible in the ad
 - Network: api-network (single custom network)
 - Volumes: fastify_oauth_postgres_data, fastify_oauth_redis_data, fastify_oauth_caddy_data
 
-**Resource Limits (Optimized for Raspberry Pi 4B):**
-- API: 512MB RAM, 1 CPU
-- PostgreSQL: 512MB RAM, 1 CPU
-- Redis: 256MB RAM, 0.5 CPU
-- Caddy: 256MB RAM, 0.5 CPU
-- **Total: ~1.5GB RAM, ~3 CPUs**
-
 **Docker Database & Redis Access:**
 
 **Recommended (npm scripts):**
@@ -1194,12 +1186,6 @@ Before deploying to production, verify (see Environment Variables section for de
 6. Seed superadmin: `npm run db:seed:superadmin`
 7. Setup test database: `npm run test:db:setup`
 8. Start development: `npm run dev`
-
-**For Raspberry Pi deployment, see [RASPBERRY_PI.md](./RASPBERRY_PI.md)**:
-- SWAP configuration for 4GB RAM (`scripts-docker/system/setup-swap.sh`)
-- Performance tuning
-- Resource monitoring
-- Backup strategies
 
 **For comprehensive testing documentation, see [test/README.md](./test/README.md)**:
 - Test structure (454 tests)
