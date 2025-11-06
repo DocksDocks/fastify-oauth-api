@@ -12,6 +12,7 @@ import { db } from '@/db/client';
 import { users, type User, authorizedAdmins } from '@/db/schema';
 import env from '@/config/env';
 import type { OAuthProfile, GoogleUserInfo, AppleIdTokenClaims, OAuthError } from './auth.types';
+import { cleanAvatarUrl } from '@/utils/avatar';
 
 /**
  * Get list of admin emails from environment
@@ -92,7 +93,7 @@ export async function verifyGoogleIdToken(idToken: string): Promise<OAuthProfile
       providerId: payload.sub,
       email: payload.email!.toLowerCase(),
       name: payload.name,
-      avatar: payload.picture,
+      avatar: cleanAvatarUrl(payload.picture),
       emailVerified: payload.email_verified || false,
     };
   } catch (error) {
@@ -166,7 +167,7 @@ export async function handleGoogleOAuth(
       providerId: userInfo.id,
       email: userInfo.email.toLowerCase(),
       name: userInfo.name,
-      avatar: userInfo.picture,
+      avatar: cleanAvatarUrl(userInfo.picture),
       emailVerified: userInfo.verified_email,
     };
   } catch (error) {

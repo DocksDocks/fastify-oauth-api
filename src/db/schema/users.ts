@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
 
 export const providerEnum = pgEnum('provider', ['google', 'apple', 'system']);
 export const roleEnum = pgEnum('role', ['user', 'admin', 'superadmin']);
@@ -7,7 +7,7 @@ export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }),
-  avatar: varchar('avatar', { length: 512 }),
+  avatar: text('avatar'),
   provider: providerEnum('provider').notNull(),
   providerId: varchar('provider_id', { length: 255 }).notNull(),
   role: roleEnum('role').notNull().default('user'),
