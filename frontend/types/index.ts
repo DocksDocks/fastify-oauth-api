@@ -51,6 +51,7 @@ export interface Collection {
   name: string;
   table: string;
   description?: string;
+  requiredRole?: 'admin' | 'superadmin';
 }
 
 export interface CollectionColumn {
@@ -59,6 +60,7 @@ export interface CollectionColumn {
   type: 'text' | 'number' | 'date' | 'timestamp' | 'boolean' | 'enum' | 'json';
   sortable?: boolean;
   searchable?: boolean;
+  enumValues?: string[];
 }
 
 export interface CollectionMeta extends Collection {

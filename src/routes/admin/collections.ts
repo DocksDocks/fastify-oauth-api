@@ -17,18 +17,34 @@ import {
 } from '@/config/collections';
 
 /**
+ * Check if user has required role for collection access
+ */
+function hasRequiredRole(userRole: string, requiredRole?: 'admin' | 'superadmin'): boolean {
+  if (!requiredRole) return true; // No role requirement
+  if (requiredRole === 'admin') return userRole === 'admin' || userRole === 'superadmin';
+  if (requiredRole === 'superadmin') return userRole === 'superadmin';
+  return false;
+}
+
+/**
  * List all available collections
  * GET /api/admin/collections
  */
 async function listCollections(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
+    const userRole = request.user?.role || 'user';
     const availableCollections = getAvailableCollections();
+
+    // Filter collections based on user role
+    const accessibleCollections = availableCollections.filter((collection) =>
+      hasRequiredRole(userRole, collection.requiredRole)
+    );
 
     return reply.send({
       success: true,
       data: {
-        collections: availableCollections,
-        total: availableCollections.length,
+        collections: accessibleCollections,
+        total: accessibleCollections.length,
       },
     });
   } catch (error) {
@@ -52,6 +68,7 @@ async function getCollectionMeta(
 ): Promise<void> {
   try {
     const { table } = request.params;
+    const userRole = request.user?.role || 'user';
 
     const collection = getCollectionByTable(table);
 
@@ -59,6 +76,14 @@ async function getCollectionMeta(
       return reply.status(404).send({
         success: false,
         error: `Collection '${table}' not found or not accessible`,
+      });
+    }
+
+    // Check if user has required role to access this collection
+    if (!hasRequiredRole(userRole, collection.requiredRole)) {
+      return reply.status(403).send({
+        success: false,
+        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
       });
     }
 
@@ -153,6 +178,7 @@ async function getCollectionData(
 ): Promise<void> {
   try {
     const { table } = request.params;
+    const userRole = request.user?.role || 'user';
     const {
       page = 1,
       limit: requestedLimit,
@@ -167,6 +193,14 @@ async function getCollectionData(
       return reply.status(404).send({
         success: false,
         error: `Collection '${table}' not found or not accessible`,
+      });
+    }
+
+    // Check if user has required role to access this collection
+    if (!hasRequiredRole(userRole, collection.requiredRole)) {
+      return reply.status(403).send({
+        success: false,
+        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
       });
     }
 
@@ -260,6 +294,7 @@ async function getCollectionRecord(
 ): Promise<void> {
   try {
     const { table, id } = request.params;
+    const userRole = request.user?.role || 'user';
 
     const collection = getCollectionByTable(table);
 
@@ -267,6 +302,14 @@ async function getCollectionRecord(
       return reply.status(404).send({
         success: false,
         error: `Collection '${table}' not found or not accessible`,
+      });
+    }
+
+    // Check if user has required role to access this collection
+    if (!hasRequiredRole(userRole, collection.requiredRole)) {
+      return reply.status(403).send({
+        success: false,
+        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
       });
     }
 
@@ -307,6 +350,240 @@ async function getCollectionRecord(
     return reply.status(500).send({
       success: false,
       error: 'Failed to get collection record',
+    });
+  }
+}
+
+/**
+ * Update a record in collection
+ * PATCH /api/admin/collections/:table/data/:id
+ */
+async function updateCollectionRecord(
+  request: FastifyRequest<{
+    Params: { table: string; id: number };
+    Body: Record<string, unknown>;
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { table, id } = request.params;
+    const userRole = request.user?.role || 'user';
+    const updates = request.body;
+
+    const collection = getCollectionByTable(table);
+
+    if (!collection) {
+      return reply.status(404).send({
+        success: false,
+        error: `Collection '${table}' not found or not accessible`,
+      });
+    }
+
+    // Check if user has required role to access this collection
+    if (!hasRequiredRole(userRole, collection.requiredRole)) {
+      return reply.status(403).send({
+        success: false,
+        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
+      });
+    }
+
+    // Get table schema from map
+    const tableMap = getTableMap();
+    const tableSchema = tableMap[table];
+    if (!tableSchema) {
+      return reply.status(500).send({
+        success: false,
+        error: `Table '${table}' not found in schema map`,
+      });
+    }
+
+    // RBAC: Check if user is trying to modify a superadmin record in users table
+    if (table === 'users' && userRole !== 'superadmin') {
+      // Fetch the existing record to check its role
+      const existingRecord = await db
+        .select()
+        .from(tableSchema)
+        .where(sql`id = ${id}`)
+        .limit(1);
+
+      if (existingRecord.length > 0) {
+        const recordRole = (existingRecord[0] as { role?: string }).role;
+        if (recordRole === 'superadmin') {
+          return reply.status(403).send({
+            success: false,
+            error: 'Only superadmins can modify superadmin users.',
+          });
+        }
+      }
+    }
+
+    // Filter out protected fields (id, createdAt, updatedAt)
+    const protectedFields = ['id', 'createdAt', 'updatedAt', 'created_at', 'updated_at'];
+    const filteredUpdates: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (!protectedFields.includes(key)) {
+        filteredUpdates[key] = value;
+      }
+    }
+
+    if (Object.keys(filteredUpdates).length === 0) {
+      return reply.status(400).send({
+        success: false,
+        error: 'No valid fields to update',
+      });
+    }
+
+    // RBAC: Prevent non-superadmin from setting role to superadmin in users table
+    if (table === 'users' && 'role' in filteredUpdates) {
+      const newRole = filteredUpdates.role as string;
+      if (newRole === 'superadmin' && userRole !== 'superadmin') {
+        return reply.status(403).send({
+          success: false,
+          error: 'Only superadmins can assign the superadmin role.',
+        });
+      }
+    }
+
+    // Add updatedAt timestamp
+    filteredUpdates.updatedAt = new Date();
+
+    // Build UPDATE query using raw SQL for dynamic fields
+    const setClauses = Object.entries(filteredUpdates)
+      .map(([key, value]) => {
+        // Find the database column name from collection config
+        const column = collection.columns.find((c) => c.name === key);
+        const dbColumnName = column?.dbColumnName || key;
+        return sql`${sql.identifier(dbColumnName)} = ${value}`;
+      });
+
+    const setClause = setClauses.reduce((acc, clause) => {
+      return acc ? sql`${acc}, ${clause}` : clause;
+    });
+
+    // Execute UPDATE query
+    await db.execute(
+      sql`UPDATE ${sql.identifier(table)} SET ${setClause} WHERE id = ${id}`
+    );
+
+    // Fetch updated record
+    const updatedData = await db
+      .select()
+      .from(tableSchema)
+      .where(sql`id = ${id}`)
+      .limit(1);
+
+    if (updatedData.length === 0) {
+      return reply.status(404).send({
+        success: false,
+        error: 'Record not found after update',
+      });
+    }
+
+    return reply.send({
+      success: true,
+      data: {
+        collection: collection.name,
+        table: collection.table,
+        record: updatedData[0],
+      },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to update collection record');
+    return reply.status(500).send({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update collection record',
+    });
+  }
+}
+
+/**
+ * Delete a record from collection
+ * DELETE /api/admin/collections/:table/data/:id
+ */
+async function deleteCollectionRecord(
+  request: FastifyRequest<{
+    Params: { table: string; id: number };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { table, id } = request.params;
+    const userRole = request.user?.role || 'user';
+
+    const collection = getCollectionByTable(table);
+
+    if (!collection) {
+      return reply.status(404).send({
+        success: false,
+        error: `Collection '${table}' not found or not accessible`,
+      });
+    }
+
+    // Check if user has required role to access this collection
+    if (!hasRequiredRole(userRole, collection.requiredRole)) {
+      return reply.status(403).send({
+        success: false,
+        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
+      });
+    }
+
+    // Get table schema from map
+    const tableMap = getTableMap();
+    const tableSchema = tableMap[table];
+    if (!tableSchema) {
+      return reply.status(500).send({
+        success: false,
+        error: `Table '${table}' not found in schema map`,
+      });
+    }
+
+    // Fetch record before deletion
+    const data = await db
+      .select()
+      .from(tableSchema)
+      .where(sql`id = ${id}`)
+      .limit(1);
+
+    if (data.length === 0) {
+      return reply.status(404).send({
+        success: false,
+        error: 'Record not found',
+      });
+    }
+
+    const deletedRecord = data[0];
+
+    // RBAC: Check if user is trying to delete a superadmin record in users table
+    if (table === 'users' && userRole !== 'superadmin') {
+      const recordRole = (deletedRecord as { role?: string }).role;
+      if (recordRole === 'superadmin') {
+        return reply.status(403).send({
+          success: false,
+          error: 'Only superadmins can delete superadmin users.',
+        });
+      }
+    }
+
+    // Execute DELETE query
+    await db.execute(
+      sql`DELETE FROM ${sql.identifier(table)} WHERE id = ${id}`
+    );
+
+    return reply.send({
+      success: true,
+      data: {
+        collection: collection.name,
+        table: collection.table,
+        record: deletedRecord,
+        message: 'Record deleted successfully',
+      },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to delete collection record');
+    return reply.status(500).send({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete collection record',
     });
   }
 }
@@ -404,5 +681,45 @@ export default async function collectionsRoutes(fastify: FastifyInstance): Promi
       },
     },
     handler: getCollectionRecord,
+  });
+
+  // Update a record
+  fastify.patch('/:table/data/:id', {
+    schema: {
+      description: 'Update a record in collection',
+      tags: ['admin', 'collections'],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['table', 'id'],
+        properties: {
+          table: { type: 'string' },
+          id: { type: 'number' },
+        },
+      },
+      body: {
+        type: 'object',
+        additionalProperties: true,
+      },
+    },
+    handler: updateCollectionRecord,
+  });
+
+  // Delete a record
+  fastify.delete('/:table/data/:id', {
+    schema: {
+      description: 'Delete a record from collection',
+      tags: ['admin', 'collections'],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['table', 'id'],
+        properties: {
+          table: { type: 'string' },
+          id: { type: 'number' },
+        },
+      },
+    },
+    handler: deleteCollectionRecord,
   });
 }

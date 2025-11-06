@@ -15,7 +15,7 @@ export interface OAuthProfile {
   providerId: string;
   email: string;
   name?: string;
-  avatar?: string;
+  avatar?: string | null;
   emailVerified?: boolean;
 }
 
@@ -78,7 +78,7 @@ export interface AppleUserInfo {
 export interface JWTPayload {
   id: number;
   email: string;
-  role: 'user' | 'coach' | 'admin' | 'superadmin';
+  role: 'user' | 'admin' | 'superadmin';
   jti?: string; // JWT ID (unique identifier for refresh tokens)
   iat?: number;
   exp?: number;
@@ -104,7 +104,7 @@ export interface LoginResponse {
       email: string;
       name: string | null;
       avatar: string | null;
-      role: 'user' | 'coach' | 'admin' | 'superadmin';
+      role: 'user' | 'admin' | 'superadmin';
     };
     tokens: TokenPair;
   };

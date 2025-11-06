@@ -16,15 +16,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { adminApi } from '@/lib/api';
 import type { Collection, CollectionMeta } from '@/types';
-import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown, Eye, Loader2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown, Eye, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { ViewContentModal } from '@/components/ViewContentModal';
+import { EditRecordModal } from '@/components/EditRecordModal';
+import { useAuthStore } from '@/store/auth';
 
 export default function CollectionsPage() {
   const params = useParams();
   const router = useRouter();
   const table = params?.table as string;
+  const { user } = useAuthStore();
 
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<CollectionMeta | null>(null);
@@ -49,6 +62,18 @@ export default function CollectionsPage() {
   const [modalContent, setModalContent] = useState('');
   const [modalTitle, setModalTitle] = useState('');
   const [modalType, setModalType] = useState('text');
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<Record<string, unknown> | null>(null);
+
+  // Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingRecord, setDeletingRecord] = useState<Record<string, unknown> | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Success/error messages
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const fetchCollections = useCallback(async () => {
     try {
@@ -170,6 +195,63 @@ export default function CollectionsPage() {
     setModalOpen(true);
   };
 
+  const handleEdit = (row: Record<string, unknown>) => {
+    setEditingRecord(row);
+    setEditModalOpen(true);
+  };
+
+  const handleDelete = (row: Record<string, unknown>) => {
+    setDeletingRecord(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleSaveEdit = async (updatedData: Record<string, unknown>) => {
+    if (!selectedCollection || !editingRecord) return;
+
+    try {
+      const id = editingRecord.id as number;
+      await adminApi.updateCollectionRecord(selectedCollection.table, id, updatedData);
+
+      // Refresh data
+      await fetchData(selectedCollection, false);
+
+      // Show success message
+      setSuccessMessage('Record updated successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+
+      setEditModalOpen(false);
+      setEditingRecord(null);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Failed to update record');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedCollection || !deletingRecord) return;
+
+    setIsDeleting(true);
+    try {
+      const id = deletingRecord.id as number;
+      await adminApi.deleteCollectionRecord(selectedCollection.table, id);
+
+      // Refresh data
+      await fetchData(selectedCollection, false);
+
+      // Show success message
+      setSuccessMessage('Record deleted successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+
+      setDeleteConfirmOpen(false);
+      setDeletingRecord(null);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Failed to delete record');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const formatValue = (value: unknown, type: string): string => {
     if (value === null || value === undefined) return '-';
 
@@ -207,7 +289,7 @@ export default function CollectionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full gap-4">
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -215,169 +297,219 @@ export default function CollectionsPage() {
         </Alert>
       )}
 
-      <div className="space-y-4">
-          {selectedCollection && (
-            <>
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{selectedCollection.name}</CardTitle>
-                      <CardDescription>
-                        {totalRecords} record{totalRecords !== 1 ? 's' : ''} found
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search..."
-                          className="pl-8 w-64"
-                          value={searchTerm}
-                          onChange={(e) => handleSearch(e.target.value)}
-                        />
-                      </div>
-                    </div>
+      {successMessage && (
+        <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
+          <AlertDescription className="text-green-800 dark:text-green-200">
+            {successMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {selectedCollection && (
+        <>
+          <Card className="flex flex-col flex-1 min-h-0">
+            <CardHeader className="flex-none">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{selectedCollection.name}</CardTitle>
+                  <CardDescription>
+                    {totalRecords} record{totalRecords !== 1 ? 's' : ''} found
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search..."
+                      className="pl-8 w-64"
+                      value={searchTerm}
+                      onChange={(e) => handleSearch(e.target.value)}
+                    />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="min-h-[600px] flex items-center justify-center">
-                    {loading || isPaginating ? (
-                      <div className="flex flex-col items-center gap-3">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        <p className="text-muted-foreground text-sm">
-                          {loading ? 'Loading collection...' : 'Loading data...'}
-                        </p>
-                      </div>
-                    ) : data.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No records found
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                        <TableHeader>
-                          <TableRow className="hover:shadow-md transition-shadow">
-                            {selectedCollection?.columns?.map((column, colIndex) => (
-                              <TableHead
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col min-h-0 p-0">
+              <div className="flex-1 overflow-auto">
+                {loading || isPaginating ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <p className="text-muted-foreground text-sm">
+                      {loading ? 'Loading collection...' : 'Loading data...'}
+                    </p>
+                  </div>
+                ) : data.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-center py-8 text-muted-foreground">
+                    No records found
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-background">
+                      <TableRow className="hover:shadow-md transition-shadow">
+                        {selectedCollection?.columns?.map((column, colIndex) => (
+                          <TableHead
+                            key={column.name}
+                            className={`${colIndex % 2 === 0 ? 'bg-primary/10' : 'bg-primary/5'}`}
+                          >
+                            <div className="flex items-center gap-1">
+                              <span className="font-semibold">{column.label}</span>
+                              {column.sortable && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => handleSort(column.name)}
+                                >
+                                  <ArrowUpDown
+                                    className={`h-3 w-3 ${
+                                      sortColumn === column.name
+                                        ? 'text-primary'
+                                        : 'text-muted-foreground'
+                                    }`}
+                                  />
+                                </Button>
+                              )}
+                            </div>
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.map((row, rowIndex) => (
+                        <TableRow key={rowIndex} className="hover:shadow-md transition-shadow">
+                          {selectedCollection?.columns?.map((column, colIndex) => {
+                            const value = row[column.name];
+                            const formattedValue = formatValue(value, column.type);
+                            const isFirstColumn = colIndex === 0;
+
+                            // RBAC: Check if current user can edit/delete this record
+                            const canModifyRecord = () => {
+                              // Only apply RBAC to users table
+                              if (selectedCollection.table !== 'users') return true;
+
+                              // Get the role of the record being viewed
+                              const recordRole = row.role as string;
+                              const currentUserRole = user?.role;
+
+                              // Superadmin can modify everything
+                              if (currentUserRole === 'superadmin') return true;
+
+                              // Non-superadmin cannot modify superadmin records
+                              if (recordRole === 'superadmin') return false;
+
+                              // Admin can modify user and admin records
+                              return true;
+                            };
+
+                            const canModify = canModifyRecord();
+
+                            return (
+                              <TableCell
                                 key={column.name}
                                 className={`${colIndex % 2 === 0 ? 'bg-primary/10' : 'bg-primary/5'}`}
                               >
-                                <div className="flex items-center gap-1">
-                                  <span className="font-semibold">{column.label}</span>
-                                  {column.sortable && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6"
-                                      onClick={() => handleSort(column.name)}
-                                    >
-                                      <ArrowUpDown
-                                        className={`h-3 w-3 ${
-                                          sortColumn === column.name
-                                            ? 'text-primary'
-                                            : 'text-muted-foreground'
-                                        }`}
-                                      />
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {data.map((row, rowIndex) => (
-                            <TableRow key={rowIndex} className="hover:shadow-md transition-shadow">
-                              {selectedCollection?.columns?.map((column, colIndex) => {
-                                const value = row[column.name];
-                                const formattedValue = formatValue(value, column.type);
-                                const isFirstColumn = colIndex === 0;
-
-                                return (
-                                  <TableCell
-                                    key={column.name}
-                                    className={`max-w-xs ${colIndex % 2 === 0 ? 'bg-primary/10' : 'bg-primary/5'}`}
-                                  >
-                                    {isFirstColumn ? (
-                                      <div className="flex items-center gap-2">
-                                        <span className="block truncate">
-                                          {formattedValue}
-                                        </span>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 shrink-0"
-                                          onClick={() => handleViewContent(row)}
-                                        >
-                                          <Eye className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    ) : column.name === 'role' ? (
-                                      <Badge variant="outline" className="capitalize">
-                                        {String(value ?? '')}
-                                      </Badge>
-                                    ) : column.type === 'boolean' ? (
-                                      <Badge variant={value ? 'default' : 'destructive'}>
-                                        {formattedValue}
-                                      </Badge>
-                                    ) : (
-                                      <span
-                                        className={`block truncate ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
-                                        title={formattedValue}
+                                {isFirstColumn ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="block truncate max-w-xs">
+                                      {formattedValue}
+                                    </span>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => handleViewContent(row)}
+                                        title="View details"
                                       >
-                                        {formattedValue}
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                );
-                              })}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                                        <Eye className="h-3 w-3" />
+                                      </Button>
+                                      {canModify && (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={() => handleEdit(row)}
+                                            title="Edit record"
+                                          >
+                                            <Pencil className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive"
+                                            onClick={() => handleDelete(row)}
+                                            title="Delete record"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : column.name === 'role' ? (
+                                  <Badge variant="outline" className="capitalize">
+                                    {String(value ?? '')}
+                                  </Badge>
+                                ) : column.type === 'boolean' ? (
+                                  <Badge variant={value ? 'default' : 'destructive'}>
+                                    {formattedValue}
+                                  </Badge>
+                                ) : (
+                                  <span
+                                    className={`block truncate max-w-xs ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
+                                    title={formattedValue}
+                                  >
+                                    {formattedValue}
+                                  </span>
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Page {page} of {totalPages}
-                    {isPaginating && (
-                      <span className="ml-2 text-xs">Loading...</span>
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setPage(page - 1)}
-                      disabled={page === 1 || isPaginating}
-                      className={isPaginating ? 'opacity-60 cursor-wait' : ''}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setPage(page + 1)}
-                      disabled={page === totalPages || isPaginating}
-                      className={isPaginating ? 'opacity-60 cursor-wait' : ''}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex-none flex items-center justify-between py-2">
+              <p className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+                {isPaginating && (
+                  <span className="ml-2 text-xs">Loading...</span>
+                )}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1 || isPaginating}
+                  className={isPaginating ? 'opacity-60 cursor-wait' : ''}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === totalPages || isPaginating}
+                  className={isPaginating ? 'opacity-60 cursor-wait' : ''}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
-      </div>
+        </>
+      )}
 
       {/* Modal for viewing full content */}
       <ViewContentModal
@@ -386,7 +518,57 @@ export default function CollectionsPage() {
         content={modalContent}
         title={modalTitle}
         type={modalType}
+        columns={selectedCollection?.columns}
       />
+
+      {/* Edit Record Modal */}
+      {editingRecord && selectedCollection && (
+        <EditRecordModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          record={editingRecord}
+          columns={selectedCollection.columns}
+          onSave={handleSaveEdit}
+          userRole={user?.role}
+          tableName={selectedCollection.table}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deletingRecord && (
+            <div className="p-3 bg-muted rounded-md">
+              <span className="text-sm font-mono">
+                ID: {String(deletingRecord.id ?? 'N/A')}
+              </span>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

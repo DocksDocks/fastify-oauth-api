@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <div className="flex h-screen bg-background">
       {/* Mobile Header with Hamburger - only show if sidebar should be visible */}
       {shouldShowSidebar && (
-        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-sidebar px-4 py-3 md:hidden shadow-md border-b border-sidebar-border">
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-sidebar px-2 py-1 md:hidden shadow-md border-b border-sidebar-border">
           <Button
             variant="ghost"
             size="icon"
@@ -64,7 +64,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile padding to account for fixed header - only if sidebar is visible */}
         {shouldShowSidebar && <div className="h-14 md:hidden" />}
-        <main className={`flex-1 overflow-y-auto ${shouldShowSidebar ? 'p-6' : ''} bg-background`}>
+        <main className={`flex-1 flex flex-col overflow-hidden ${shouldShowSidebar ? 'p-6' : ''} bg-background`}>
           {children}
         </main>
       </div>

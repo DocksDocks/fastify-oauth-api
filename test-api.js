@@ -72,7 +72,7 @@ async function main() {
     try {
       const result = JSON.parse(text);
       console.log(JSON.stringify(result, null, 2));
-    } catch (jsonError) {
+    } catch {
       console.log('Raw response (not valid JSON):');
       console.log(text);
     }

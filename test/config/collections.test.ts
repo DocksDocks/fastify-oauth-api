@@ -4,10 +4,7 @@ import {
   getCollectionByTable,
   getAvailableCollections,
   getTableMap,
-  type Collection,
-  type CollectionColumn,
 } from '@/config/collections';
-import * as schema from '@/db/schema';
 
 /**
  * Comprehensive test suite for collections configuration

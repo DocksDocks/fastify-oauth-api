@@ -336,6 +336,10 @@ export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<U
       })
       .returning();
 
+    if (!user) {
+      throw new Error('Failed to create user');
+    }
+
     console.log(`[Admin OAuth] Created new admin user: ${email} (${provider}) with role: ${assignedRole}`);
     return user;
   }

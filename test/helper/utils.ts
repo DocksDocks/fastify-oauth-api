@@ -77,7 +77,7 @@ export async function waitFor(
 export function parseJsonResponse<T = any>(response: string): T {
   try {
     return JSON.parse(response);
-  } catch (error) {
+  } catch {
     throw new Error(`Failed to parse JSON response: ${response}`);
   }
 }

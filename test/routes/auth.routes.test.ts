@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { buildTestApp } from '../helper/app-helper';
 import { createUser } from '../helper/factories';
-import { generateTestToken } from '../helper/factories';
 import type { FastifyInstance } from 'fastify';
 import type { User } from '@/db/schema/users';
 import { generateTokens } from '@/modules/auth/jwt.service';

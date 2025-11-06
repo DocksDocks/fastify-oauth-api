@@ -16,6 +16,7 @@ export interface CollectionColumn {
   type: 'text' | 'number' | 'date' | 'timestamp' | 'boolean' | 'enum' | 'json';
   sortable?: boolean;
   searchable?: boolean;
+  enumValues?: string[]; // Available values for enum fields
 }
 
 export interface Collection {
@@ -25,6 +26,7 @@ export interface Collection {
   columns: CollectionColumn[];
   defaultSort?: { column: string; order: 'asc' | 'desc' };
   defaultLimit?: number;
+  requiredRole?: 'admin' | 'superadmin'; // Minimum role required to access this collection
 }
 
 /**
@@ -108,14 +110,13 @@ function mapColumnType(column: PgColumn): CollectionColumn['type'] {
     return 'text';
   }
 
-  // Timestamp with timezone
-  /* v8 ignore next 3 - Unreachable: Drizzle columnType returns 'timestamp' not 'timestamp with timezone' */
-  if (columnType.includes('timestamp') && columnType.includes('timezone')) {
+  // Timestamp (includes both with and without timezone)
+  if (columnType.includes('timestamp')) {
     return 'timestamp';
   }
 
-  // Date or timestamp without timezone
-  if (columnType.includes('timestamp') || columnType.includes('date')) {
+  // Date only (without time)
+  if (columnType.includes('date')) {
     return 'date';
   }
 
@@ -190,9 +191,11 @@ function generateCollection(table: PgTable, tableName: string): Collection {
   // Generate column configurations
   const collectionColumns: CollectionColumn[] = columnEntries
     .map(([columnName, column]) => {
-      const type = mapColumnType(column as PgColumn);
-      const dbColName = (column as PgColumn).name; // Database column name (snake_case)
-      return {
+      const pgColumn = column as PgColumn;
+      const type = mapColumnType(pgColumn);
+      const dbColName = pgColumn.name; // Database column name (snake_case)
+
+      const columnConfig: CollectionColumnWithPriority = {
         name: columnName, // JavaScript property name (camelCase - matches Drizzle ORM output)
         dbColumnName: dbColName, // Database column name (snake_case - for SQL queries)
         label: toTitleCase(dbColName), // Better formatting: "Created At" instead of "Createdat"
@@ -200,7 +203,14 @@ function generateCollection(table: PgTable, tableName: string): Collection {
         sortable: isSortable(),
         searchable: isSearchable(dbColName, type),
         _priority: getColumnPriority(dbColName), // Temporary field for sorting
-      } as CollectionColumnWithPriority;
+      };
+
+      // Add enum values if this is an enum column
+      if (type === 'enum' && pgColumn.enumValues && pgColumn.enumValues.length > 0) {
+        columnConfig.enumValues = [...pgColumn.enumValues];
+      }
+
+      return columnConfig;
     })
     // Sort by priority
     .sort((a, b) => a._priority - b._priority)
@@ -277,6 +287,11 @@ function getSchemaTableMap(): Record<string, PgTable> {
 }
 
 /**
+ * Tables that require superadmin role to access
+ */
+const SUPERADMIN_ONLY_TABLES = new Set(['authorized_admins']);
+
+/**
  * Generate all collections from schema
  */
 function generateCollections(): Collection[] {
@@ -285,6 +300,12 @@ function generateCollections(): Collection[] {
 
   for (const [tableName, table] of Object.entries(tableMap)) {
     const collection = generateCollection(table, tableName);
+
+    // Set required role for sensitive tables
+    if (SUPERADMIN_ONLY_TABLES.has(tableName)) {
+      collection.requiredRole = 'superadmin';
+    }
+
     collectionsList.push(collection);
   }
 
@@ -307,11 +328,12 @@ export function getCollectionByTable(table: string): Collection | undefined {
 /**
  * Get list of all available collection names
  */
-export function getAvailableCollections(): { name: string; table: string; description?: string }[] {
+export function getAvailableCollections(): { name: string; table: string; description?: string; requiredRole?: 'admin' | 'superadmin' }[] {
   return collections.map((c) => ({
     name: c.name,
     table: c.table,
     description: c.description,
+    requiredRole: c.requiredRole,
   }));
 }
 

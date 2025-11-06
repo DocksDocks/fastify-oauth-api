@@ -91,7 +91,9 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   await app.register(fastifyCors, {
     origin: isProduction
-      ? [env.API_URL, env.ADMIN_PANEL_URL, process.env.CORS_ORIGIN].filter(Boolean)
+      ? [env.API_URL, env.ADMIN_PANEL_URL, process.env.CORS_ORIGIN].filter(
+          (origin): origin is string => Boolean(origin),
+        )
       : [
           'http://localhost:5173', // Vite dev server
           'http://127.0.0.1:5173',
@@ -100,7 +102,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           env.API_URL,
           env.ADMIN_PANEL_URL,
           process.env.CORS_ORIGIN,
-        ].filter(Boolean),
+        ].filter((origin): origin is string => Boolean(origin)),
     credentials: true,
   });
 

@@ -217,6 +217,10 @@ export const adminApi = {
   ) => api.get(`/admin/collections/${table}/data`, {
     params: { page, limit, search, sortBy, sortOrder },
   }),
+  updateCollectionRecord: (table: string, id: number, data: Record<string, unknown>) =>
+    api.patch(`/admin/collections/${table}/data/${id}`, data),
+  deleteCollectionRecord: (table: string, id: number) =>
+    api.delete(`/admin/collections/${table}/data/${id}`),
 
   // Authorized Admins (superadmin only)
   getAuthorizedAdmins: () => api.get('/admin/authorized-admins'),
