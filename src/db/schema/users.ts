@@ -8,8 +8,9 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }),
   avatar: text('avatar'),
-  provider: providerEnum('provider').notNull(),
-  providerId: varchar('provider_id', { length: 255 }).notNull(),
+  provider: providerEnum('provider').notNull(), // Legacy field (kept for backward compatibility)
+  providerId: varchar('provider_id', { length: 255 }).notNull(), // Legacy field (kept for backward compatibility)
+  primaryProvider: providerEnum('primary_provider'), // Primary OAuth provider for this user
   role: roleEnum('role').notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

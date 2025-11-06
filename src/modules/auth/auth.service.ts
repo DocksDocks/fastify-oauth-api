@@ -8,11 +8,24 @@
 import { eq } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 import AppleSignIn from 'apple-signin-auth';
+import crypto from 'crypto';
 import { db } from '@/db/client';
 import { users, type User, authorizedAdmins } from '@/db/schema';
 import env from '@/config/env';
-import type { OAuthProfile, GoogleUserInfo, AppleIdTokenClaims, OAuthError } from './auth.types';
+import type {
+  OAuthProfile,
+  GoogleUserInfo,
+  AppleIdTokenClaims,
+  OAuthError,
+  AccountLinkingRequest,
+  OAuthProvider,
+} from './auth.types';
 import { cleanAvatarUrl } from '@/utils/avatar';
+import {
+  getProviderAccount,
+  createProviderAccount,
+  getUserProviderAccounts,
+} from './provider-accounts.service';
 
 /**
  * Get list of admin emails from environment
@@ -232,71 +245,230 @@ export async function handleAppleOAuth(
 }
 
 /**
- * Handle OAuth callback: Create or update user, assign role
+ * Temporary storage for linking tokens (in-memory, expires after 10 minutes)
+ * In production, use Redis for distributed systems
  */
-export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> {
+const linkingTokenStore = new Map<
+  string,
+  { profile: OAuthProfile; userId: number; expiresAt: number }
+>();
+
+/**
+ * Generate a temporary linking token for account confirmation
+ */
+function generateLinkingToken(profile: OAuthProfile, userId: number): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  linkingTokenStore.set(token, { profile, userId, expiresAt });
+
+  // Cleanup expired tokens
+  for (const [key, value] of linkingTokenStore.entries()) {
+    if (value.expiresAt < Date.now()) {
+      linkingTokenStore.delete(key);
+    }
+  }
+
+  return token;
+}
+
+/**
+ * Retrieve and validate a linking token
+ */
+export function consumeLinkingToken(token: string): {
+  profile: OAuthProfile;
+  userId: number;
+} | null {
+  const data = linkingTokenStore.get(token);
+
+  if (!data || data.expiresAt < Date.now()) {
+    linkingTokenStore.delete(token);
+    return null;
+  }
+
+  linkingTokenStore.delete(token); // One-time use
+  return { profile: data.profile, userId: data.userId };
+}
+
+/**
+ * Handle OAuth callback: Multi-provider support with account linking
+ * Returns User if authenticated, or AccountLinkingRequest if confirmation needed
+ */
+export async function handleOAuthCallback(
+  profile: OAuthProfile
+): Promise<User | AccountLinkingRequest> {
   const { email, name, avatar, provider, providerId } = profile;
 
-  // Check if user exists
-  let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  // Step 1: Look up by provider + providerId (unique OAuth account)
+  const providerAccount = await getProviderAccount(provider as OAuthProvider, providerId);
 
-  // Determine role based on super admin and admin emails
-  const shouldBeSuperAdmin = isSuperAdminEmail(email);
-  const shouldBeAdmin = await isAdminEmail(email);
-  const assignedRole = shouldBeSuperAdmin ? 'superadmin' : shouldBeAdmin ? 'admin' : 'user';
+  if (providerAccount) {
+    // User already has this provider linked - authenticate
+    const [user] = await db.select().from(users).where(eq(users.id, providerAccount.userId)).limit(1);
 
-  if (user) {
-    // Update existing user
+    if (!user) {
+      throw new Error(`User not found for provider account: ${providerId}`);
+    }
+
+    // Update lastLoginAt
     const updates: Partial<typeof users.$inferInsert> = {
       lastLoginAt: new Date(),
       updatedAt: new Date(),
     };
 
-    // Auto-promote to superadmin if email matches (highest priority)
-    if (shouldBeSuperAdmin && user.role !== 'superadmin') {
-      updates.role = 'superadmin';
-      console.log(`[OAuth] Auto-promoted ${email} to superadmin role`);
-    }
-    // Auto-promote to admin if email matches and not already superadmin
-    else if (shouldBeAdmin && user.role === 'user') {
-      updates.role = 'admin';
-      console.log(`[OAuth] Auto-promoted ${email} to admin role`);
-    }
-
-    // Update name/avatar if missing and provided
+    // Update name if user doesn't have one and OAuth provides it
     if (!user.name && name) {
       updates.name = name;
     }
+
+    // Update avatar if user doesn't have one and OAuth provides it
     if (!user.avatar && avatar) {
       updates.avatar = avatar;
     }
 
-    [user] = await db.update(users).set(updates).where(eq(users.id, user.id)).returning();
+    // Auto-promote if applicable
+    const shouldBeSuperAdmin = isSuperAdminEmail(email);
+    const shouldBeAdmin = await isAdminEmail(email);
 
-    console.log(`[OAuth] Updated existing user: ${email} (${provider})`);
-  } else {
-    // Create new user
-    [user] = await db
-      .insert(users)
-      .values({
+    if (shouldBeSuperAdmin && user.role !== 'superadmin') {
+      updates.role = 'superadmin';
+      console.log(`[OAuth] Auto-promoted ${email} to superadmin role`);
+    } else if (shouldBeAdmin && user.role === 'user') {
+      updates.role = 'admin';
+      console.log(`[OAuth] Auto-promoted ${email} to admin role`);
+    }
+
+    const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, user.id)).returning();
+
+    if (!updatedUser) {
+      throw new Error(`Failed to update user: ${email}`);
+    }
+
+    console.log(`[OAuth] Authenticated existing user: ${email} (${provider})`);
+    return updatedUser;
+  }
+
+  // Step 2: Provider account not found - check if email exists
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+  if (existingUser) {
+    // User exists with same email but different provider
+    // Get their existing providers
+    const existingProviders = await getUserProviderAccounts(existingUser.id);
+    const providersList = existingProviders.map((p) => p.provider);
+
+    // Generate linking token
+    const linkingToken = generateLinkingToken(profile, existingUser.id);
+
+    // Return account linking request
+    const linkingRequest: AccountLinkingRequest = {
+      linkingToken,
+      existingUser: {
+        id: existingUser.id,
+        email: existingUser.email,
+        name: existingUser.name,
+        providers: providersList,
+      },
+      newProvider: {
+        provider: provider as OAuthProvider,
+        providerId,
         email,
         name: name || null,
         avatar: avatar || null,
-        provider,
-        providerId,
-        role: assignedRole,
-        lastLoginAt: new Date(),
-      })
-      .returning();
+      },
+    };
 
-    console.log(`[OAuth] Created new user: ${email} (${provider}) with role: ${assignedRole}`);
+    console.log(
+      `[OAuth] Account linking required for ${email}: ${provider} → existing user #${existingUser.id}`
+    );
+    return linkingRequest;
   }
+
+  // Step 3: New user - create user and provider account
+  const shouldBeSuperAdmin = isSuperAdminEmail(email);
+  const shouldBeAdmin = await isAdminEmail(email);
+  const assignedRole = shouldBeSuperAdmin ? 'superadmin' : shouldBeAdmin ? 'admin' : 'user';
+
+  const [newUser] = await db
+    .insert(users)
+    .values({
+      email,
+      name: name || null,
+      avatar: avatar || null,
+      provider, // Legacy field
+      providerId, // Legacy field
+      primaryProvider: provider as OAuthProvider,
+      role: assignedRole,
+      lastLoginAt: new Date(),
+    })
+    .returning();
+
+  if (!newUser) {
+    throw new Error(`Failed to create user: ${email}`);
+  }
+
+  // Create provider account
+  await createProviderAccount(
+    newUser.id,
+    provider as OAuthProvider,
+    providerId,
+    email,
+    name || null,
+    avatar || null
+  );
+
+  console.log(`[OAuth] Created new user: ${email} (${provider}) with role: ${assignedRole}`);
+  return newUser;
+}
+
+/**
+ * Confirm account linking and merge provider accounts
+ */
+export async function confirmAccountLinking(linkingToken: string): Promise<User> {
+  const tokenData = consumeLinkingToken(linkingToken);
+
+  if (!tokenData) {
+    throw new Error('Invalid or expired linking token');
+  }
+
+  const { profile, userId } = tokenData;
+  const { email, name, avatar, provider, providerId } = profile;
+
+  // Verify user still exists
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
   if (!user) {
-    throw new Error(`Failed to create or update user: ${email}`);
+    throw new Error('User not found');
   }
 
-  return user;
+  // Verify email matches (case-insensitive)
+  if (user.email.toLowerCase() !== email.toLowerCase()) {
+    throw new Error('Email mismatch - cannot link accounts with different emails');
+  }
+
+  // Create provider account link
+  await createProviderAccount(
+    userId,
+    provider as OAuthProvider,
+    providerId,
+    email,
+    name || null,
+    avatar || null
+  );
+
+  // Update user lastLoginAt
+  const [updatedUser] = await db
+    .update(users)
+    .set({ lastLoginAt: new Date(), updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
+
+  if (!updatedUser) {
+    throw new Error(`Failed to update user after linking: ${userId}`);
+  }
+
+  console.log(`[OAuth] Linked ${provider} provider to user #${userId} (${email})`);
+  return updatedUser;
 }
 
 /**

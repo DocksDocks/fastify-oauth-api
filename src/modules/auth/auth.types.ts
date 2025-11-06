@@ -155,3 +155,63 @@ export interface GoogleOAuthConfig {
   redirectUri: string;
   scopes: string[];
 }
+
+/**
+ * Provider account (for multi-provider support)
+ */
+export interface ProviderAccountInfo {
+  id: number;
+  provider: OAuthProvider;
+  providerId: string;
+  email: string;
+  name: string | null;
+  avatar: string | null;
+  linkedAt: string;
+  isPrimary: boolean;
+}
+
+/**
+ * Account linking request (when same email found with different provider)
+ */
+export interface AccountLinkingRequest {
+  linkingToken: string; // Temporary token for linking
+  existingUser: {
+    id: number;
+    email: string;
+    name: string | null;
+    providers: OAuthProvider[];
+  };
+  newProvider: {
+    provider: OAuthProvider;
+    providerId: string;
+    email: string;
+    name: string | null;
+    avatar: string | null;
+  };
+}
+
+/**
+ * Account linking response (returned when linking is required)
+ */
+export interface AccountLinkingResponse {
+  success: false;
+  requiresLinking: true;
+  data: AccountLinkingRequest;
+}
+
+/**
+ * Account linking confirmation payload
+ */
+export interface LinkProviderPayload {
+  linkingToken: string;
+  confirm: boolean;
+}
+
+/**
+ * Unlink provider response
+ */
+export interface UnlinkProviderResponse {
+  success: true;
+  message: string;
+  remainingProviders: ProviderAccountInfo[];
+}

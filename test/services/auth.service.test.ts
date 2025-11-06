@@ -106,6 +106,8 @@ describe('Auth Service', () => {
       const existing = await createUser({
         email: 'hasname@example.com',
         name: 'Original Name',
+        provider: 'google',
+        providerId: 'google_hasname',
       });
 
       const profile: OAuthProfile = {
@@ -125,6 +127,8 @@ describe('Auth Service', () => {
       const existing = await createUser({
         email: 'hasavatar@example.com',
         avatar: 'https://example.com/original.jpg',
+        provider: 'google',
+        providerId: 'google_hasavatar',
       });
 
       const profile: OAuthProfile = {
@@ -145,6 +149,8 @@ describe('Auth Service', () => {
       const existing = await createUser({
         email: 'noname@example.com',
         name: null,
+        provider: 'google',
+        providerId: 'google_noname',
       });
 
       const profile: OAuthProfile = {

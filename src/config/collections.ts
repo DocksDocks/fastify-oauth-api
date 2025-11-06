@@ -17,6 +17,7 @@ export interface CollectionColumn {
   sortable?: boolean;
   searchable?: boolean;
   enumValues?: string[]; // Available values for enum fields
+  readonly?: boolean; // Prevent editing this field
 }
 
 export interface Collection {
@@ -73,6 +74,27 @@ function isSearchable(columnName: string, columnType: string): boolean {
 
   // Check against non-searchable patterns
   return !NON_SEARCHABLE_PATTERNS.some((pattern) => pattern.test(columnName));
+}
+
+/**
+ * Determine if a column is readonly (cannot be edited)
+ */
+function isReadonly(columnName: string, tableName: string): boolean {
+  // Base readonly fields (apply to all tables)
+  const baseReadonlyFields = ['id', 'created_at', 'updated_at', 'last_login_at', 'linked_at'];
+
+  // Users table specific readonly fields (authentication-related)
+  const usersReadonlyFields = ['email', 'provider', 'provider_id', 'primary_provider'];
+
+  if (baseReadonlyFields.some((field) => columnName.toLowerCase() === field)) {
+    return true;
+  }
+
+  if (tableName === 'users' && usersReadonlyFields.some((field) => columnName.toLowerCase() === field)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -202,6 +224,7 @@ function generateCollection(table: PgTable, tableName: string): Collection {
         type,
         sortable: isSortable(),
         searchable: isSearchable(dbColName, type),
+        readonly: isReadonly(dbColName, tableName),
         _priority: getColumnPriority(dbColName), // Temporary field for sorting
       };
 

@@ -61,6 +61,7 @@ export interface CollectionColumn {
   sortable?: boolean;
   searchable?: boolean;
   enumValues?: string[];
+  readonly?: boolean; // Prevent editing this field
 }
 
 export interface CollectionMeta extends Collection {

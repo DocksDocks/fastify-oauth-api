@@ -350,6 +350,122 @@ npm run type-check               # TypeScript
 7. Server generates JWT access + refresh tokens
 8. Client stores tokens and uses access token for subsequent requests
 
+### Multi-Provider Support
+
+**Architecture:**
+Users can link multiple OAuth providers (Google + Apple) to a single account using the same email address. The system uses a normalized database design with a separate `provider_accounts` table to manage these relationships.
+
+**Database Schema:**
+```typescript
+// src/db/schema/provider-accounts.ts
+export const providerAccounts = pgTable('provider_accounts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  provider: providerEnum('provider').notNull(),  // 'google' | 'apple' | 'system'
+  providerId: text('provider_id').notNull(),
+  email: text('email').notNull(),
+  name: text('name'),
+  avatar: text('avatar'),
+  linkedAt: timestamp('linked_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  uniqueProviderAccount: unique().on(table.provider, table.providerId),  // Each provider account is unique
+  uniqueUserProvider: unique().on(table.userId, table.provider),  // User can only link each provider once
+}));
+
+// src/db/schema/users.ts (updated)
+export const users = pgTable('users', {
+  // ... existing fields ...
+  primaryProvider: providerEnum('primary_provider'),  // User's preferred provider
+  // Legacy fields (kept for backward compatibility):
+  provider: providerEnum('provider').notNull(),
+  providerId: text('provider_id').notNull(),
+});
+```
+
+**Account Linking Flow:**
+1. User signs in with OAuth provider (e.g., Google)
+2. System checks if `(provider, providerId)` combination exists in `provider_accounts`
+3. **If found**: Authenticate user and update `lastLoginAt`
+4. **If not found**: Check if email exists with different provider
+5. **If email exists**: Return `AccountLinkingRequest` with linking token (10-minute expiry)
+6. **If email doesn't exist**: Create new user + provider account
+7. **User confirms linking**: Call `POST /api/auth/link-provider` with token
+8. **System links accounts**: Create new provider account entry and authenticate
+
+**Account Linking Security:**
+- Linking requires explicit user confirmation via frontend modal
+- Temporary tokens expire after 10 minutes
+- Tokens stored in-memory (Map) with automatic cleanup
+- Cannot link if provider already linked to another user
+- Cannot link if this provider is already linked to the account
+
+**Provider Management Endpoints:**
+- `GET /api/profile/providers` - List all linked providers for authenticated user
+- `DELETE /api/profile/providers/:provider` - Unlink a provider (cannot remove last provider)
+- `POST /api/auth/link-provider` - Confirm account linking with temporary token
+
+**Provider Accounts Service:**
+Located in `src/modules/auth/provider-accounts.service.ts`:
+- `getProviderAccount(provider, providerId)` - Look up by provider + providerId
+- `getUserProviderAccounts(userId)` - Get all providers for a user
+- `createProviderAccount()` - Link new provider to user
+- `deleteProviderAccount()` - Unlink provider (prevents unlinking last one)
+- `setPrimaryProvider()` - Change user's primary provider
+- `hasProviderLinked()` - Check if user has specific provider
+- `getUserIdByProvider()` - Get user ID by provider + providerId
+
+**Field Locking:**
+To protect authentication integrity, the following fields are read-only in both frontend and backend:
+- **Profile API** (`src/routes/profile.ts`): `id`, `email`, `role`, `provider`, `providerId`, `primaryProvider`, `createdAt`, `updatedAt`, `lastLoginAt`
+- **Admin Collections** (`src/routes/admin/collections.ts`): Same fields + additional protection for `users` table
+- **Frontend** (`frontend/components/EditRecordModal.tsx`): Readonly fields displayed but not editable
+- **Collections Config** (`src/config/collections.ts`): Fields marked with `readonly: true` flag
+
+**Data Migration:**
+The `0003_migrate_existing_users_to_provider_accounts.sql` migration automatically:
+1. Copies existing `(provider, providerId)` from `users` table to `provider_accounts`
+2. Sets `primaryProvider` based on existing `provider` field
+3. Verifies all users were migrated successfully
+
+**Type Safety:**
+```typescript
+// src/modules/auth/auth.types.ts
+export interface ProviderAccountInfo {
+  id: number;
+  provider: OAuthProvider;
+  providerId: string;
+  email: string;
+  name: string | null;
+  avatar: string | null;
+  linkedAt: string;
+  isPrimary: boolean;
+}
+
+export interface AccountLinkingRequest {
+  linkingToken: string;
+  existingUser: {
+    id: number;
+    email: string;
+    name: string | null;
+    providers: OAuthProvider[];
+  };
+  newProvider: {
+    provider: OAuthProvider;
+    providerId: string;
+    email: string;
+    name: string | null;
+    avatar: string | null;
+  };
+}
+```
+
+**Frontend Component:**
+The `LinkProviderConfirmation` component (`frontend/components/LinkProviderConfirmation.tsx`) displays:
+- Existing account details (email, name, linked providers)
+- New provider details (provider, email, name)
+- Confirmation/cancel actions
+- Error handling with retry support
+
 ### JWT Implementation
 
 **Token Types:**
@@ -375,11 +491,12 @@ interface JWTPayload {
 ### Module Structure
 
 **`src/modules/auth/`:**
-- **`auth.types.ts`**: TypeScript interfaces for OAuth, JWT, providers
-- **`auth.service.ts`**: OAuth logic (handleGoogleOAuth, handleAppleOAuth, handleOAuthCallback, getGoogleAuthUrl, getAppleAuthUrl)
+- **`auth.types.ts`**: TypeScript interfaces for OAuth, JWT, providers, multi-provider types
+- **`auth.service.ts`**: OAuth logic with multi-provider support (handleOAuthCallback returns User | AccountLinkingRequest, confirmAccountLinking)
+- **`provider-accounts.service.ts`**: Provider account management (CRUD operations for linking/unlinking providers)
 - **`jwt.service.ts`**: JWT management (generateTokens, verifyToken, refreshAccessToken)
-- **`auth.controller.ts`**: Route handlers (handleGoogleLogin, handleGoogleCallback, handleAppleLogin, handleAppleCallback, handleRefreshToken, handleLogout, handleVerifyToken)
-- **`auth.routes.ts`**: Fastify route registration with schemas
+- **`auth.controller.ts`**: Route handlers with account linking support (handleLinkProvider added)
+- **`auth.routes.ts`**: Fastify route registration with schemas (includes /api/auth/link-provider)
 
 **`src/plugins/jwt.ts`:**
 - Registers `@fastify/jwt` plugin
@@ -403,6 +520,7 @@ user → admin → superadmin
 
 ```typescript
 // src/db/schema/users.ts
+export const providerEnum = pgEnum('provider', ['google', 'apple', 'system']);
 export const roleEnum = pgEnum('role', ['user', 'admin', 'superadmin']);
 
 export const users = pgTable('users', {
@@ -410,13 +528,29 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   name: text('name'),
   avatar: text('avatar'),
-  provider: text('provider').notNull(),  // 'google' | 'apple'
-  providerId: text('provider_id').notNull(),
+  provider: providerEnum('provider').notNull(),  // Legacy field (kept for backward compatibility)
+  providerId: text('provider_id').notNull(),  // Legacy field (kept for backward compatibility)
+  primaryProvider: providerEnum('primary_provider'),  // User's preferred OAuth provider
   role: roleEnum('role').notNull().default('user'),  // RBAC role
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// src/db/schema/provider-accounts.ts (NEW - Multi-provider support)
+export const providerAccounts = pgTable('provider_accounts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  provider: providerEnum('provider').notNull(),
+  providerId: text('provider_id').notNull(),
+  email: text('email').notNull(),
+  name: text('name'),
+  avatar: text('avatar'),
+  linkedAt: timestamp('linked_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  uniqueProviderAccount: unique().on(table.provider, table.providerId),
+  uniqueUserProvider: unique().on(table.userId, table.provider),
+}));
 ```
 
 ### Authorization Middleware
@@ -709,7 +843,8 @@ Edit `src/config/collections.ts` to add/modify database tables visible in the ad
 | GET | `/api/auth/google` | Get Google OAuth authorization URL |
 | GET | `/api/auth/google/callback` | Google OAuth callback (receives code, returns tokens) |
 | GET | `/api/auth/apple` | Get Apple OAuth authorization URL |
-| POST | `/api/auth/apple/callback` | Apple OAuth callback (receives code + id_token, returns tokens) |
+| POST | `/api/auth/apple/callback` | Apple OAuth callback (receives code + id_token, returns tokens or account linking request) |
+| POST | `/api/auth/link-provider` | Confirm account linking with temporary token (multi-provider support) |
 | POST | `/api/auth/refresh` | Refresh access token using refresh token |
 | GET | `/api/auth/verify` | Verify access token validity |
 | POST | `/api/auth/logout` | Logout (client-side token discard) |
@@ -719,8 +854,10 @@ Edit `src/config/collections.ts` to add/modify database tables visible in the ad
 | Method | Endpoint | Description | Required Role |
 |--------|----------|-------------|---------------|
 | GET | `/api/profile` | Get current user profile | user+ |
-| PATCH | `/api/profile` | Update profile (name, avatar) | user+ |
+| PATCH | `/api/profile` | Update profile (name, avatar - email/provider locked) | user+ |
 | DELETE | `/api/profile` | Delete own account | user+ |
+| GET | `/api/profile/providers` | List all linked OAuth providers for user | user+ |
+| DELETE | `/api/profile/providers/:provider` | Unlink OAuth provider (cannot remove last one) | user+ |
 
 ### Admin Endpoints (Require Admin Role)
 

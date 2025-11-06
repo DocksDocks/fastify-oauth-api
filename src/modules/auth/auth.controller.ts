@@ -6,7 +6,8 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { LoginResponse } from './auth.types';
+import type { LoginResponse, AccountLinkingRequest, LinkProviderPayload } from './auth.types';
+import type { User } from '@/db/schema';
 import env from '@/config/env';
 import {
   handleGoogleOAuth,
@@ -19,6 +20,7 @@ import {
   getAppleAuthUrlAdmin,
   verifyGoogleIdToken,
   getUserById,
+  confirmAccountLinking,
 } from './auth.service';
 import {
   generateTokens,
@@ -30,6 +32,15 @@ import {
   revokeSession,
   extractTokenFromHeader,
 } from './jwt.service';
+
+/**
+ * Type guard to check if OAuth result requires account linking
+ */
+function isAccountLinkingRequest(
+  result: User | AccountLinkingRequest
+): result is AccountLinkingRequest {
+  return 'linkingToken' in result;
+}
 
 /**
  * Generate Google OAuth authorization URL
@@ -94,8 +105,18 @@ export async function handleGoogleCallback(
     // This endpoint is only for web-based callbacks
     const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_ADMIN, 'web');
 
-    // Create or update user
-    const user = await handleOAuthCallback(profile);
+    // Create or update user (may return AccountLinkingRequest)
+    const result = await handleOAuthCallback(profile);
+
+    // Check if account linking is required
+    if (isAccountLinkingRequest(result)) {
+      // Redirect to frontend with linking request data
+      const linkingData = encodeURIComponent(JSON.stringify(result));
+      return reply.redirect(`/admin/auth/callback#linking=${linkingData}`);
+    }
+
+    // User authenticated successfully
+    const user = result;
 
     // Generate JWT tokens
     const tokens = await generateTokens(
@@ -193,8 +214,18 @@ export async function handleAppleCallback(
     // Verify ID token and get user profile
     const profile = await handleAppleOAuth(code, id_token, user);
 
-    // Create or update user
-    const userRecord = await handleOAuthCallback(profile);
+    // Create or update user (may return AccountLinkingRequest)
+    const result = await handleOAuthCallback(profile);
+
+    // Check if account linking is required
+    if (isAccountLinkingRequest(result)) {
+      // Redirect to frontend with linking request data
+      const linkingData = encodeURIComponent(JSON.stringify(result));
+      return reply.redirect(`/admin/auth/callback#linking=${linkingData}`);
+    }
+
+    // User authenticated successfully
+    const userRecord = result;
 
     // Generate JWT tokens
     const tokens = await generateTokens(
@@ -674,8 +705,21 @@ export async function handleGoogleMobileAuth(
     // Use the redirect URI provided by the client (must match what was used to obtain the code)
     const profile = await handleGoogleOAuth(code, redirectUri, 'web');
 
-    // Create or update user
-    const user = await handleOAuthCallback(profile);
+    // Create or update user (may return AccountLinkingRequest)
+    const result = await handleOAuthCallback(profile);
+
+    // Check if account linking is required
+    if (isAccountLinkingRequest(result)) {
+      // For mobile apps, return linking request in JSON format
+      return reply.send({
+        success: false,
+        requiresLinking: true,
+        data: result,
+      });
+    }
+
+    // User authenticated successfully
+    const user = result;
 
     // Generate JWT tokens
     const tokens = await generateTokens(
@@ -743,8 +787,21 @@ export async function handleGoogleIdTokenAuth(
     // Verify ID token with Google
     const profile = await verifyGoogleIdToken(idToken);
 
-    // Create or update user
-    const user = await handleOAuthCallback(profile);
+    // Create or update user (may return AccountLinkingRequest)
+    const result = await handleOAuthCallback(profile);
+
+    // Check if account linking is required
+    if (isAccountLinkingRequest(result)) {
+      // For mobile apps, return linking request in JSON format
+      return reply.send({
+        success: false,
+        requiresLinking: true,
+        data: result,
+      });
+    }
+
+    // User authenticated successfully
+    const user = result;
 
     // Generate JWT tokens
     const tokens = await generateTokens(
@@ -814,8 +871,21 @@ export async function handleAppleMobileAuth(
     // Verify ID token and get user profile (same as web flow)
     const profile = await handleAppleOAuth(code, id_token, user);
 
-    // Create or update user
-    const userRecord = await handleOAuthCallback(profile);
+    // Create or update user (may return AccountLinkingRequest)
+    const result = await handleOAuthCallback(profile);
+
+    // Check if account linking is required
+    if (isAccountLinkingRequest(result)) {
+      // For mobile apps, return linking request in JSON format
+      return reply.send({
+        success: false,
+        requiresLinking: true,
+        data: result,
+      });
+    }
+
+    // User authenticated successfully
+    const userRecord = result;
 
     // Generate JWT tokens
     const tokens = await generateTokens(
@@ -845,6 +915,65 @@ export async function handleAppleMobileAuth(
     return reply.status(500).send({
       success: false,
       error: 'Apple mobile authentication failed',
+    });
+  }
+}
+
+/**
+ * Confirm account linking (link new provider to existing account)
+ * POST /api/auth/link-provider
+ * Body: { linkingToken, confirm }
+ */
+export async function handleLinkProvider(
+  request: FastifyRequest<{
+    Body: LinkProviderPayload;
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { linkingToken, confirm } = request.body;
+
+    if (!linkingToken) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Missing linking token',
+      });
+    }
+
+    if (!confirm) {
+      return reply.status(400).send({
+        success: false,
+        error: 'User did not confirm account linking',
+      });
+    }
+
+    // Confirm the account linking
+    const user = await confirmAccountLinking(linkingToken);
+
+    // Generate JWT tokens for the newly linked account
+    const tokens = await generateTokens(request.server, user, request.ip, request.headers['user-agent']);
+
+    const response: LoginResponse = {
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          role: user.role,
+        },
+        tokens,
+      },
+    };
+
+    return reply.send(response);
+  } catch (error) {
+    request.log.error({ error }, 'Link provider failed');
+    const err = error as Error;
+    return reply.status(400).send({
+      success: false,
+      error: err.message || 'Failed to link provider',
     });
   }
 }

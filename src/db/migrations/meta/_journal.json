@@ -15,6 +15,13 @@
       "when": 1762443643025,
       "tag": "0001_superb_nightcrawler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762463813145,
+      "tag": "0002_blushing_jazinda",
+      "breakpoints": true
     }
   ]
 }

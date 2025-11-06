@@ -417,14 +417,33 @@ async function updateCollectionRecord(
       }
     }
 
-    // Filter out protected fields (id, createdAt, updatedAt)
-    const protectedFields = ['id', 'createdAt', 'updatedAt', 'created_at', 'updated_at'];
+    // Filter out protected fields (id, timestamps)
+    const baseProtectedFields = ['id', 'createdAt', 'updatedAt', 'created_at', 'updated_at', 'last_login_at', 'lastLoginAt'];
+
+    // Additional readonly fields for users table (authentication-related fields)
+    const usersReadonlyFields = ['email', 'provider', 'providerId', 'provider_id', 'primaryProvider', 'primary_provider'];
+
+    const protectedFields = table === 'users'
+      ? [...baseProtectedFields, ...usersReadonlyFields]
+      : baseProtectedFields;
+
     const filteredUpdates: Record<string, unknown> = {};
+    const attemptedProtectedFields: string[] = [];
 
     for (const [key, value] of Object.entries(updates)) {
-      if (!protectedFields.includes(key)) {
+      if (protectedFields.includes(key)) {
+        attemptedProtectedFields.push(key);
+      } else {
         filteredUpdates[key] = value;
       }
+    }
+
+    // Inform user if they tried to update protected fields
+    if (attemptedProtectedFields.length > 0) {
+      return reply.status(403).send({
+        success: false,
+        error: `Cannot update readonly fields: ${attemptedProtectedFields.join(', ')}`,
+      });
     }
 
     if (Object.keys(filteredUpdates).length === 0) {

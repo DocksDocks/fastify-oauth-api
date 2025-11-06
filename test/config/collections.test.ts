@@ -287,15 +287,15 @@ describe('Collections Configuration', () => {
       });
     });
 
-    it('should map timestamp columns to date type', () => {
-      const timestampColumns = ['createdAt', 'updatedAt', 'deletedAt', 'revokedAt', 'lastLoginAt', 'usedAt', 'performedAt'];
+    it('should map timestamp columns to timestamp type', () => {
+      const timestampColumns = ['createdAt', 'updatedAt', 'deletedAt', 'revokedAt', 'lastLoginAt', 'usedAt', 'performedAt', 'linkedAt'];
 
       collections.forEach((collection) => {
         collection.columns
           .filter((c) => timestampColumns.includes(c.name))
           .forEach((col) => {
-            // Drizzle's columnType returns 'date' for timestamp columns
-            expect(col.type).toBe('date');
+            // Timestamp columns should map to 'timestamp' type (includes date + time)
+            expect(col.type).toBe('timestamp');
           });
       });
     });

@@ -9,7 +9,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { users } from '@/db/schema/users';
-import type { JWTPayload } from '@/modules/auth/auth.types';
+import type { JWTPayload, OAuthProvider } from '@/modules/auth/auth.types';
+import {
+  getUserProviderAccounts,
+  deleteProviderAccount,
+} from '@/modules/auth/provider-accounts.service';
 
 // Extend FastifyInstance to include authenticate decorator
 declare module 'fastify' {
@@ -72,16 +76,41 @@ async function updateProfile(
     Body: {
       name?: string;
       avatar?: string;
+      [key: string]: unknown; // Allow additional fields for validation
     };
   }>,
   reply: FastifyReply,
 ): Promise<void> {
   try {
     const user = request.user as JWTPayload;
-    const { name, avatar } = request.body;
+    const body = request.body;
 
-    // Validate at least one field provided
-    if (!name && !avatar) {
+    // Define locked fields that cannot be edited
+    const lockedFields = [
+      'id',
+      'email',
+      'role',
+      'provider',
+      'providerId',
+      'primaryProvider',
+      'createdAt',
+      'updatedAt',
+      'lastLoginAt',
+    ];
+
+    // Check if any locked fields are in the request
+    const attemptedLockedFields = lockedFields.filter((field) => field in body);
+    if (attemptedLockedFields.length > 0) {
+      return reply.status(403).send({
+        success: false,
+        error: `Cannot update locked fields: ${attemptedLockedFields.join(', ')}`,
+      });
+    }
+
+    const { name, avatar } = body;
+
+    // Validate at least one editable field provided
+    if (name === undefined && avatar === undefined) {
       return reply.status(400).send({
         success: false,
         error: 'At least one field (name or avatar) is required',
@@ -155,6 +184,76 @@ async function deleteProfile(request: FastifyRequest, reply: FastifyReply): Prom
     return reply.status(500).send({
       success: false,
       error: 'Failed to delete account',
+    });
+  }
+}
+
+/**
+ * Get all linked OAuth providers for the current user
+ * GET /api/profile/providers
+ */
+async function getProviders(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  try {
+    const user = request.user as JWTPayload;
+
+    const providers = await getUserProviderAccounts(user.id);
+
+    return reply.send({
+      success: true,
+      data: providers,
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to fetch providers');
+    return reply.status(500).send({
+      success: false,
+      error: 'Failed to fetch linked providers',
+    });
+  }
+}
+
+/**
+ * Unlink an OAuth provider from the current user
+ * DELETE /api/profile/providers/:provider
+ */
+async function unlinkProvider(
+  request: FastifyRequest<{
+    Params: {
+      provider: string;
+    };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const user = request.user as JWTPayload;
+    const { provider } = request.params;
+
+    // Validate provider
+    if (!['google', 'apple'].includes(provider)) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Invalid provider. Must be "google" or "apple"',
+      });
+    }
+
+    // Unlink provider
+    await deleteProviderAccount(user.id, provider as OAuthProvider);
+
+    // Get remaining providers
+    const remainingProviders = await getUserProviderAccounts(user.id);
+
+    return reply.send({
+      success: true,
+      message: `${provider} provider unlinked successfully`,
+      data: {
+        remainingProviders,
+      },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to unlink provider');
+    const err = error as Error;
+    return reply.status(400).send({
+      success: false,
+      error: err.message || 'Failed to unlink provider',
     });
   }
 }
@@ -248,5 +347,88 @@ export default async function profileRoutes(fastify: FastifyInstance): Promise<v
       },
     },
     handler: deleteProfile,
+  });
+
+  // Provider management routes
+  fastify.get('/providers', {
+    schema: {
+      description: 'Get all linked OAuth providers',
+      tags: ['profile', 'providers'],
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  provider: { type: 'string' },
+                  providerId: { type: 'string' },
+                  email: { type: 'string' },
+                  name: { type: 'string', nullable: true },
+                  avatar: { type: 'string', nullable: true },
+                  linkedAt: { type: 'string' },
+                  isPrimary: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: getProviders,
+  });
+
+  fastify.delete('/providers/:provider', {
+    schema: {
+      description: 'Unlink an OAuth provider',
+      tags: ['profile', 'providers'],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['provider'],
+        properties: {
+          provider: {
+            type: 'string',
+            enum: ['google', 'apple'],
+          },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                remainingProviders: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'number' },
+                      provider: { type: 'string' },
+                      providerId: { type: 'string' },
+                      email: { type: 'string' },
+                      name: { type: 'string', nullable: true },
+                      avatar: { type: 'string', nullable: true },
+                      linkedAt: { type: 'string' },
+                      isPrimary: { type: 'boolean' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: unlinkProvider,
   });
 }

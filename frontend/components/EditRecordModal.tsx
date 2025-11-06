@@ -39,7 +39,7 @@ interface EditRecordModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   record: Record<string, unknown>;
-  columns: Array<{ name: string; type: string; label: string; enumValues?: string[] }>;
+  columns: Array<{ name: string; type: string; label: string; enumValues?: string[]; readonly?: boolean }>;
   onSave: (updatedData: Record<string, unknown>) => Promise<void>;
   userRole?: 'user' | 'admin' | 'superadmin';
   tableName?: string;
@@ -95,8 +95,48 @@ export function EditRecordModal({
     }
   };
 
-  const renderField = (column: { name: string; type: string; label: string; enumValues?: string[] }) => {
+  const renderField = (column: { name: string; type: string; label: string; enumValues?: string[]; readonly?: boolean }) => {
     const value = formData[column.name];
+
+    // Render readonly fields as plain text
+    if (column.readonly) {
+      let displayValue: string;
+
+      switch (column.type) {
+        case 'boolean':
+          displayValue = value ? 'Yes' : 'No';
+          break;
+        case 'date':
+        case 'timestamp':
+          try {
+            const date = value ? new Date(value as string | number | Date) : null;
+            displayValue = date
+              ? column.type === 'timestamp'
+                ? `${format(date, 'PPP')} (${format(date, 'p')})`
+                : format(date, 'PPP')
+              : 'Not set';
+          } catch {
+            displayValue = String(value ?? 'Not set');
+          }
+          break;
+        case 'json':
+          displayValue = typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '');
+          break;
+        default:
+          displayValue = String(value ?? '');
+      }
+
+      return (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-text-secondary">
+            {column.label} <span className="text-text-tertiary text-xs">(readonly)</span>
+          </Label>
+          <div className="w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-text-secondary">
+            {displayValue || <span className="text-text-muted italic">Empty</span>}
+          </div>
+        </div>
+      );
+    }
 
     switch (column.type) {
       case 'enum': {

@@ -28,6 +28,7 @@ import {
   handleAppleMobileAuth,
   handleGetSessions,
   handleRevokeSession,
+  handleLinkProvider,
 } from './auth.controller';
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -351,6 +352,60 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     },
     preHandler: optionalAuth, // Optional auth: populates request.user if token provided
     handler: handleLogout,
+  });
+
+  // Account Linking Route
+  fastify.post('/link-provider', {
+    schema: {
+      description: 'Confirm account linking (link new OAuth provider to existing account)',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['linkingToken', 'confirm'],
+        properties: {
+          linkingToken: {
+            type: 'string',
+            description: 'Temporary linking token returned during OAuth callback',
+          },
+          confirm: {
+            type: 'boolean',
+            description: 'User confirmation to proceed with linking',
+          },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    email: { type: 'string' },
+                    name: { type: 'string', nullable: true },
+                    avatar: { type: 'string', nullable: true },
+                    role: { type: 'string' },
+                  },
+                },
+                tokens: {
+                  type: 'object',
+                  properties: {
+                    accessToken: { type: 'string' },
+                    refreshToken: { type: 'string' },
+                    expiresIn: { type: 'number' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: handleLinkProvider,
   });
 
   // Mobile OAuth Routes
