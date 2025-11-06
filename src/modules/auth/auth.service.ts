@@ -232,6 +232,8 @@ export async function handleAppleOAuth(
 
 /**
  * Handle OAuth callback: Create or update user, assign role
+ * Used for regular user OAuth (mobile apps, web non-admin flows)
+ * Allows creating new users and auto-promotes if email is in admin list
  */
 export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> {
   const { email, name, avatar, provider, providerId } = profile;
@@ -270,12 +272,17 @@ export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> 
       updates.avatar = avatar;
     }
 
-    [user] = await db.update(users).set(updates).where(eq(users.id, user.id)).returning();
+    const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, user.id)).returning();
 
+    if (!updatedUser) {
+      throw new Error(`Failed to update user: ${email}`);
+    }
+
+    user = updatedUser;
     console.log(`[OAuth] Updated existing user: ${email} (${provider})`);
   } else {
     // Create new user
-    [user] = await db
+    const [newUser] = await db
       .insert(users)
       .values({
         email,
@@ -288,11 +295,12 @@ export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> 
       })
       .returning();
 
-    console.log(`[OAuth] Created new user: ${email} (${provider}) with role: ${assignedRole}`);
-  }
+    if (!newUser) {
+      throw new Error(`Failed to create user: ${email}`);
+    }
 
-  if (!user) {
-    throw new Error(`Failed to create or update user: ${email}`);
+    user = newUser;
+    console.log(`[OAuth] Created new user: ${email} (${provider}) with role: ${assignedRole}`);
   }
 
   return user;
@@ -300,41 +308,80 @@ export async function handleOAuthCallback(profile: OAuthProfile): Promise<User> 
 
 /**
  * Handle Admin OAuth callback: Validate existing admin/superadmin users only
- * IMPORTANT: Does NOT create new users - only allows existing admins to login
+ * Used for admin panel OAuth - does NOT create new users, only allows existing admins
  */
 export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<User> {
-  const { email, provider } = profile;
+  const { email, provider, name, avatar, providerId } = profile;
+
+  // Check if email is authorized as admin/superadmin
+  const shouldBeSuperAdmin = isSuperAdminEmail(email);
+  const shouldBeAdmin = await isAdminEmail(email);
+
+  if (!shouldBeSuperAdmin && !shouldBeAdmin) {
+    // Email is not in authorized admin list - reject
+    throw new Error('Access denied. You are not authorized as an administrator.');
+  }
 
   // Check if user exists
-  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
   if (!user) {
-    // User doesn't exist - reject
-    throw new Error('Access denied. You are not registered as an administrator.');
+    // User doesn't exist - create with appropriate admin role
+    const assignedRole = shouldBeSuperAdmin ? 'superadmin' : 'admin';
+
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email,
+        name: name || null,
+        avatar: avatar || null,
+        provider,
+        providerId,
+        role: assignedRole,
+        lastLoginAt: new Date(),
+      })
+      .returning();
+
+    if (!newUser) {
+      throw new Error(`Failed to create admin user: ${email}`);
+    }
+
+    console.log(`[Admin OAuth] Created new admin user: ${email} (${provider}) with role: ${assignedRole}`);
+    return newUser;
   }
 
-  if (user.role !== 'admin' && user.role !== 'superadmin') {
-    // User exists but is not an admin - reject
-    throw new Error('Access denied. Only administrators can access this panel.');
-  }
-
-  // User exists and is admin/superadmin - update last login and return
+  // User exists - check if they need role upgrade
   const updates: Partial<typeof users.$inferInsert> = {
     lastLoginAt: new Date(),
     updatedAt: new Date(),
   };
 
-  // Update name/avatar if missing and provided
-  if (!user.name && profile.name) {
-    updates.name = profile.name;
+  // Auto-promote to superadmin if email matches (highest priority)
+  if (shouldBeSuperAdmin && user.role !== 'superadmin') {
+    updates.role = 'superadmin';
+    console.log(`[Admin OAuth] Auto-promoted ${email} to superadmin role`);
   }
-  if (!user.avatar && profile.avatar) {
-    updates.avatar = profile.avatar;
+  // Auto-promote to admin if email matches and not already superadmin
+  else if (shouldBeAdmin && user.role === 'user') {
+    updates.role = 'admin';
+    console.log(`[Admin OAuth] Auto-promoted ${email} to admin role`);
+  }
+  // User exists but is not admin/superadmin and not in authorized list
+  else if (user.role !== 'admin' && user.role !== 'superadmin') {
+    throw new Error('Access denied. Only administrators can access this panel.');
+  }
+
+  // Update name/avatar if missing and provided
+  if (!user.name && name) {
+    updates.name = name;
+  }
+  if (!user.avatar && avatar) {
+    updates.avatar = avatar;
   }
 
   const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, user.id)).returning();
 
-  console.log(`[Admin OAuth] Admin login successful: ${email} (${provider}) - Role: ${user.role}`);
+  console.log(`[Admin OAuth] Admin login successful: ${email} (${provider}) - Role: ${updatedUser!.role}`);
 
   return updatedUser!; // Non-null assertion: update with returning always returns at least one row
 }

@@ -81,12 +81,12 @@ export async function handleGoogleCallback(
     if (error) {
       request.log.warn({ error }, 'Google OAuth error');
       // Redirect to frontend with error
-      return reply.redirect(`/admin/auth/callback?error=${encodeURIComponent(error)}`);
+      return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${encodeURIComponent(error)}`);
     }
 
     if (!code) {
       // Redirect to frontend with error
-      return reply.redirect('/admin/auth/callback?error=missing_code');
+      return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=missing_code`);
     }
 
     // Exchange code for user profile (legacy callback - not used by mobile app)
@@ -117,11 +117,11 @@ export async function handleGoogleCallback(
       tokens,
     }));
 
-    return reply.redirect(`/admin/auth/callback#data=${tokenData}`);
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback#data=${tokenData}`);
   } catch (error) {
     request.log.error({ error }, 'Google callback failed');
     // Redirect to frontend with error
-    return reply.redirect('/admin/auth/callback?error=authentication_failed');
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=authentication_failed`);
   }
 }
 

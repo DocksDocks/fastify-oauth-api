@@ -4,8 +4,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3000'),
   HOST: z.string().default('0.0.0.0'),
-  HOST_URL: z.string().url(),
-  ADMIN_PANEL_URL: z.string().url(),
+  API_URL: z.string().url().default('http://localhost:1337'),
+  ADMIN_PANEL_URL: z.string().url().default('http://localhost:3000'),
 
   DATABASE_HOST: z.string(),
   DATABASE_PORT: z.string(),

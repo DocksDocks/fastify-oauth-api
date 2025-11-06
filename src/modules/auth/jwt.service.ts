@@ -328,7 +328,16 @@ export async function cleanupExpiredTokens(): Promise<void> {
  * @param userId - User ID to get sessions for
  * @returns List of active refresh tokens (sessions)
  */
-export async function getUserSessions(userId: number) {
+export async function getUserSessions(userId: number): Promise<Array<{
+  id: number;
+  familyId: string;
+  createdAt: Date;
+  expiresAt: Date;
+  ipAddress: string | null;
+  userAgent: string | null;
+  isUsed: boolean;
+  usedAt: Date | null;
+}>> {
   return await db
     .select({
       id: refreshTokens.id,

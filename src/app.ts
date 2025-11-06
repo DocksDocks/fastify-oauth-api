@@ -99,12 +99,15 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   await app.register(fastifyCors, {
     origin: isProduction
-      ? corsOrigins.length > 0 ? corsOrigins : '*'
+      ? [env.API_URL, env.ADMIN_PANEL_URL, ...corsOrigins].filter(Boolean) as string[]
       : [
-          'http://localhost:5173', // Vite dev server
-          'http://127.0.0.1:5173',
+          'http://localhost:3000', // Admin panel dev
+          'http://127.0.0.1:3000',
+          env.API_URL,
+          env.ADMIN_PANEL_URL,
+          process.env.CORS_ORIGIN,
           ...corsOrigins,
-        ],
+        ].filter(Boolean) as string[],
     credentials: true,
   });
 

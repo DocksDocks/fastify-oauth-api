@@ -9,11 +9,18 @@
  */
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+// API base URL
+// Use VITE_API_URL from env if available, otherwise fallback to smart detection
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 
+const isLocalhost = typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 // API base URL - use VITE_API_URL from .env if available, otherwise fallback to relative /api
-const BASE_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api';
+const BASE_URL = VITE_API_URL
+  ? `${VITE_API_URL}/api`
+  : import.meta.env.PROD || !isLocalhost
+    ? '/api'
+    : 'http://localhost:1337/api';
 
 // API key (from env or localStorage)
 const API_KEY = import.meta.env.VITE_ADMIN_PANEL_API_KEY || localStorage.getItem('api_key') || '';

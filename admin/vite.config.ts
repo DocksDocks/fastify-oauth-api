@@ -15,7 +15,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      port: 3000,
+      port: Number(process.env.VITE_PORT) || 3000,
       allowedHosts: [
         '.ngrok-free.app',  // Allow all ngrok free tier hosts
         '.ngrok.io',        // Allow ngrok paid tier custom domains
@@ -23,7 +23,7 @@ export default defineConfig(() => {
       ],
       proxy: {
         '/api': {
-          target: 'http://localhost:1337',
+          target: process.env.VITE_API_URL || 'http://localhost:1337',
           changeOrigin: true,
         },
       },

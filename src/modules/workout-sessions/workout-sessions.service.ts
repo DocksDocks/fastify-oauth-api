@@ -1,4 +1,4 @@
-import { eq, and, or, gte, lte, sql, desc, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, desc, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { workoutLogs } from '@/db/schema/workout-logs';
 import { setLogs } from '@/db/schema/set-logs';
@@ -16,6 +16,7 @@ import type {
   PaginatedSessions,
   SetLogWithDetails,
   SessionExerciseInfo,
+  SetType,
 } from './workout-sessions.types';
 import { BadRequestError, NotFoundError, ForbiddenError } from '@/utils/errors';
 
@@ -528,7 +529,7 @@ export class WorkoutSessionsService {
   private calculateNextSet(
     config: any,
     completedSets: any[]
-  ): { setType: string; setNumberWithinType: number; suggestedRestSeconds: number } | undefined {
+  ): { setType: SetType; setNumberWithinType: number; suggestedRestSeconds: number } | undefined {
     const warmupCompleted = completedSets.filter(s => s.setType === 'warmup').length;
     const prepCompleted = completedSets.filter(s => s.setType === 'prep').length;
     const workingCompleted = completedSets.filter(s => s.setType === 'working').length;
