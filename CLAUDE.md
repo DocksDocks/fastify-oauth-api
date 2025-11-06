@@ -56,32 +56,36 @@ fastify-oauth-api/
 ├── scripts/                     # Utility scripts
 │   ├── dev-init.sh              # Complete dev environment setup (services + migrations + seeds)
 │   └── test-db/                 # Test database management (create, drop, reset, migrate, setup)
-├── admin/                       # Admin panel (Vite + React)
+├── frontend/                    # Admin panel (Next.js 16)
+│   ├── app/                     # Next.js App Router
+│   │   ├── admin/               # Admin routes
+│   │   │   ├── layout.tsx       # Admin layout with sidebar
+│   │   │   ├── page.tsx         # Dashboard
+│   │   │   ├── login/           # Login page
+│   │   │   ├── auth/            # OAuth callback
+│   │   │   ├── api-keys/        # API Keys management
+│   │   │   ├── collections/     # Database browser
+│   │   │   └── authorized-admins/ # Authorized admins (superadmin)
+│   │   ├── layout.tsx           # Root layout
+│   │   └── globals.css          # Global styles with OKLCH theme
 │   ├── src/
 │   │   ├── components/          # React components
 │   │   │   ├── ui/              # shadcn/ui components
-│   │   │   ├── layout/          # Layout components (Sidebar, Header, Layout)
-│   │   │   └── ProtectedRoute.tsx
-│   │   ├── pages/               # Page components
-│   │   │   ├── Login.tsx
-│   │   │   ├── OAuthCallback.tsx
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── ApiKeys.tsx
-│   │   │   └── Collections.tsx
+│   │   │   ├── layout/          # Sidebar component
+│   │   │   ├── ProtectedRoute.tsx
+│   │   │   ├── RestrictedAccess.tsx
+│   │   │   └── ViewContentModal.tsx
 │   │   ├── store/               # Zustand stores
 │   │   │   └── auth.ts          # Authentication state
 │   │   ├── lib/                 # Utilities
 │   │   │   ├── api.ts           # Axios client with interceptors
 │   │   │   └── utils.ts         # Helper functions
-│   │   ├── types/               # TypeScript types
-│   │   │   └── index.ts
-│   │   ├── App.tsx              # Main app with routing
-│   │   ├── main.tsx             # Entry point
-│   │   └── index.css            # Global styles with Tailwind
+│   │   └── types/               # TypeScript types
+│   │       └── index.ts
 │   ├── package.json
-│   ├── vite.config.ts
-│   ├── tailwind.config.js
-│   └── .env.example
+│   ├── next.config.ts
+│   ├── tailwind.config.ts
+│   └── tsconfig.json
 ├── src/
 │   ├── config/                  # Configuration layer
 │   │   ├── env.ts               # Environment validation (Zod)
@@ -244,7 +248,7 @@ npm run docker:postgres:log      # PostgreSQL only
 # Development (local machine, Docker for DB/Redis)
 npm run dev                      # Start both API + Admin panel
 npm run dev:api                  # Start API only (backend)
-npm run dev:admin                # Start admin panel only (frontend)
+npm run dev:frontend             # Start admin panel only (Next.js)
 
 # Database
 npm run db:generate              # Generate migrations
@@ -318,14 +322,15 @@ npm run type-check               # TypeScript
 - Keep files under 300 lines
 - Use barrel exports (index.ts) for modules
 
-**Admin Panel Styling (Tailwind CSS v4):**
-- ALWAYS use theme color variables defined in `admin/src/index.css`
-- **Text Colors**: `text-text-primary` (headings), `text-text-secondary` (descriptions), `text-text-tertiary` (labels), `text-text-muted` (placeholders)
-- **Borders**: `border-border` (never generic colors like `border-gray-200`)
-- **Backgrounds**: `bg-primary`, `bg-secondary`, `bg-muted` with opacity modifiers (e.g., `bg-primary/20`)
-- NEVER use generic Tailwind colors: `text-foreground`, `text-gray-500`, `text-slate-600`
-- ALL text components MUST have explicit theme color classes
-- Theme colors automatically adapt to light/dark mode
+**Admin Panel Styling (Next.js + Tailwind CSS v4):**
+- ALWAYS use OKLCH theme color variables defined in `frontend/app/globals.css`
+- **Colors**: Professional slate/blue palette with WCAG AAA contrast
+- **Text Colors**: `text-foreground` (primary text), `text-muted-foreground` (secondary text)
+- **Borders**: `border-border` (consistent border colors)
+- **Backgrounds**: `bg-background`, `bg-primary`, `bg-secondary`, `bg-muted` with opacity modifiers (e.g., `bg-primary/10`)
+- Modern OKLCH color space for perceptual uniformity
+- Full light/dark mode support
+- Theme colors automatically adapt to system preferences
 
 ## OAuth & JWT Authentication
 
@@ -470,14 +475,14 @@ This script reads `ADMIN_EMAIL` and `ADMIN_EMAILS_ADDITIONAL` from `.env`, finds
    - `android_api_key` - For Android mobile app
    - `admin_panel_api_key` - For admin web interface
 
-4. Add `admin_panel_api_key` to root `.env` (VITE_ prefix required):
+4. Add `admin_panel_api_key` to root `.env` (NEXT_PUBLIC_ prefix required):
    ```bash
    # Add to .env file
-   VITE_ADMIN_PANEL_API_KEY=<key>
+   NEXT_PUBLIC_ADMIN_PANEL_API_KEY=<key>
    ```
 
 5. Login via Google OAuth to activate superadmin role:
-   - Navigate to `http://localhost:5173` (dev) or `/admin` (prod)
+   - Navigate to `http://localhost:3000/admin` (dev) or `/admin` (prod)
    - Sign in with super admin email
    - Automatically promoted to superadmin role
 
@@ -492,22 +497,22 @@ The admin panel is a full-featured web interface for managing the API. It provid
 ### Tech Stack
 
 **Frontend:**
-- Vite 5.x (build tool with hot module replacement)
+- Next.js 16.0.1 (App Router with server-side rendering)
 - React 19 (UI library)
 - TypeScript with strict mode
 - Path aliases (`@/*` → `src/*`)
 
 **UI & Styling:**
-- shadcn/ui component library (headless components)
-- TailwindCSS for styling
-- CSS variables for theming (light/dark mode support)
+- shadcn/ui component library (headless components with Radix UI)
+- TailwindCSS v4 with OKLCH color space
+- Modern slate/blue theme with WCAG AAA contrast
 - Lucide icons
 
 **State & Data:**
 - Zustand for client-side state management
 - localStorage persistence for auth state
 - Axios for HTTP requests with interceptors
-- React Router for client-side routing
+- Next.js App Router for client-side routing
 
 ### Features
 
@@ -534,7 +539,13 @@ The admin panel is a full-featured web interface for managing the API. It provid
 - Dynamic column formatting (timestamps, booleans, JSON, etc.)
 - Role badges and status indicators
 
-**4. Authentication**
+**4. Authorized Admins Management (Superadmin Only)**
+- Pre-authorize emails for automatic admin promotion
+- Add/remove authorized admin emails
+- View creation history (who added, when)
+- Restricted access with role-based UI components
+
+**5. Authentication**
 - Google OAuth integration
 - Admin/superadmin role requirement
 - JWT token management with automatic refresh
@@ -544,23 +555,25 @@ The admin panel is a full-featured web interface for managing the API. It provid
 ### Architecture
 
 **Layout Components:**
-- `Sidebar`: Navigation menu with active link highlighting
-- `Header`: User profile dropdown with logout
-- `Layout`: Wrapper combining Sidebar + Header + page content
+- `Sidebar`: Navigation menu with Next.js Link and usePathname
+- `AdminLayout`: Main layout wrapper with sidebar and mobile menu
+- All components use 'use client' directive for interactivity
 
-**Pages:**
-- `Login`: OAuth login with Google button
-- `OAuthCallback`: Handles OAuth redirect and token exchange
-- `Dashboard`: Statistics and overview
-- `ApiKeys`: API key management interface
-- `Collections`: Database browser with pagination/search/sort
+**Pages (Next.js App Router):**
+- `/admin/login` - OAuth login with Google/Apple buttons
+- `/admin/auth/callback` - Handles OAuth redirect and token exchange
+- `/admin` - Dashboard with statistics and overview
+- `/admin/api-keys` - API key management interface
+- `/admin/collections/[table]` - Database browser with dynamic routes
+- `/admin/authorized-admins` - Authorized admins management (superadmin only)
 
 **State Management:**
 - `useAuthStore` (Zustand): User, tokens, isAuthenticated
-- Syncs with localStorage for axios interceptor access
+- localStorage persistence for auth state
+- SSR checks: `typeof window !== 'undefined'` for browser-only APIs
 
 **API Client:**
-- Axios instance with base URL
+- Axios instance with base URL from `NEXT_PUBLIC_API_URL`
 - Request interceptor: adds X-API-Key + Authorization headers
 - Response interceptor: handles 401 with token refresh
 - Helper methods: `authApi`, `adminApi`
@@ -577,9 +590,9 @@ All API routes (except whitelisted paths) require `X-API-Key` header.
 **API Key Setup:**
 1. Run super admin seed: `npm run db:seed:superadmin`
 2. Copy displayed API keys (only shown once)
-3. Add `admin_panel_api_key` to root `.env` (VITE_ prefix required):
+3. Add `admin_panel_api_key` to root `.env` (NEXT_PUBLIC_ prefix required):
    ```
-   VITE_ADMIN_PANEL_API_KEY=your_key_here
+   NEXT_PUBLIC_ADMIN_PANEL_API_KEY=your_key_here
    ```
 4. Store other keys (`ios_api_key`, `android_api_key`) in mobile apps
 
@@ -593,22 +606,22 @@ All API routes (except whitelisted paths) require `X-API-Key` header.
 
 **Build Admin Panel:**
 ```bash
-npm run build:admin
+npm run build:frontend
 ```
 
 This:
-1. Runs Vite build in `admin/` directory
-2. Outputs static files to `admin/dist/`
+1. Runs Next.js build in `frontend/` directory
+2. Outputs static files to `frontend/.next/`
 3. Fastify serves these files from `/admin` route
 
 **Docker Build:**
 The Dockerfile includes a multi-stage build:
-- Stage 4: Builds admin panel with Node.js
+- Stage 4: Builds admin panel with Next.js
 - Stage 5: Copies built files to production image
 - Admin panel served as static files by Fastify
 
 **Access Admin Panel:**
-- Development: `http://localhost:5173`
+- Development: `http://localhost:3000/admin`
 - Production: `https://yourdomain.com/admin`
 
 ### Collections Configuration
@@ -673,7 +686,7 @@ Edit `src/config/collections.ts` to add/modify database tables visible in the ad
 **API Keys (Generated via seed script):**
 - `IOS_API_KEY` - API key for iOS mobile app (stored in mobile apps)
 - `ANDROID_API_KEY` - API key for Android mobile app (stored in mobile apps)
-- `VITE_ADMIN_PANEL_API_KEY` - API key for admin web interface (VITE_ prefix required for frontend)
+- `NEXT_PUBLIC_ADMIN_PANEL_API_KEY` - API key for admin web interface (NEXT_PUBLIC_ prefix required for Next.js frontend)
 
 **Caddy (Reverse Proxy):**
 - `CADDY_DOMAIN` - Domain name (localhost for dev, real domain for prod)
@@ -1079,8 +1092,8 @@ docker compose logs api
 ```
 
 **"API key is required" error:**
-1. Ensure `VITE_ADMIN_PANEL_API_KEY` is set in root `.env`
-2. Rebuild admin panel: `npm run build:admin`
+1. Ensure `NEXT_PUBLIC_ADMIN_PANEL_API_KEY` is set in root `.env`
+2. Rebuild admin panel: `npm run build:frontend`
 3. Restart dev server: `npm run dev`
 
 **401 Unauthorized after login:**
@@ -1174,7 +1187,7 @@ Before deploying to production, verify (see Environment Variables section for de
 4. Initialize development environment: `npm run dev:init`
    - Starts PostgreSQL + Redis containers
    - Runs migrations on development database
-   - Seeds superadmin + API keys (copy to admin/.env)
+   - Seeds superadmin + API keys (copy NEXT_PUBLIC_ADMIN_PANEL_API_KEY to root .env)
    - Sets up test database
 5. Start development: `npm run dev`
 6. Test endpoints: `curl http://localhost:3000/health`
@@ -1210,6 +1223,6 @@ Before deploying to production, verify (see Environment Variables section for de
 
 ---
 
-**Last Updated:** October 2025
+**Last Updated:** November 2025
 **Maintainer:** Infrastructure Team
-**Version:** 9.1 (Production-Ready OAuth + RBAC + 100% Test Coverage + Test DB Management)
+**Version:** 10.0 (Next.js 16 Admin Panel + OKLCH Theme + Production-Ready OAuth + RBAC + 100% Test Coverage)
