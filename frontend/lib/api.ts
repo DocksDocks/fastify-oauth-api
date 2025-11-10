@@ -111,7 +111,7 @@ api.interceptors.response.use(
             },
           });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+          const { accessToken, refreshToken: newRefreshToken } = response.data.tokens;
 
           // Store new tokens in localStorage
           localStorage.setItem('access_token', accessToken);
@@ -194,13 +194,20 @@ export const authApi = {
 };
 
 export const adminApi = {
+  // Profile
+  updateProfile: (data: { name?: string; avatar?: string; locale?: 'pt-BR' | 'en' }) =>
+    api.patch('/profile', data),
+
+  // Users
+  getUser: (id: number) => api.get(`/admin/users/${id}`),
+
   // User stats
   getUserStats: () => api.get('/admin/users/stats'),
 
   // API Keys
   getApiKeys: () => api.get('/admin/api-keys'),
   getApiKeyStats: () => api.get('/admin/api-keys/stats'),
-  generateApiKey: (name: string) => api.post('/admin/api-keys/generate', { name }),
+  generateApiKey: (platform: string) => api.post('/admin/api-keys/generate', { platform }),
   regenerateApiKey: (id: number) => api.post(`/admin/api-keys/${id}/regenerate`),
   revokeApiKey: (id: number) => api.post(`/admin/api-keys/${id}/revoke`),
 

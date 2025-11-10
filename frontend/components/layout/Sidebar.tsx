@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck, Sun, Moon, Monitor } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck, Sun, Moon, Monitor, Languages, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import type { Collection } from '@/types';
 import { useTheme } from 'next-themes';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   Collapsible,
   CollapsibleContent,
@@ -25,12 +26,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 
-const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'API Keys', href: '/admin/api-keys', icon: Key },
-  { name: 'Authorized Admins', href: '/admin/authorized-admins', icon: ShieldCheck },
-];
-
 interface SidebarProps {
   isMobileMenuOpen?: boolean;
   onCloseMobile?: () => void;
@@ -38,17 +33,28 @@ interface SidebarProps {
 
 export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProps = {}) {
   const pathname = usePathname();
+  const router = useRouter();
+  const t = useTranslations('navigation');
+  const locale = useLocale();
   const { user, isAuthenticated, clearAuth } = useAuthStore();
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
+  const [isChangingLocale, setIsChangingLocale] = useState(false);
+
+  const navigation = [
+    { name: t('menu.dashboard'), href: '/admin', icon: LayoutDashboard },
+    { name: t('menu.apiKeys'), href: '/admin/api-keys', icon: Key },
+    { name: t('menu.authorizedAdmins'), href: '/admin/authorized-admins', icon: ShieldCheck },
+  ];
 
   const fetchCollections = async () => {
     try {
       const response = await adminApi.getCollections();
-      setCollections(response.data.data.collections);
+      setCollections(response.data.collections || []);
     } catch (error) {
       console.error('Failed to fetch collections:', error);
+      setCollections([]);
     }
   };
 
@@ -71,6 +77,32 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
   const handleLogout = () => {
     clearAuth();
     window.location.href = '/admin/login';
+  };
+
+  const handleLanguageChange = async (newLocale: 'pt-BR' | 'en') => {
+    if (locale === newLocale || isChangingLocale) return;
+
+    try {
+      setIsChangingLocale(true);
+
+      // 1. Update cookie first for instant feedback
+      document.cookie = `locale=${newLocale}; path=/; max-age=31536000`;
+
+      // 2. Update database (if authenticated)
+      if (user) {
+        await adminApi.updateProfile({ locale: newLocale });
+      }
+
+      // 3. Refresh server components to re-render with new locale
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to change language:', error);
+      // Revert cookie on error
+      document.cookie = `locale=${locale}; path=/; max-age=31536000`;
+      alert('Failed to change language. Please try again.');
+    } finally {
+      setIsChangingLocale(false);
+    }
   };
 
   const getRoleBadgeVariant = (role: string) => {
@@ -149,24 +181,30 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-1 pl-8 pt-1">
-            {collections.map((collection) => {
-              const isActive = pathname === `/admin/collections/${collection.table}`;
-              return (
-                <Link
-                  key={collection.table}
-                  href={`/admin/collections/${collection.table}`}
-                  onClick={handleLinkClick}
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer',
-                    isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-                  )}
-                >
-                  {collection.name}
-                </Link>
-              );
-            })}
+            {collections && collections.length > 0 ? (
+              collections.map((collection) => {
+                const isActive = pathname === `/admin/collections/${collection.table}`;
+                return (
+                  <Link
+                    key={collection.table}
+                    href={`/admin/collections/${collection.table}`}
+                    onClick={handleLinkClick}
+                    className={cn(
+                      'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer',
+                      isActive
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                        : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                    )}
+                  >
+                    {collection.name}
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="px-3 py-1.5 text-sm text-sidebar-foreground/40">
+                No collections
+              </div>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </nav>
@@ -204,24 +242,49 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Theme
+              {t('user.theme')}
             </DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setTheme('light')} className="cursor-pointer">
               <Sun className="mr-2 h-4 w-4" />
-              <span>Light</span>
+              <span>{t('theme.light')}</span>
+              {theme === 'light' && <Check className="ml-auto h-4 w-4" />}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme('dark')} className="cursor-pointer">
               <Moon className="mr-2 h-4 w-4" />
-              <span>Dark</span>
+              <span>{t('theme.dark')}</span>
+              {theme === 'dark' && <Check className="ml-auto h-4 w-4" />}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme('system')} className="cursor-pointer">
               <Monitor className="mr-2 h-4 w-4" />
-              <span>System</span>
+              <span>{t('theme.system')}</span>
+              {theme === 'system' && <Check className="ml-auto h-4 w-4" />}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              {t('user.language')}
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => handleLanguageChange('pt-BR')}
+              className="cursor-pointer"
+              disabled={isChangingLocale}
+            >
+              <Languages className="mr-2 h-4 w-4" />
+              <span>{t('language.pt-BR')}</span>
+              {locale === 'pt-BR' && <Check className="ml-auto h-4 w-4" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleLanguageChange('en')}
+              className="cursor-pointer"
+              disabled={isChangingLocale}
+            >
+              <Languages className="mr-2 h-4 w-4" />
+              <span>{t('language.en')}</span>
+              {locale === 'en' && <Check className="ml-auto h-4 w-4" />}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
+              <span>{t('user.logout')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -37,10 +37,8 @@ async function listAuthorizedAdmins(
 
     return reply.send({
       success: true,
-      data: {
-        authorizedAdmins: result,
-        total: result.length,
-      },
+      authorizedAdmins: result,
+      total: result.length,
     });
   } catch (error) {
     _request.log.error({ error }, 'Failed to list authorized admins');
@@ -115,9 +113,7 @@ async function addAuthorizedAdmin(
 
     return reply.status(201).send({
       success: true,
-      data: {
-        authorizedAdmin: newAuthorizedAdmin,
-      },
+      authorizedAdmin: newAuthorizedAdmin,
       message: 'Email added to authorized admins. Users with this email will be auto-promoted to admin on sign-in.',
     });
   } catch (error) {
@@ -220,26 +216,21 @@ export async function authorizedAdminsRoutes(fastify: FastifyInstance): Promise<
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                authorizedAdmins: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'number' },
-                      email: { type: 'string' },
-                      createdAt: { type: 'string' },
-                      createdBy: { type: 'number' },
-                      createdByEmail: { type: 'string', nullable: true },
-                      createdByName: { type: 'string', nullable: true },
-                    },
-                  },
+            authorizedAdmins: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  email: { type: 'string' },
+                  createdAt: { type: 'string' },
+                  createdBy: { type: 'number' },
+                  createdByEmail: { type: 'string', nullable: true },
+                  createdByName: { type: 'string', nullable: true },
                 },
-                total: { type: 'number' },
               },
             },
+            total: { type: 'number' },
           },
         },
       },
@@ -265,18 +256,13 @@ export async function authorizedAdminsRoutes(fastify: FastifyInstance): Promise<
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            authorizedAdmin: {
               type: 'object',
               properties: {
-                authorizedAdmin: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    createdAt: { type: 'string' },
-                    createdBy: { type: 'number' },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                createdAt: { type: 'string' },
+                createdBy: { type: 'number' },
               },
             },
             message: { type: 'string' },

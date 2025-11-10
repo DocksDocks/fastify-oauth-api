@@ -26,6 +26,7 @@
     "db:seed": "dotenvx run -- tsx src/db/seeds/index.ts",
     "db:seed:dev": "dotenvx run -- tsx src/db/seeds/development-users.ts",
     "db:seed:superadmin": "dotenvx run -- tsx src/db/seeds/super-admin.ts",
+    "db:seed:preferences": "dotenvx run -- tsx src/db/seeds/user-preferences.ts",
     "test:db:create": "bash scripts/test-db/create.sh",
     "test:db:drop": "bash scripts/test-db/drop.sh",
     "test:db:reset": "bash scripts/test-db/reset.sh",

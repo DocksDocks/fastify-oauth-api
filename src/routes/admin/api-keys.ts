@@ -52,18 +52,19 @@ async function listApiKeys(request: FastifyRequest, reply: FastifyReply): Promis
 
     return reply.send({
       success: true,
-      data: {
-        keys: keys.map((key) => ({
-          ...key,
-          status: key.revokedAt ? 'revoked' : 'active',
-        })),
-      },
+      apiKeys: keys.map((key) => ({
+        ...key,
+        status: key.revokedAt ? 'revoked' : 'active',
+      })),
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to list API keys');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to list API keys',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to list API keys',
+      },
     });
   }
 }
@@ -89,7 +90,10 @@ async function generateNewApiKey(
     if (!validPlatforms.includes(platform)) {
       return reply.status(400).send({
         success: false,
-        error: `Invalid platform. Must be one of: ${validPlatforms.join(', ')}`,
+        error: {
+          code: 'INVALID_PLATFORM',
+          message: `Invalid platform. Must be one of: ${validPlatforms.join(', ')}`,
+        },
       });
     }
 
@@ -106,7 +110,10 @@ async function generateNewApiKey(
     if (existingKey.length > 0 && !existingKey[0]!.revokedAt) {
       return reply.status(409).send({
         success: false,
-        error: `API key for platform '${platform}' already exists. Use regenerate to create a new one, or revoke it first.`,
+        error: {
+          code: 'KEY_ALREADY_EXISTS',
+          message: `API key for platform '${platform}' already exists. Use regenerate to create a new one, or revoke it first.`,
+        },
       });
     }
 
@@ -136,8 +143,8 @@ async function generateNewApiKey(
     // Return plain key (ONLY TIME IT'S VISIBLE!)
     return reply.send({
       success: true,
-      data: {
-        key: newKey!,
+      apiKey: {
+        ...newKey!,
         plainKey, // WARNING: Store this securely! It won't be shown again.
       },
       message: 'API key generated successfully. Store it securely - it will not be shown again.',
@@ -146,7 +153,10 @@ async function generateNewApiKey(
     request.log.error({ error }, 'Failed to generate API key');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to generate API key',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to generate API key',
+      },
     });
   }
 }
@@ -175,14 +185,20 @@ async function regenerateApiKey(
     if (existingKey.length === 0) {
       return reply.status(404).send({
         success: false,
-        error: 'API key not found',
+        error: {
+          code: 'KEY_NOT_FOUND',
+          message: 'API key not found',
+        },
       });
     }
 
     if (existingKey[0]!.revokedAt) {
       return reply.status(400).send({
         success: false,
-        error: 'Cannot regenerate revoked key. Create a new one instead.',
+        error: {
+          code: 'KEY_ALREADY_REVOKED',
+          message: 'Cannot regenerate revoked key. Create a new one instead.',
+        },
       });
     }
 
@@ -213,8 +229,8 @@ async function regenerateApiKey(
     // Return new plain key (ONLY TIME IT'S VISIBLE!)
     return reply.send({
       success: true,
-      data: {
-        key: updatedKey!,
+      apiKey: {
+        ...updatedKey!,
         plainKey, // WARNING: Store this securely! It won't be shown again.
       },
       message: 'API key regenerated successfully. Update your apps with the new key.',
@@ -223,7 +239,10 @@ async function regenerateApiKey(
     request.log.error({ error }, 'Failed to regenerate API key');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to regenerate API key',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to regenerate API key',
+      },
     });
   }
 }
@@ -251,14 +270,20 @@ async function revokeApiKey(
     if (existingKey.length === 0) {
       return reply.status(404).send({
         success: false,
-        error: 'API key not found',
+        error: {
+          code: 'KEY_NOT_FOUND',
+          message: 'API key not found',
+        },
       });
     }
 
     if (existingKey[0]!.revokedAt) {
       return reply.status(400).send({
         success: false,
-        error: 'API key is already revoked',
+        error: {
+          code: 'KEY_ALREADY_REVOKED',
+          message: 'API key is already revoked',
+        },
       });
     }
 
@@ -284,7 +309,10 @@ async function revokeApiKey(
     request.log.error({ error }, 'Failed to revoke API key');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to revoke API key',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to revoke API key',
+      },
     });
   }
 }
@@ -303,7 +331,7 @@ async function getApiKeyStats(request: FastifyRequest, reply: FastifyReply): Pro
 
     return reply.send({
       success: true,
-      data: {
+      stats: {
         total,
         active,
         revoked,
@@ -313,7 +341,10 @@ async function getApiKeyStats(request: FastifyRequest, reply: FastifyReply): Pro
     request.log.error({ error }, 'Failed to get API key stats');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to get API key statistics',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get API key statistics',
+      },
     });
   }
 }
@@ -337,22 +368,18 @@ export default async function apiKeyRoutes(fastify: FastifyInstance): Promise<vo
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                keys: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'number' },
-                      name: { type: 'string' },
-                      status: { type: 'string', enum: ['active', 'revoked'] },
-                      createdAt: { type: 'string' },
-                      updatedAt: { type: 'string' },
-                      revokedAt: { type: 'string', nullable: true },
-                    },
-                  },
+            apiKeys: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  name: { type: 'string' },
+                  status: { type: 'string', enum: ['active', 'revoked'] },
+                  createdAt: { type: 'string' },
+                  updatedAt: { type: 'string' },
+                  revokedAt: { type: 'string', nullable: true },
+                  createdBy: { type: 'number' },
                 },
               },
             },
@@ -374,7 +401,7 @@ export default async function apiKeyRoutes(fastify: FastifyInstance): Promise<vo
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            stats: {
               type: 'object',
               properties: {
                 total: { type: 'number' },
@@ -406,6 +433,24 @@ export default async function apiKeyRoutes(fastify: FastifyInstance): Promise<vo
           },
         },
       },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            apiKey: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                createdAt: { type: 'string' },
+                plainKey: { type: 'string' },
+              },
+            },
+            message: { type: 'string' },
+          },
+        },
+      },
     },
     handler: generateNewApiKey,
   });
@@ -421,6 +466,24 @@ export default async function apiKeyRoutes(fastify: FastifyInstance): Promise<vo
         required: ['id'],
         properties: {
           id: { type: 'number' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            apiKey: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                updatedAt: { type: 'string' },
+                plainKey: { type: 'string' },
+              },
+            },
+            message: { type: 'string' },
+          },
         },
       },
     },

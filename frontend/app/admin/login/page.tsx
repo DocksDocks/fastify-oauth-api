@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -11,6 +12,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 
 export default function LoginPage() {
+  const t = useTranslations('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +21,7 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
       const response = await authApi.adminGoogle();
-      const authUrl = response.data?.data?.authUrl;
+      const authUrl = response.data?.authUrl;
 
       if (!authUrl) {
         setError('No authorization URL received from server');
@@ -43,7 +45,7 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
       const response = await authApi.adminApple();
-      const authUrl = response.data?.data?.authUrl;
+      const authUrl = response.data?.authUrl;
 
       if (!authUrl) {
         setError('No authorization URL received from server');
@@ -63,11 +65,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl">Admin Panel</CardTitle>
-          <CardDescription>Sign in with your Google or Apple account to continue</CardDescription>
+          <CardTitle className="text-3xl">{t('title')}</CardTitle>
+          <CardDescription>{t('subtitle')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -85,11 +87,11 @@ export default function LoginPage() {
             variant="outline"
           >
             {loading ? (
-              <span>Redirecting...</span>
+              <span>{t('redirecting')}</span>
             ) : (
               <>
                 <FcGoogle className="mr-2 h-5 w-5" />
-                Continue with Google
+                {t('googleButton')}
               </>
             )}
           </Button>
@@ -102,17 +104,17 @@ export default function LoginPage() {
             variant="outline"
           >
             {loading ? (
-              <span>Redirecting...</span>
+              <span>{t('redirecting')}</span>
             ) : (
               <>
                 <FaApple className="mr-2 h-5 w-5" />
-                Continue with Apple
+                {t('appleButton')}
               </>
             )}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            Only authorized administrators can access this panel
+            {t('adminOnly')}
           </p>
         </CardContent>
       </Card>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,8 @@ import { EditRecordModal } from '@/components/EditRecordModal';
 import { useAuthStore } from '@/store/auth';
 
 export default function CollectionsPage() {
+  const t = useTranslations('collections');
+  const tCommon = useTranslations('common');
   const params = useParams();
   const router = useRouter();
   const table = params?.table as string;
@@ -79,31 +82,31 @@ export default function CollectionsPage() {
     try {
       setLoading(true);
       const response = await adminApi.getCollections();
-      setCollections(response.data.data.collections);
+      setCollections(response.data.collections);
 
-      if (!table && response.data.data.collections.length > 0) {
-        router.replace(`/admin/collections/${response.data.data.collections[0].table}`);
+      if (!table && response.data.collections.length > 0) {
+        router.replace(`/admin/collections/${response.data.collections[0].table}`);
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } } };
-      setError(error.response?.data?.error?.message || 'Failed to load collections');
+      setError(error.response?.data?.error?.message || t('messages.failedToLoad'));
     } finally {
       setLoading(false);
     }
-  }, [table, router]);
+  }, [table, router, t]);
 
   const fetchCollectionMeta = useCallback(async (tableName: string) => {
     try {
       setLoading(true);
       const response = await adminApi.getCollectionMeta(tableName);
-      setSelectedCollection(response.data.data);
+      setSelectedCollection(response.data.collection);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } } };
-      setError(error.response?.data?.error?.message || 'Failed to load collection metadata');
+      setError(error.response?.data?.error?.message || t('messages.failedToLoadMeta'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const fetchData = useCallback(async (collection: CollectionMeta, isInitialLoad = false) => {
     try {
@@ -122,12 +125,12 @@ export default function CollectionsPage() {
         sortColumn,
         sortOrder
       );
-      setData(response.data.data.rows);
-      setTotalPages(response.data.data.pagination.totalPages);
-      setTotalRecords(response.data.data.pagination.total);
+      setData(response.data.rows);
+      setTotalPages(response.data.pagination.totalPages);
+      setTotalRecords(response.data.pagination.total);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } } };
-      setError(error.response?.data?.error?.message || 'Failed to load data');
+      setError(error.response?.data?.error?.message || t('messages.failedToLoadData'));
     } finally {
       setLoading(false);
       setIsPaginating(false);
@@ -190,7 +193,7 @@ export default function CollectionsPage() {
 
   const handleViewContent = (row: Record<string, unknown>) => {
     setModalContent(JSON.stringify(row));
-    setModalTitle('Record Details');
+    setModalTitle(t('modals.recordDetails'));
     setModalType('row');
     setModalOpen(true);
   };
@@ -216,14 +219,14 @@ export default function CollectionsPage() {
       await fetchData(selectedCollection, false);
 
       // Show success message
-      setSuccessMessage('Record updated successfully');
+      setSuccessMessage(t('messages.recordUpdated'));
       setTimeout(() => setSuccessMessage(null), 3000);
 
       setEditModalOpen(false);
       setEditingRecord(null);
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Failed to update record');
+      const error = err as { response?: { data?: { error?: { code: string; message: string } } } };
+      setError(error.response?.data?.error?.message || t('messages.failedToUpdate'));
     }
   };
 
@@ -239,14 +242,14 @@ export default function CollectionsPage() {
       await fetchData(selectedCollection, false);
 
       // Show success message
-      setSuccessMessage('Record deleted successfully');
+      setSuccessMessage(t('messages.recordDeleted'));
       setTimeout(() => setSuccessMessage(null), 3000);
 
       setDeleteConfirmOpen(false);
       setDeletingRecord(null);
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Failed to delete record');
+      const error = err as { response?: { data?: { error?: { code: string; message: string } } } };
+      setError(error.response?.data?.error?.message || t('messages.failedToDelete'));
     } finally {
       setIsDeleting(false);
     }
@@ -313,14 +316,17 @@ export default function CollectionsPage() {
                 <div>
                   <CardTitle>{selectedCollection.name}</CardTitle>
                   <CardDescription>
-                    {totalRecords} record{totalRecords !== 1 ? 's' : ''} found
+                    {totalRecords !== 1
+                      ? t('recordsFoundPlural', { count: totalRecords })
+                      : t('recordsFound', { count: totalRecords })
+                    }
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search..."
+                      placeholder={t('actions.search')}
                       className="pl-8 w-64"
                       value={searchTerm}
                       onChange={(e) => handleSearch(e.target.value)}
@@ -335,12 +341,12 @@ export default function CollectionsPage() {
                   <div className="flex flex-col items-center justify-center h-full gap-3">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     <p className="text-muted-foreground text-sm">
-                      {loading ? 'Loading collection...' : 'Loading data...'}
+                      {loading ? t('messages.loadingCollection') : t('messages.loadingData')}
                     </p>
                   </div>
                 ) : data.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-center py-8 text-muted-foreground">
-                    No records found
+                    {t('table.noData')}
                   </div>
                 ) : (
                   <Table>
@@ -419,7 +425,7 @@ export default function CollectionsPage() {
                                         size="icon"
                                         className="h-6 w-6"
                                         onClick={() => handleViewContent(row)}
-                                        title="View details"
+                                        title={t('actions.viewDetails')}
                                       >
                                         <Eye className="h-3 w-3" />
                                       </Button>
@@ -430,7 +436,7 @@ export default function CollectionsPage() {
                                             size="icon"
                                             className="h-6 w-6"
                                             onClick={() => handleEdit(row)}
-                                            title="Edit record"
+                                            title={t('actions.editRecord')}
                                           >
                                             <Pencil className="h-3 w-3" />
                                           </Button>
@@ -439,7 +445,7 @@ export default function CollectionsPage() {
                                             size="icon"
                                             className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive"
                                             onClick={() => handleDelete(row)}
-                                            title="Delete record"
+                                            title={t('actions.deleteRecord')}
                                           >
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
@@ -538,9 +544,9 @@ export default function CollectionsPage() {
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogTitle>{t('modals.deleteConfirm.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this record? This action cannot be undone.
+              {t('modals.deleteConfirm.description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deletingRecord && (
@@ -551,7 +557,7 @@ export default function CollectionsPage() {
             </div>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{tCommon('actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={isDeleting}
@@ -560,10 +566,10 @@ export default function CollectionsPage() {
               {isDeleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  {tCommon('actions.loading')}
                 </>
               ) : (
-                'Delete'
+                tCommon('actions.delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

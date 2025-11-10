@@ -1,12 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -29,13 +37,15 @@ import { Key, Copy, RefreshCw, Trash2, AlertCircle, Plus } from 'lucide-react';
 import { isAxiosError } from 'axios';
 
 export default function ApiKeysPage() {
+  const t = useTranslations('apiKeys');
+  const tCommon = useTranslations('common');
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Generate dialog state
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-  const [newKeyName, setNewKeyName] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
 
@@ -59,9 +69,9 @@ export default function ApiKeysPage() {
       setApiKeys(response.data.apiKeys);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to load API keys');
+        setError(err.response.data.error.message || t('messages.failedToLoad'));
       } else {
-        setError('Failed to load API keys');
+        setError(t('messages.failedToLoad'));
       }
     } finally {
       setLoading(false);
@@ -69,19 +79,19 @@ export default function ApiKeysPage() {
   };
 
   const handleGenerate = async () => {
-    if (!newKeyName.trim()) return;
+    if (!selectedPlatform) return;
 
     try {
       setGenerating(true);
-      const response = await adminApi.generateApiKey(newKeyName.trim());
-      setGeneratedKey(response.data.apiKey);
-      setNewKeyName('');
+      const response = await adminApi.generateApiKey(selectedPlatform);
+      setGeneratedKey(response.data.apiKey.plainKey);
+      setSelectedPlatform('');
       await fetchApiKeys();
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to generate API key');
+        setError(err.response.data.error.message || t('messages.failedToGenerate'));
       } else {
-        setError('Failed to generate API key');
+        setError(t('messages.failedToGenerate'));
       }
       setShowGenerateDialog(false);
     } finally {
@@ -94,13 +104,13 @@ export default function ApiKeysPage() {
 
     try {
       const response = await adminApi.regenerateApiKey(regenerateKeyId);
-      setRegeneratedKey(response.data.apiKey);
+      setRegeneratedKey(response.data.apiKey.plainKey);
       await fetchApiKeys();
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to regenerate API key');
+        setError(err.response.data.error.message || t('messages.failedToRegenerate'));
       } else {
-        setError('Failed to regenerate API key');
+        setError(t('messages.failedToRegenerate'));
       }
       setShowRegenerateDialog(false);
     }
@@ -116,9 +126,9 @@ export default function ApiKeysPage() {
       setRevokeKeyId(null);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to revoke API key');
+        setError(err.response.data.error.message || t('messages.failedToRevoke'));
       } else {
-        setError('Failed to revoke API key');
+        setError(t('messages.failedToRevoke'));
       }
     }
   };
@@ -130,7 +140,7 @@ export default function ApiKeysPage() {
   const closeGenerateDialog = () => {
     setShowGenerateDialog(false);
     setGeneratedKey(null);
-    setNewKeyName('');
+    setSelectedPlatform('');
   };
 
   const closeRegenerateDialog = () => {
@@ -143,8 +153,8 @@ export default function ApiKeysPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">API Keys</h1>
-          <p className="text-muted-foreground">Manage API keys for authentication</p>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         <Card>
           <CardHeader>
@@ -166,12 +176,12 @@ export default function ApiKeysPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">API Keys</h1>
-          <p className="text-muted-foreground">Manage API keys for authentication</p>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         <Button onClick={() => setShowGenerateDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Generate New Key
+          {t('actions.generateNew')}
         </Button>
       </div>
 
@@ -184,25 +194,25 @@ export default function ApiKeysPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>API Keys</CardTitle>
+          <CardTitle>{t('card.title')}</CardTitle>
           <CardDescription>
-            These keys are used to authenticate API requests. Keep them secure.
+            {t('card.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {(apiKeys?.length || 0) === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No API keys found. Generate one to get started.
+              {t('messages.noKeys')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('table.name')}</TableHead>
+                  <TableHead>{t('table.status')}</TableHead>
+                  <TableHead>{t('table.created')}</TableHead>
+                  <TableHead>{t('table.createdBy')}</TableHead>
+                  <TableHead className="text-right">{t('table.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -216,13 +226,13 @@ export default function ApiKeysPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={key.revokedAt ? 'destructive' : 'default'}>
-                        {key.revokedAt ? 'Revoked' : 'Active'}
+                        {key.revokedAt ? tCommon('status.revoked') : tCommon('status.active')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(key.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">User #{key.createdBy}</TableCell>
+                    <TableCell className="text-muted-foreground">{t('table.userPrefix')}{key.createdBy}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         {!key.revokedAt && (
@@ -263,11 +273,11 @@ export default function ApiKeysPage() {
       <Dialog open={showGenerateDialog} onOpenChange={closeGenerateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Generate New API Key</DialogTitle>
+            <DialogTitle>{t('dialogs.generate.title')}</DialogTitle>
             <DialogDescription>
               {generatedKey
-                ? 'Your API key has been generated. Copy it now - you won\'t be able to see it again!'
-                : 'Create a new API key for authenticating requests.'}
+                ? t('dialogs.generate.descriptionAfter')
+                : t('dialogs.generate.descriptionBefore')}
             </DialogDescription>
           </DialogHeader>
 
@@ -275,9 +285,9 @@ export default function ApiKeysPage() {
             <div className="space-y-4">
               <Alert>
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>API Key Generated</AlertTitle>
+                <AlertTitle>{t('dialogs.generate.alertTitle')}</AlertTitle>
                 <AlertDescription>
-                  Make sure to copy your API key now. You won&apos;t be able to see it again!
+                  {t('dialogs.generate.alertDescription')}
                 </AlertDescription>
               </Alert>
               <div className="flex items-center gap-2">
@@ -293,38 +303,37 @@ export default function ApiKeysPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div>
-                <label htmlFor="keyName" className="text-sm font-medium">
-                  Key Name
+              <div className="space-y-2">
+                <label htmlFor="platform" className="text-sm font-medium">
+                  {t('dialogs.generate.platformLabel')}
                 </label>
-                <Input
-                  id="keyName"
-                  placeholder="e.g., ios_api_key"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newKeyName.trim()) {
-                      handleGenerate();
-                    }
-                  }}
-                />
+                <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                  <SelectTrigger id="platform">
+                    <SelectValue placeholder={t('dialogs.generate.platformPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ios">{t('dialogs.generate.platformIos')}</SelectItem>
+                    <SelectItem value="android">{t('dialogs.generate.platformAndroid')}</SelectItem>
+                    <SelectItem value="admin_panel">{t('dialogs.generate.platformAdminPanel')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
 
           <DialogFooter>
             {generatedKey ? (
-              <Button onClick={closeGenerateDialog}>Done</Button>
+              <Button onClick={closeGenerateDialog}>{t('actions.done')}</Button>
             ) : (
               <>
                 <Button variant="outline" onClick={closeGenerateDialog}>
-                  Cancel
+                  {tCommon('actions.cancel')}
                 </Button>
                 <Button
                   onClick={handleGenerate}
-                  disabled={!newKeyName.trim() || generating}
+                  disabled={!selectedPlatform || generating}
                 >
-                  {generating ? 'Generating...' : 'Generate'}
+                  {generating ? t('dialogs.generate.generating') : tCommon('actions.confirm')}
                 </Button>
               </>
             )}
@@ -336,11 +345,11 @@ export default function ApiKeysPage() {
       <Dialog open={showRegenerateDialog} onOpenChange={closeRegenerateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Regenerate API Key</DialogTitle>
+            <DialogTitle>{t('dialogs.regenerate.title')}</DialogTitle>
             <DialogDescription>
               {regeneratedKey
-                ? 'Your API key has been regenerated. Copy it now - you won\'t be able to see it again!'
-                : 'This will generate a new key and invalidate the old one. This action cannot be undone.'}
+                ? t('dialogs.regenerate.descriptionAfter')
+                : t('dialogs.regenerate.descriptionBefore')}
             </DialogDescription>
           </DialogHeader>
 
@@ -348,9 +357,9 @@ export default function ApiKeysPage() {
             <div className="space-y-4">
               <Alert>
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>API Key Regenerated</AlertTitle>
+                <AlertTitle>{t('dialogs.regenerate.alertTitle')}</AlertTitle>
                 <AlertDescription>
-                  The old key has been invalidated. Make sure to update all services using this key.
+                  {t('dialogs.regenerate.alertDescription')}
                 </AlertDescription>
               </Alert>
               <div className="flex items-center gap-2">
@@ -368,14 +377,14 @@ export default function ApiKeysPage() {
 
           <DialogFooter>
             {regeneratedKey ? (
-              <Button onClick={closeRegenerateDialog}>Done</Button>
+              <Button onClick={closeRegenerateDialog}>{t('actions.done')}</Button>
             ) : (
               <>
                 <Button variant="outline" onClick={closeRegenerateDialog}>
-                  Cancel
+                  {tCommon('actions.cancel')}
                 </Button>
                 <Button variant="destructive" onClick={handleRegenerate}>
-                  Regenerate
+                  {t('dialogs.regenerate.action')}
                 </Button>
               </>
             )}
@@ -387,18 +396,17 @@ export default function ApiKeysPage() {
       <Dialog open={showRevokeDialog} onOpenChange={() => setShowRevokeDialog(false)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Revoke API Key</DialogTitle>
+            <DialogTitle>{t('dialogs.revoke.title')}</DialogTitle>
             <DialogDescription>
-              This will permanently revoke this API key. All requests using this key will fail. This
-              action cannot be undone.
+              {t('dialogs.revoke.description')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRevokeDialog(false)}>
-              Cancel
+              {tCommon('actions.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleRevoke}>
-              Revoke
+              {t('dialogs.revoke.action')}
             </Button>
           </DialogFooter>
         </DialogContent>

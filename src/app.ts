@@ -104,6 +104,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           process.env.CORS_ORIGIN,
         ].filter((origin): origin is string => Boolean(origin)),
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
   // Register JWT plugin for authentication

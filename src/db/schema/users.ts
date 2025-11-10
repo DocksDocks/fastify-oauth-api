@@ -1,4 +1,6 @@
 import { pgTable, serial, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+import { userPreferences } from './user-preferences';
 
 export const providerEnum = pgEnum('provider', ['google', 'apple', 'system']);
 export const roleEnum = pgEnum('role', ['user', 'admin', 'superadmin']);
@@ -16,6 +18,14 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
 });
+
+// Relations
+export const usersRelations = relations(users, ({ one }) => ({
+  preferences: one(userPreferences, {
+    fields: [users.id],
+    references: [userPreferences.userId],
+  }),
+}));
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

@@ -77,23 +77,24 @@ async function listUsers(
 
     return reply.send({
       success: true,
-      data: {
-        users: userList,
-        pagination: {
-          page,
-          limit,
-          total: count,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1,
-        },
+      users: userList,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
       },
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to list users');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to list users',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to list users',
+      },
     });
   }
 }
@@ -131,19 +132,25 @@ async function getUser(
     if (!user) {
       return reply.status(404).send({
         success: false,
-        error: 'User not found',
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+        },
       });
     }
 
     return reply.send({
       success: true,
-      data: user,
+      user,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to get user');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to get user',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get user',
+      },
     });
   }
 }
@@ -166,11 +173,14 @@ async function updateUserRole(
     const currentUser = request.user as JWTPayload;
 
     // Validate role
-    /* v8 ignore next 5 - Unreachable: Fastify schema validation catches this */
+    /* v8 ignore next 7 - Unreachable: Fastify schema validation catches this */
     if (!['user', 'admin', 'superadmin'].includes(role)) {
       return reply.status(400).send({
         success: false,
-        error: 'Invalid role. Must be one of: user, admin, superadmin',
+        error: {
+          code: 'INVALID_ROLE',
+          message: 'Invalid role. Must be one of: user, admin, superadmin',
+        },
       });
     }
 
@@ -178,7 +188,10 @@ async function updateUserRole(
     if (id === currentUser.id) {
       return reply.status(400).send({
         success: false,
-        error: 'You cannot change your own role',
+        error: {
+          code: 'CANNOT_MODIFY_SELF',
+          message: 'You cannot change your own role',
+        },
       });
     }
 
@@ -186,7 +199,10 @@ async function updateUserRole(
     if (role === 'superadmin' && currentUser.role !== 'superadmin') {
       return reply.status(403).send({
         success: false,
-        error: 'Only superadmins can promote users to superadmin',
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only superadmins can promote users to superadmin',
+        },
       });
     }
 
@@ -206,7 +222,10 @@ async function updateUserRole(
     if (!updatedUser) {
       return reply.status(404).send({
         success: false,
-        error: 'User not found',
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+        },
       });
     }
 
@@ -214,14 +233,17 @@ async function updateUserRole(
 
     return reply.send({
       success: true,
-      data: updatedUser,
+      user: updatedUser,
       message: `User role updated to ${role}`,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to update user role');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to update user role',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to update user role',
+      },
     });
   }
 }
@@ -244,7 +266,10 @@ async function deleteUser(
     if (id === currentUser.id) {
       return reply.status(400).send({
         success: false,
-        error: 'You cannot delete your own account',
+        error: {
+          code: 'CANNOT_DELETE_SELF',
+          message: 'You cannot delete your own account',
+        },
       });
     }
 
@@ -258,7 +283,10 @@ async function deleteUser(
     if (!userToDelete) {
       return reply.status(404).send({
         success: false,
-        error: 'User not found',
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+        },
       });
     }
 
@@ -266,7 +294,10 @@ async function deleteUser(
     if (userToDelete.role === 'superadmin' && currentUser.role !== 'superadmin') {
       return reply.status(403).send({
         success: false,
-        error: 'Only superadmins can delete other superadmins',
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only superadmins can delete other superadmins',
+        },
       });
     }
 
@@ -283,7 +314,10 @@ async function deleteUser(
     request.log.error({ error }, 'Failed to delete user');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to delete user',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to delete user',
+      },
     });
   }
 }
@@ -332,7 +366,7 @@ async function getUserStats(request: FastifyRequest, reply: FastifyReply): Promi
 
     return reply.send({
       success: true,
-      data: {
+      stats: {
         total,
         byRole,
         byProvider,
@@ -342,7 +376,10 @@ async function getUserStats(request: FastifyRequest, reply: FastifyReply): Promi
     request.log.error({ error }, 'Failed to get user stats');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to get user statistics',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get user statistics',
+      },
     });
   }
 }
@@ -379,36 +416,31 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            users: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  email: { type: 'string' },
+                  name: { type: 'string', nullable: true },
+                  avatar: { type: 'string', nullable: true },
+                  role: { type: 'string', enum: ['user', 'coach', 'admin', 'superadmin'] },
+                  provider: { type: 'string' },
+                  createdAt: { type: 'string' },
+                  lastLoginAt: { type: 'string', nullable: true },
+                },
+              },
+            },
+            pagination: {
               type: 'object',
               properties: {
-                users: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'number' },
-                      email: { type: 'string' },
-                      name: { type: 'string', nullable: true },
-                      avatar: { type: 'string', nullable: true },
-                      role: { type: 'string', enum: ['user', 'coach', 'admin', 'superadmin'] },
-                      provider: { type: 'string' },
-                      createdAt: { type: 'string' },
-                      lastLoginAt: { type: 'string', nullable: true },
-                    },
-                  },
-                },
-                pagination: {
-                  type: 'object',
-                  properties: {
-                    page: { type: 'number' },
-                    limit: { type: 'number' },
-                    total: { type: 'number' },
-                    totalPages: { type: 'number' },
-                    hasNext: { type: 'boolean' },
-                    hasPrev: { type: 'boolean' },
-                  },
-                },
+                page: { type: 'number' },
+                limit: { type: 'number' },
+                total: { type: 'number' },
+                totalPages: { type: 'number' },
+                hasNext: { type: 'boolean' },
+                hasPrev: { type: 'boolean' },
               },
             },
           },
@@ -428,7 +460,7 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            stats: {
               type: 'object',
               properties: {
                 total: { type: 'number' },
@@ -460,7 +492,7 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
                 id: { type: 'number' },
@@ -506,7 +538,7 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
                 id: { type: 'number' },

@@ -14,6 +14,11 @@ import {
   getUserProviderAccounts,
   deleteProviderAccount,
 } from '@/modules/auth/provider-accounts.service';
+import {
+  getOrCreateUserPreferences,
+  updateUserPreferences,
+} from '@/services/user-preferences.service';
+import type { NewUserPreferences } from '@/db/schema';
 
 // Extend FastifyInstance to include authenticate decorator
 declare module 'fastify' {
@@ -53,9 +58,13 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply): Promise
       });
     }
 
+    // Get or create user preferences
+    const preferences = await getOrCreateUserPreferences(user.id);
+
     return reply.send({
       success: true,
-      data: userRecord,
+      user: userRecord,
+      preferences,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to fetch profile');
@@ -69,13 +78,26 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply): Promise
 /**
  * Update user profile
  * PATCH /api/profile
- * Body: { name?, avatar? }
+ * Body: { name?, avatar?, locale?, theme?, timezone?, currency?, dateFormat?, timeFormat?, emailNotifications?, pushNotifications?, marketingEmails?, compactMode?, showAvatars? }
  */
 async function updateProfile(
   request: FastifyRequest<{
     Body: {
+      // User fields
       name?: string;
       avatar?: string;
+      // Preference fields
+      locale?: string;
+      theme?: 'light' | 'dark' | 'system';
+      timezone?: 'UTC' | 'America/New_York' | 'America/Chicago' | 'America/Denver' | 'America/Los_Angeles' | 'America/Sao_Paulo' | 'Europe/London' | 'Europe/Paris' | 'Europe/Berlin' | 'Asia/Tokyo' | 'Asia/Shanghai' | 'Asia/Dubai' | 'Australia/Sydney';
+      currency?: 'USD' | 'EUR' | 'GBP' | 'BRL' | 'JPY' | 'CNY' | 'AUD' | 'CAD' | 'CHF' | 'INR';
+      dateFormat?: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD' | 'DD.MM.YYYY' | 'DD-MM-YYYY';
+      timeFormat?: '12h' | '24h';
+      emailNotifications?: boolean;
+      pushNotifications?: boolean;
+      marketingEmails?: boolean;
+      compactMode?: boolean;
+      showAvatars?: boolean;
       [key: string]: unknown; // Allow additional fields for validation
     };
   }>,
@@ -107,52 +129,104 @@ async function updateProfile(
       });
     }
 
-    const { name, avatar } = body;
+    const { name, avatar, locale, theme, timezone, currency, dateFormat, timeFormat, emailNotifications, pushNotifications, marketingEmails, compactMode, showAvatars } = body;
 
-    // Validate at least one editable field provided
-    if (name === undefined && avatar === undefined) {
-      return reply.status(400).send({
-        success: false,
-        error: 'At least one field (name or avatar) is required',
-      });
-    }
-
-    // Prepare update data
-    const updates: { name?: string; avatar?: string; updatedAt: Date } = {
+    // Separate user fields from preference fields
+    const userUpdates: { name?: string; avatar?: string; updatedAt: Date } = {
       updatedAt: new Date(),
     };
 
+    const preferenceUpdates: Partial<Omit<NewUserPreferences, 'userId' | 'id' | 'createdAt' | 'updatedAt'>> = {};
+
+    // User fields
     if (name !== undefined) {
-      updates.name = name;
+      userUpdates.name = name;
     }
     if (avatar !== undefined) {
-      updates.avatar = avatar;
+      userUpdates.avatar = avatar;
     }
 
-    // Update user in database
-    const [updatedUser] = await db
-      .update(users)
-      .set(updates)
-      .where(eq(users.id, user.id))
-      .returning({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        avatar: users.avatar,
-        role: users.role,
-        updatedAt: users.updatedAt,
-      });
+    // Preference fields
+    if (locale !== undefined) preferenceUpdates.locale = locale;
+    if (theme !== undefined) preferenceUpdates.theme = theme;
+    if (timezone !== undefined) preferenceUpdates.timezone = timezone;
+    if (currency !== undefined) preferenceUpdates.currency = currency;
+    if (dateFormat !== undefined) preferenceUpdates.dateFormat = dateFormat;
+    if (timeFormat !== undefined) preferenceUpdates.timeFormat = timeFormat;
+    if (emailNotifications !== undefined) preferenceUpdates.emailNotifications = emailNotifications;
+    if (pushNotifications !== undefined) preferenceUpdates.pushNotifications = pushNotifications;
+    if (marketingEmails !== undefined) preferenceUpdates.marketingEmails = marketingEmails;
+    if (compactMode !== undefined) preferenceUpdates.compactMode = compactMode;
+    if (showAvatars !== undefined) preferenceUpdates.showAvatars = showAvatars;
 
-    if (!updatedUser) {
-      return reply.status(404).send({
+    // Validate at least one editable field provided
+    if (Object.keys(userUpdates).length === 1 && Object.keys(preferenceUpdates).length === 0) {
+      return reply.status(400).send({
         success: false,
-        error: 'User not found',
+        error: 'At least one field is required',
       });
+    }
+
+    let updatedUser = null;
+
+    // Update user fields if any
+    if (Object.keys(userUpdates).length > 1) {
+      const [result] = await db
+        .update(users)
+        .set(userUpdates)
+        .where(eq(users.id, user.id))
+        .returning({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          avatar: users.avatar,
+          role: users.role,
+          updatedAt: users.updatedAt,
+        });
+
+      updatedUser = result;
+
+      if (!updatedUser) {
+        return reply.status(404).send({
+          success: false,
+          error: 'User not found',
+        });
+      }
+    }
+
+    // Update preferences if any
+    let updatedPreferences = null;
+    if (Object.keys(preferenceUpdates).length > 0) {
+      updatedPreferences = await updateUserPreferences(user.id, preferenceUpdates);
+    }
+
+    // If no user updates, fetch current user
+    if (!updatedUser) {
+      const [currentUser] = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          avatar: users.avatar,
+          role: users.role,
+          updatedAt: users.updatedAt,
+        })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1);
+
+      updatedUser = currentUser;
+    }
+
+    // Get current preferences if not updated
+    if (!updatedPreferences) {
+      updatedPreferences = await getOrCreateUserPreferences(user.id);
     }
 
     return reply.send({
       success: true,
-      data: updatedUser,
+      user: updatedUser,
+      preferences: updatedPreferences,
       message: 'Profile updated successfully',
     });
   } catch (error) {
@@ -200,7 +274,7 @@ async function getProviders(request: FastifyRequest, reply: FastifyReply): Promi
 
     return reply.send({
       success: true,
-      data: providers,
+      providers,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to fetch providers');
@@ -244,9 +318,7 @@ async function unlinkProvider(
     return reply.send({
       success: true,
       message: `${provider} provider unlinked successfully`,
-      data: {
-        remainingProviders,
-      },
+      remainingProviders,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to unlink provider');
@@ -275,7 +347,7 @@ export default async function profileRoutes(fastify: FastifyInstance): Promise<v
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
                 id: { type: 'number' },
@@ -305,6 +377,7 @@ export default async function profileRoutes(fastify: FastifyInstance): Promise<v
         properties: {
           name: { type: 'string', minLength: 1, maxLength: 100 },
           avatar: { type: 'string', format: 'uri' },
+          locale: { type: 'string', enum: ['pt-BR', 'en'] },
         },
       },
       response: {
@@ -312,7 +385,7 @@ export default async function profileRoutes(fastify: FastifyInstance): Promise<v
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
                 id: { type: 'number' },
@@ -320,6 +393,7 @@ export default async function profileRoutes(fastify: FastifyInstance): Promise<v
                 name: { type: 'string', nullable: true },
                 avatar: { type: 'string', nullable: true },
                 role: { type: 'string' },
+                locale: { type: 'string', nullable: true },
                 updatedAt: { type: 'string' },
               },
             },
@@ -360,7 +434,7 @@ export default async function profileRoutes(fastify: FastifyInstance): Promise<v
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            providers: {
               type: 'array',
               items: {
                 type: 'object',
@@ -404,24 +478,19 @@ export default async function profileRoutes(fastify: FastifyInstance): Promise<v
           properties: {
             success: { type: 'boolean' },
             message: { type: 'string' },
-            data: {
-              type: 'object',
-              properties: {
-                remainingProviders: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'number' },
-                      provider: { type: 'string' },
-                      providerId: { type: 'string' },
-                      email: { type: 'string' },
-                      name: { type: 'string', nullable: true },
-                      avatar: { type: 'string', nullable: true },
-                      linkedAt: { type: 'string' },
-                      isPrimary: { type: 'boolean' },
-                    },
-                  },
+            remainingProviders: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  provider: { type: 'string' },
+                  providerId: { type: 'string' },
+                  email: { type: 'string' },
+                  name: { type: 'string', nullable: true },
+                  avatar: { type: 'string', nullable: true },
+                  linkedAt: { type: 'string' },
+                  isPrimary: { type: 'boolean' },
                 },
               },
             },

@@ -6,7 +6,7 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { LoginResponse, AccountLinkingRequest, LinkProviderPayload } from './auth.types';
+import type { AccountLinkingRequest, LinkProviderPayload } from './auth.types';
 import type { User } from '@/db/schema';
 import env from '@/config/env';
 import {
@@ -64,13 +64,16 @@ export async function handleGoogleLogin(
 
     return reply.send({
       success: true,
-      data: { authUrl },
+      authUrl,
     });
   } catch (error) {
     request.log.error({ error }, 'Google login failed');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to generate Google OAuth URL',
+      error: {
+        code: 'OAUTH_URL_GENERATION_FAILED',
+        message: 'Failed to generate Google OAuth URL',
+      },
     });
   }
 }
@@ -134,6 +137,7 @@ export async function handleGoogleCallback(
         name: user.name,
         avatar: user.avatar,
         role: user.role,
+        locale: user.locale,
       },
       tokens,
     }));
@@ -168,13 +172,16 @@ export async function handleAppleLogin(
 
     return reply.send({
       success: true,
-      data: { authUrl },
+      authUrl,
     });
   } catch (error) {
     request.log.error({ error }, 'Apple login failed');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to generate Apple OAuth URL',
+      error: {
+        code: 'OAUTH_URL_GENERATION_FAILED',
+        message: 'Failed to generate Apple OAuth URL',
+      },
     });
   }
 }
@@ -243,6 +250,7 @@ export async function handleAppleCallback(
         name: userRecord.name,
         avatar: userRecord.avatar,
         role: userRecord.role,
+        locale: userRecord.locale,
       },
       tokens,
     }));
@@ -278,13 +286,16 @@ export async function handleAdminGoogleLogin(
 
     return reply.send({
       success: true,
-      data: { authUrl },
+      authUrl,
     });
   } catch (error) {
     request.log.error({ error }, 'Admin Google login failed');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to generate Google OAuth URL',
+      error: {
+        code: 'OAUTH_URL_GENERATION_FAILED',
+        message: 'Failed to generate Google OAuth URL',
+      },
     });
   }
 }
@@ -373,13 +384,16 @@ export async function handleAdminAppleLogin(
 
     return reply.send({
       success: true,
-      data: { authUrl },
+      authUrl,
     });
   } catch (error) {
     request.log.error({ error }, 'Admin Apple login failed');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to generate Apple OAuth URL',
+      error: {
+        code: 'OAUTH_URL_GENERATION_FAILED',
+        message: 'Failed to generate Apple OAuth URL',
+      },
     });
   }
 }
@@ -469,7 +483,10 @@ export async function handleRefreshToken(
     if (!refreshToken) {
       return reply.status(400).send({
         success: false,
-        error: 'Missing refresh token',
+        error: {
+          code: 'MISSING_REFRESH_TOKEN',
+          message: 'Missing refresh token',
+        },
       });
     }
 
@@ -483,14 +500,17 @@ export async function handleRefreshToken(
 
     return reply.send({
       success: true,
-      data: tokens,
+      tokens,
     });
   } catch (error) {
     request.log.error(error, 'Token refresh failed');
     const err = error as Error;
     return reply.status(401).send({
       success: false,
-      error: err.message || 'Invalid or expired refresh token',
+      error: {
+        code: 'TOKEN_REFRESH_FAILED',
+        message: err.message || 'Invalid or expired refresh token',
+      },
     });
   }
 }
@@ -515,27 +535,30 @@ export async function handleLogout(
       await revokeAllUserTokens(user.id);
       return reply.send({
         success: true,
-        data: { message: 'Logged out from all devices successfully' },
+        message: 'Logged out from all devices successfully',
       });
     } else if (refreshToken) {
       // Logout from this device only
       await revokeRefreshToken(refreshToken);
       return reply.send({
         success: true,
-        data: { message: 'Logged out successfully' },
+        message: 'Logged out successfully',
       });
     } else {
       // No token provided, just return success (client-side logout)
       return reply.send({
         success: true,
-        data: { message: 'Logged out successfully' },
+        message: 'Logged out successfully',
       });
     }
   } catch (error) {
     request.log.error({ error }, 'Logout failed');
     return reply.status(500).send({
       success: false,
-      error: 'Logout failed',
+      error: {
+        code: 'LOGOUT_FAILED',
+        message: 'Logout failed',
+      },
     });
   }
 }
@@ -555,7 +578,10 @@ export async function handleVerifyToken(
     if (!token) {
       return reply.status(401).send({
         success: false,
-        error: 'Missing or invalid authorization header',
+        error: {
+          code: 'MISSING_AUTHORIZATION_HEADER',
+          message: 'Missing or invalid authorization header',
+        },
       });
     }
 
@@ -567,32 +593,36 @@ export async function handleVerifyToken(
     if (!user) {
       return reply.status(401).send({
         success: false,
-        error: 'User not found',
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+        },
       });
     }
 
     return reply.send({
       success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
-          provider: user.provider,
-          providerId: user.providerId,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt.toISOString(),
-          lastLoginAt: user.lastLoginAt?.toISOString() || null,
-        },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+        provider: user.provider,
+        providerId: user.providerId,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+        lastLoginAt: user.lastLoginAt?.toISOString() || null,
       },
     });
   } catch (error) {
     request.log.error({ error }, 'Token verification failed');
     return reply.status(401).send({
       success: false,
-      error: 'Invalid or expired token',
+      error: {
+        code: 'TOKEN_VERIFICATION_FAILED',
+        message: 'Invalid or expired token',
+      },
     });
   }
 }
@@ -613,13 +643,16 @@ export async function handleGetSessions(
 
     return reply.send({
       success: true,
-      data: { sessions },
+      sessions,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to get sessions');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to retrieve sessions',
+      error: {
+        code: 'GET_SESSIONS_FAILED',
+        message: 'Failed to retrieve sessions',
+      },
     });
   }
 }
@@ -642,7 +675,10 @@ export async function handleRevokeSession(
     if (isNaN(sessionId)) {
       return reply.status(400).send({
         success: false,
-        error: 'Invalid session ID',
+        error: {
+          code: 'INVALID_SESSION_ID',
+          message: 'Invalid session ID',
+        },
       });
     }
 
@@ -650,13 +686,16 @@ export async function handleRevokeSession(
 
     return reply.send({
       success: true,
-      data: { message: 'Session revoked successfully' },
+      message: 'Session revoked successfully',
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to revoke session');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to revoke session',
+      error: {
+        code: 'REVOKE_SESSION_FAILED',
+        message: 'Failed to revoke session',
+      },
     });
   }
 }
@@ -686,14 +725,20 @@ export async function handleGoogleMobileAuth(
     if (!code) {
       return reply.status(400).send({
         success: false,
-        error: 'Missing authorization code',
+        error: {
+          code: 'MISSING_AUTHORIZATION_CODE',
+          message: 'Missing authorization code',
+        },
       });
     }
 
     if (!redirectUri) {
       return reply.status(400).send({
         success: false,
-        error: 'Missing redirect URI',
+        error: {
+          code: 'MISSING_REDIRECT_URI',
+          message: 'Missing redirect URI',
+        },
       });
     }
 
@@ -729,26 +774,25 @@ export async function handleGoogleMobileAuth(
       request.headers['user-agent']
     );
 
-    const response: LoginResponse = {
+    return reply.send({
       success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
-        },
-        tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
       },
-    };
-
-    return reply.send(response);
+      tokens,
+    });
   } catch (error) {
     request.log.error({ error }, 'Google mobile auth failed');
     return reply.status(500).send({
       success: false,
-      error: 'Google mobile authentication failed',
+      error: {
+        code: 'GOOGLE_MOBILE_AUTH_FAILED',
+        message: 'Google mobile authentication failed',
+      },
     });
   }
 }
@@ -778,7 +822,10 @@ export async function handleGoogleIdTokenAuth(
     if (!idToken) {
       return reply.status(400).send({
         success: false,
-        error: 'Missing ID token',
+        error: {
+          code: 'MISSING_ID_TOKEN',
+          message: 'Missing ID token',
+        },
       });
     }
 
@@ -811,26 +858,25 @@ export async function handleGoogleIdTokenAuth(
       request.headers['user-agent']
     );
 
-    const response: LoginResponse = {
+    return reply.send({
       success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
-        },
-        tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
       },
-    };
-
-    return reply.send(response);
+      tokens,
+    });
   } catch (error) {
     request.log.error({ error }, 'Google ID token auth failed');
     return reply.status(500).send({
       success: false,
-      error: 'Google ID token authentication failed',
+      error: {
+        code: 'GOOGLE_ID_TOKEN_AUTH_FAILED',
+        message: 'Google ID token authentication failed',
+      },
     });
   }
 }
@@ -864,7 +910,10 @@ export async function handleAppleMobileAuth(
     if (!code || !id_token) {
       return reply.status(400).send({
         success: false,
-        error: 'Missing required parameters (code and id_token)',
+        error: {
+          code: 'MISSING_REQUIRED_PARAMETERS',
+          message: 'Missing required parameters (code and id_token)',
+        },
       });
     }
 
@@ -895,26 +944,25 @@ export async function handleAppleMobileAuth(
       request.headers['user-agent']
     );
 
-    const response: LoginResponse = {
+    return reply.send({
       success: true,
-      data: {
-        user: {
-          id: userRecord.id,
-          email: userRecord.email,
-          name: userRecord.name,
-          avatar: userRecord.avatar,
-          role: userRecord.role,
-        },
-        tokens,
+      user: {
+        id: userRecord.id,
+        email: userRecord.email,
+        name: userRecord.name,
+        avatar: userRecord.avatar,
+        role: userRecord.role,
       },
-    };
-
-    return reply.send(response);
+      tokens,
+    });
   } catch (error) {
     request.log.error({ error }, 'Apple mobile auth failed');
     return reply.status(500).send({
       success: false,
-      error: 'Apple mobile authentication failed',
+      error: {
+        code: 'APPLE_MOBILE_AUTH_FAILED',
+        message: 'Apple mobile authentication failed',
+      },
     });
   }
 }
@@ -936,14 +984,20 @@ export async function handleLinkProvider(
     if (!linkingToken) {
       return reply.status(400).send({
         success: false,
-        error: 'Missing linking token',
+        error: {
+          code: 'MISSING_LINKING_TOKEN',
+          message: 'Missing linking token',
+        },
       });
     }
 
     if (!confirm) {
       return reply.status(400).send({
         success: false,
-        error: 'User did not confirm account linking',
+        error: {
+          code: 'LINKING_NOT_CONFIRMED',
+          message: 'User did not confirm account linking',
+        },
       });
     }
 
@@ -953,27 +1007,26 @@ export async function handleLinkProvider(
     // Generate JWT tokens for the newly linked account
     const tokens = await generateTokens(request.server, user, request.ip, request.headers['user-agent']);
 
-    const response: LoginResponse = {
+    return reply.send({
       success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
-        },
-        tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
       },
-    };
-
-    return reply.send(response);
+      tokens,
+    });
   } catch (error) {
     request.log.error({ error }, 'Link provider failed');
     const err = error as Error;
     return reply.status(400).send({
       success: false,
-      error: err.message || 'Failed to link provider',
+      error: {
+        code: 'LINK_PROVIDER_FAILED',
+        message: err.message || 'Failed to link provider',
+      },
     });
   }
 }

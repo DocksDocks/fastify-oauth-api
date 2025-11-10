@@ -26,6 +26,7 @@ import {
   createProviderAccount,
   getUserProviderAccounts,
 } from './provider-accounts.service';
+import { createDefaultPreferences } from '@/services/user-preferences.service';
 
 /**
  * Get list of admin emails from environment
@@ -416,6 +417,9 @@ export async function handleOAuthCallback(
     name || null,
     avatar || null
   );
+
+  // Create default user preferences
+  await createDefaultPreferences(newUser.id, 'pt-BR');
 
   console.log(`[OAuth] Created new user: ${email} (${provider}) with role: ${assignedRole}`);
   return newUser;

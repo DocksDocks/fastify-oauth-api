@@ -42,12 +42,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                authUrl: { type: 'string' },
-              },
-            },
+            authUrl: { type: 'string' },
           },
         },
       },
@@ -72,27 +67,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    name: { type: 'string', nullable: true },
-                    avatar: { type: 'string', nullable: true },
-                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
-                  },
-                },
-                tokens: {
-                  type: 'object',
-                  properties: {
-                    accessToken: { type: 'string' },
-                    refreshToken: { type: 'string' },
-                    expiresIn: { type: 'number' },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                avatar: { type: 'string', nullable: true },
+                role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
               },
             },
           },
@@ -112,12 +102,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                authUrl: { type: 'string' },
-              },
-            },
+            authUrl: { type: 'string' },
           },
         },
       },
@@ -145,27 +130,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    name: { type: 'string', nullable: true },
-                    avatar: { type: 'string', nullable: true },
-                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
-                  },
-                },
-                tokens: {
-                  type: 'object',
-                  properties: {
-                    accessToken: { type: 'string' },
-                    refreshToken: { type: 'string' },
-                    expiresIn: { type: 'number' },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                avatar: { type: 'string', nullable: true },
+                role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
               },
             },
           },
@@ -185,12 +165,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                authUrl: { type: 'string' },
-              },
-            },
+            authUrl: { type: 'string' },
           },
         },
       },
@@ -223,12 +198,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                authUrl: { type: 'string' },
-              },
-            },
+            authUrl: { type: 'string' },
           },
         },
       },
@@ -272,7 +242,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            tokens: {
               type: 'object',
               properties: {
                 accessToken: { type: 'string' },
@@ -297,24 +267,19 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    name: { type: ['string', 'null'] },
-                    avatar: { type: ['string', 'null'] },
-                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
-                    provider: { type: 'string' },
-                    providerId: { type: 'string' },
-                    createdAt: { type: 'string' },
-                    updatedAt: { type: 'string' },
-                    lastLoginAt: { type: ['string', 'null'] },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: ['string', 'null'] },
+                avatar: { type: ['string', 'null'] },
+                role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+                provider: { type: 'string' },
+                providerId: { type: 'string' },
+                createdAt: { type: 'string' },
+                updatedAt: { type: 'string' },
+                lastLoginAt: { type: ['string', 'null'] },
               },
             },
           },
@@ -340,12 +305,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                message: { type: 'string' },
-              },
-            },
+            message: { type: 'string' },
           },
         },
       },
@@ -378,27 +338,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    name: { type: 'string', nullable: true },
-                    avatar: { type: 'string', nullable: true },
-                    role: { type: 'string' },
-                  },
-                },
-                tokens: {
-                  type: 'object',
-                  properties: {
-                    accessToken: { type: 'string' },
-                    refreshToken: { type: 'string' },
-                    expiresIn: { type: 'number' },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                avatar: { type: 'string', nullable: true },
+                role: { type: 'string' },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
               },
             },
           },
@@ -432,27 +387,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    name: { type: 'string', nullable: true },
-                    avatar: { type: 'string', nullable: true },
-                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
-                  },
-                },
-                tokens: {
-                  type: 'object',
-                  properties: {
-                    accessToken: { type: 'string' },
-                    refreshToken: { type: 'string' },
-                    expiresIn: { type: 'number' },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                avatar: { type: 'string', nullable: true },
+                role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
               },
             },
           },
@@ -481,27 +431,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    name: { type: 'string', nullable: true },
-                    avatar: { type: 'string', nullable: true },
-                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
-                  },
-                },
-                tokens: {
-                  type: 'object',
-                  properties: {
-                    accessToken: { type: 'string' },
-                    refreshToken: { type: 'string' },
-                    expiresIn: { type: 'number' },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                avatar: { type: 'string', nullable: true },
+                role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
               },
             },
           },
@@ -538,27 +483,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
+            user: {
               type: 'object',
               properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    email: { type: 'string' },
-                    name: { type: 'string', nullable: true },
-                    avatar: { type: 'string', nullable: true },
-                    role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
-                  },
-                },
-                tokens: {
-                  type: 'object',
-                  properties: {
-                    accessToken: { type: 'string' },
-                    refreshToken: { type: 'string' },
-                    expiresIn: { type: 'number' },
-                  },
-                },
+                id: { type: 'number' },
+                email: { type: 'string' },
+                name: { type: 'string', nullable: true },
+                avatar: { type: 'string', nullable: true },
+                role: { type: 'string', enum: ['user', 'admin', 'superadmin'] },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
               },
             },
           },
@@ -579,24 +519,19 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                sessions: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'number' },
-                      familyId: { type: 'string' },
-                      createdAt: { type: 'string' },
-                      expiresAt: { type: 'string' },
-                      ipAddress: { type: 'string', nullable: true },
-                      userAgent: { type: 'string', nullable: true },
-                      isUsed: { type: 'boolean' },
-                      usedAt: { type: 'string', nullable: true },
-                    },
-                  },
+            sessions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  familyId: { type: 'string' },
+                  createdAt: { type: 'string' },
+                  expiresAt: { type: 'string' },
+                  ipAddress: { type: 'string', nullable: true },
+                  userAgent: { type: 'string', nullable: true },
+                  isUsed: { type: 'boolean' },
+                  usedAt: { type: 'string', nullable: true },
                 },
               },
             },
@@ -625,12 +560,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                message: { type: 'string' },
-              },
-            },
+            message: { type: 'string' },
           },
         },
       },

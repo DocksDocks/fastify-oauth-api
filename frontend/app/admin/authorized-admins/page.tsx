@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/auth';
 import { RestrictedAccess } from '@/components/RestrictedAccess';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,8 +41,11 @@ import { adminApi } from '@/lib/api';
 import { UserPlus, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import type { AuthorizedAdmin } from '@/types';
+import { ViewContentModal } from '@/components/ViewContentModal';
 
 export default function AuthorizedAdminsPage() {
+  const t = useTranslations('authorizedAdmins');
+  const tCommon = useTranslations('common');
   const { user } = useAuthStore();
   const [authorizedAdmins, setAuthorizedAdmins] = useState<AuthorizedAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +57,13 @@ export default function AuthorizedAdminsPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // User details modal state
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [userModalContent, setUserModalContent] = useState('');
+  const [userModalTitle, setUserModalTitle] = useState('');
+  const [loadingUser, setLoadingUser] = useState(false);
+
   const hasFetched = useRef(false);
 
   // Check if user is superadmin
@@ -77,12 +88,12 @@ export default function AuthorizedAdminsPage() {
       setLoading(true);
       setError(null);
       const response = await adminApi.getAuthorizedAdmins();
-      setAuthorizedAdmins(response.data.data.authorizedAdmins);
+      setAuthorizedAdmins(response.data.authorizedAdmins);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to load authorized admins');
+        setError(err.response.data.error.message || t('messages.failedToLoad'));
       } else {
-        setError('Failed to load authorized admins');
+        setError(t('messages.failedToLoad'));
       }
     } finally {
       setLoading(false);
@@ -91,7 +102,7 @@ export default function AuthorizedAdminsPage() {
 
   const handleAddEmail = async () => {
     if (!newEmail.trim()) {
-      setAddError('Email is required');
+      setAddError(t('messages.emailRequired'));
       return;
     }
 
@@ -102,7 +113,7 @@ export default function AuthorizedAdminsPage() {
 
       await adminApi.addAuthorizedAdmin(newEmail.trim());
 
-      setAddSuccess('Email added successfully!');
+      setAddSuccess(t('messages.emailAdded'));
       setNewEmail('');
 
       // Refresh list
@@ -115,9 +126,9 @@ export default function AuthorizedAdminsPage() {
       }, 1500);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setAddError(err.response.data.error.message || 'Failed to add email');
+        setAddError(err.response.data.error.message || t('messages.failedToAdd'));
       } else {
-        setAddError('Failed to add email');
+        setAddError(t('messages.failedToAdd'));
       }
     } finally {
       setIsAdding(false);
@@ -137,6 +148,31 @@ export default function AuthorizedAdminsPage() {
       console.error('Failed to delete authorized admin:', err);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleViewUser = async (userId: number) => {
+    try {
+      setLoadingUser(true);
+      const response = await adminApi.getUser(userId);
+      console.log('Full response:', response);
+      console.log('response.data:', response.data);
+      console.log('response.data.user:', response.data.user);
+
+      const userData = response.data.user;
+
+      if (!userData) {
+        console.error('User data is undefined!');
+        return;
+      }
+
+      setUserModalContent(JSON.stringify(userData));
+      setUserModalTitle(`User Details: ${userData.name || userData.email}`);
+      setUserModalOpen(true);
+    } catch (err: unknown) {
+      console.error('Failed to load user details:', err);
+    } finally {
+      setLoadingUser(false);
     }
   };
 
@@ -166,8 +202,8 @@ export default function AuthorizedAdminsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Authorized Admins</h1>
-          <p className="text-muted-foreground">Manage pre-authorized admin emails</p>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         <Card>
           <CardHeader>
@@ -191,15 +227,15 @@ export default function AuthorizedAdminsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Authorized Admins</h1>
-          <p className="text-muted-foreground">Manage pre-authorized admin emails</p>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
         <Button onClick={fetchAuthorizedAdmins} variant="outline">
-          Try Again
+          {tCommon('actions.retry')}
         </Button>
       </div>
     );
@@ -210,32 +246,32 @@ export default function AuthorizedAdminsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Authorized Admins</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="text-muted-foreground">
-            Pre-authorize emails for automatic admin promotion on sign-in
+            {t('subtitle')}
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
-              Add Email
+              {t('actions.addEmail')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Authorized Admin Email</DialogTitle>
+              <DialogTitle>{t('dialogs.addEmail.title')}</DialogTitle>
               <DialogDescription>
-                Users with this email will be automatically promoted to admin when they sign in via OAuth.
+                {t('dialogs.addEmail.description')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">{t('form.emailLabel')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@example.com"
+                  placeholder={t('form.emailPlaceholder')}
                   value={newEmail}
                   onChange={(e) => {
                     setNewEmail(e.target.value);
@@ -272,10 +308,10 @@ export default function AuthorizedAdminsPage() {
                 }}
                 disabled={isAdding}
               >
-                Cancel
+                {tCommon('actions.cancel')}
               </Button>
               <Button onClick={handleAddEmail} disabled={isAdding}>
-                {isAdding ? 'Adding...' : 'Add Email'}
+                {isAdding ? t('actions.adding') : t('actions.addEmail')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -286,26 +322,24 @@ export default function AuthorizedAdminsPage() {
       <Alert className="border-border bg-primary/5">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          <strong>How it works:</strong> When a user
-          signs in via Google OAuth with an email listed here, they will automatically be promoted
-          to the admin role. This works for both new users and existing users.
+          <strong>{t('info.howItWorks')}</strong> {t('info.description')}
         </AlertDescription>
       </Alert>
 
       {/* Authorized Admins List */}
       <Card>
         <CardHeader>
-          <CardTitle>Authorized Admin Emails ({authorizedAdmins.length})</CardTitle>
+          <CardTitle>{t('table.email')} ({authorizedAdmins.length})</CardTitle>
           <CardDescription>
-            These emails will be auto-promoted to admin role on sign-in
+            {t('subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {authorizedAdmins.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <UserPlus className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>No authorized admin emails yet</p>
-              <p className="text-sm mt-2">Click &quot;Add Email&quot; to get started</p>
+              <p>{t('messages.noEmails')}</p>
+              <p className="text-sm mt-2">{t('actions.addEmail')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -318,12 +352,24 @@ export default function AuthorizedAdminsPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{admin.email}</p>
                       <Badge variant="outline" className="text-xs">
-                        Auto-promoted
+                        {t('badges.autoPromoted')}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Added by {admin.createdByName || admin.createdByEmail} on{' '}
-                      {formatDate(admin.createdAt)}
+                      {t('badges.addedBy')}{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleViewUser(admin.createdBy);
+                        }}
+                        className="text-primary hover:underline font-medium cursor-pointer inline"
+                        disabled={loadingUser}
+                      >
+                        {admin.createdByName || admin.createdByEmail}
+                      </button>
+                      {' '}{t('table.on')} {formatDate(admin.createdAt)}
                     </p>
                   </div>
                   <Button
@@ -345,24 +391,32 @@ export default function AuthorizedAdminsPage() {
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Authorized Email?</AlertDialogTitle>
+            <AlertDialogTitle>{t('dialogs.removeConfirm.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This email will no longer be automatically promoted to admin when signing in.
-              Existing users with this email will keep their current role.
+              {t('dialogs.removeConfirm.description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{tCommon('actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && handleDeleteEmail(deleteId)}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isDeleting ? 'Removing...' : 'Remove'}
+              {isDeleting ? t('actions.remove') + '...' : t('actions.remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View User Details Modal */}
+      <ViewContentModal
+        open={userModalOpen}
+        onOpenChange={setUserModalOpen}
+        title={userModalTitle}
+        content={userModalContent}
+        type="row"
+      />
     </div>
   );
 }

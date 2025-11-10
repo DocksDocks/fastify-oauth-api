@@ -1,0 +1,262 @@
+{
+  "navigation": {
+    "title": "Painel Administrativo",
+    "menu": {
+      "dashboard": "Dashboard",
+      "apiKeys": "Chaves de API",
+      "collections": "Coleções",
+      "authorizedAdmins": "Administradores Autorizados"
+    },
+    "user": {
+      "profile": "Perfil",
+      "theme": "Tema",
+      "language": "Idioma",
+      "logout": "Sair"
+    },
+    "theme": {
+      "light": "Claro",
+      "dark": "Escuro",
+      "system": "Sistema"
+    },
+    "language": {
+      "pt-BR": "Português (Brasil)",
+      "en": "English"
+    }
+  },
+  "login": {
+    "title": "Entrar no Painel Administrativo",
+    "subtitle": "Faça login com sua conta de administrador",
+    "googleButton": "Continuar com Google",
+    "appleButton": "Continuar com Apple",
+    "adminOnly": "Acesso restrito apenas para administradores",
+    "redirecting": "Redirecionando...",
+    "error": {
+      "title": "Erro ao fazer login",
+      "description": "Ocorreu um erro ao tentar fazer login. Por favor, tente novamente.",
+      "unauthorized": "Você não tem permissão para acessar o painel administrativo.",
+      "tryAgain": "Tentar novamente"
+    }
+  },
+  "authorizedAdmins": {
+    "title": "Administradores Autorizados",
+    "subtitle": "Gerenciar e-mails pré-autorizados para promoção automática de administrador",
+    "info": {
+      "howItWorks": "Como funciona:",
+      "description": "Quando um usuário faz login via OAuth do Google com um e-mail listado aqui, ele será automaticamente promovido para a função de administrador. Isso funciona tanto para novos usuários quanto para usuários existentes."
+    },
+    "badges": {
+      "autoPromoted": "Auto-promovido",
+      "addedBy": "Adicionado por"
+    },
+    "actions": {
+      "addEmail": "Adicionar E-mail",
+      "adding": "Adicionando...",
+      "remove": "Remover",
+      "refresh": "Atualizar"
+    },
+    "form": {
+      "emailLabel": "Endereço de E-mail",
+      "emailPlaceholder": "admin@exemplo.com"
+    },
+    "table": {
+      "email": "E-mail",
+      "addedBy": "Adicionado por",
+      "dateAdded": "Data de Adição",
+      "actions": "Ações",
+      "addedByName": "Adicionado por {name} em {date}",
+      "on": "em"
+    },
+    "dialogs": {
+      "addEmail": {
+        "title": "Adicionar Administrador Autorizado",
+        "description": "Adicione um endereço de e-mail à lista de administradores pré-autorizados. Usuários com este e-mail serão automaticamente promovidos a administradores no login."
+      },
+      "removeConfirm": {
+        "title": "Remover Administrador Autorizado",
+        "description": "Tem certeza de que deseja remover este e-mail da lista de administradores autorizados? Isso não afetará usuários existentes com este e-mail."
+      }
+    },
+    "messages": {
+      "noEmails": "Nenhum e-mail autorizado encontrado",
+      "emailRequired": "E-mail é obrigatório",
+      "emailAdded": "E-mail adicionado com sucesso!",
+      "emailRemoved": "E-mail removido com sucesso!",
+      "failedToLoad": "Falha ao carregar administradores autorizados",
+      "failedToAdd": "Falha ao adicionar e-mail",
+      "failedToRemove": "Falha ao remover administrador autorizado"
+    }
+  },
+  "collections": {
+    "title": "Coleção: {name}",
+    "subtitle": "Navegar e gerenciar registros de banco de dados",
+    "recordsFound": "{count} registro encontrado",
+    "recordsFoundPlural": "{count} registros encontrados",
+    "actions": {
+      "search": "Pesquisar...",
+      "viewDetails": "Ver detalhes",
+      "editRecord": "Editar registro",
+      "deleteRecord": "Excluir registro",
+      "previousPage": "Página anterior",
+      "nextPage": "Próxima página"
+    },
+    "table": {
+      "noData": "Nenhum dado encontrado",
+      "actions": "Ações"
+    },
+    "modals": {
+      "recordDetails": "Detalhes do Registro",
+      "editRecord": "Editar Registro",
+      "deleteConfirm": {
+        "title": "Excluir Registro",
+        "description": "Tem certeza de que deseja excluir este registro? Esta ação não pode ser desfeita."
+      }
+    },
+    "pagination": {
+      "pageInfo": "Página {current} de {total}",
+      "noPages": "Nenhuma página"
+    },
+    "messages": {
+      "loadingCollection": "Carregando coleção...",
+      "loadingData": "Carregando dados...",
+      "recordUpdated": "Registro atualizado com sucesso",
+      "recordDeleted": "Registro excluído com sucesso",
+      "failedToLoad": "Falha ao carregar coleções",
+      "failedToLoadMeta": "Falha ao carregar metadados da coleção",
+      "failedToLoadData": "Falha ao carregar dados",
+      "failedToUpdate": "Falha ao atualizar registro",
+      "failedToDelete": "Falha ao excluir registro"
+    }
+  },
+  "apiKeys": {
+    "title": "Chaves de API",
+    "subtitle": "Gerenciar chaves de API para autenticação",
+    "card": {
+      "title": "Chaves de API",
+      "description": "Essas chaves são usadas para autenticar requisições de API. Mantenha-as seguras."
+    },
+    "actions": {
+      "generateNew": "Gerar Nova Chave",
+      "regenerate": "Regenerar",
+      "revoke": "Revogar",
+      "copy": "Copiar",
+      "done": "Concluído"
+    },
+    "table": {
+      "name": "Nome",
+      "status": "Status",
+      "created": "Criado",
+      "createdBy": "Criado por",
+      "actions": "Ações",
+      "userPrefix": "Usuário #"
+    },
+    "dialogs": {
+      "generate": {
+        "title": "Gerar Nova Chave de API",
+        "descriptionBefore": "Crie uma nova chave de API para autenticar requisições. Apenas uma chave ativa por plataforma é permitida.",
+        "descriptionAfter": "Sua chave de API foi gerada. Copie-a agora - você não poderá vê-la novamente!",
+        "alertTitle": "Chave de API Gerada",
+        "alertDescription": "Certifique-se de copiar sua chave de API agora. Você não poderá vê-la novamente!",
+        "platformLabel": "Plataforma",
+        "platformPlaceholder": "Selecione a plataforma",
+        "platformIos": "Aplicativo iOS",
+        "platformAndroid": "Aplicativo Android",
+        "platformAdminPanel": "Painel Administrativo",
+        "generating": "Gerando..."
+      },
+      "regenerate": {
+        "title": "Regenerar Chave de API",
+        "descriptionBefore": "Isso irá gerar uma nova chave e invalidar a antiga. Esta ação não pode ser desfeita.",
+        "descriptionAfter": "Sua chave de API foi regenerada. Copie-a agora - você não poderá vê-la novamente!",
+        "alertTitle": "Chave de API Regenerada",
+        "alertDescription": "A chave antiga foi invalidada. Certifique-se de atualizar todos os serviços que usam esta chave.",
+        "action": "Regenerar"
+      },
+      "revoke": {
+        "title": "Revogar Chave de API",
+        "description": "Isso irá revogar permanentemente esta chave de API. Todas as requisições usando esta chave falharão. Esta ação não pode ser desfeita.",
+        "action": "Revogar"
+      }
+    },
+    "messages": {
+      "noKeys": "Nenhuma chave de API encontrada. Gere uma para começar.",
+      "failedToLoad": "Falha ao carregar chaves de API",
+      "failedToGenerate": "Falha ao gerar chave de API",
+      "failedToRegenerate": "Falha ao regenerar chave de API",
+      "failedToRevoke": "Falha ao revogar chave de API"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Visão geral do seu painel administrativo",
+    "cards": {
+      "totalUsers": {
+        "title": "Total de Usuários",
+        "description": "Todos os usuários registrados"
+      },
+      "activeApiKeys": {
+        "title": "Chaves de API Ativas",
+        "description": "{count} revogada(s)"
+      },
+      "admins": {
+        "title": "Administradores",
+        "description": "{count} superadministrador(es)"
+      },
+      "collections": {
+        "title": "Coleções",
+        "description": "Tabelas disponíveis"
+      }
+    },
+    "sections": {
+      "usersByRole": {
+        "title": "Usuários por Função",
+        "description": "Distribuição de funções de usuários no sistema"
+      },
+      "usersByProvider": {
+        "title": "Usuários por Provedor",
+        "description": "Distribuição de provedores de autenticação"
+      }
+    },
+    "errors": {
+      "failedToLoad": "Falha ao carregar estatísticas do dashboard"
+    }
+  },
+  "common": {
+    "actions": {
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "delete": "Excluir",
+      "edit": "Editar",
+      "view": "Visualizar",
+      "close": "Fechar",
+      "confirm": "Confirmar",
+      "back": "Voltar",
+      "next": "Próximo",
+      "search": "Pesquisar",
+      "loading": "Carregando...",
+      "retry": "Tentar novamente"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo",
+      "revoked": "Revogado",
+      "pending": "Pendente"
+    },
+    "roles": {
+      "user": "Usuário",
+      "admin": "Administrador",
+      "superadmin": "Super Administrador"
+    },
+    "providers": {
+      "google": "Google",
+      "apple": "Apple",
+      "system": "Sistema"
+    },
+    "messages": {
+      "success": "Operação realizada com sucesso",
+      "error": "Ocorreu um erro",
+      "noData": "Nenhum dado encontrado",
+      "confirmDelete": "Tem certeza que deseja excluir?",
+      "cannotUndo": "Esta ação não pode ser desfeita"
+    }
+  }
+}

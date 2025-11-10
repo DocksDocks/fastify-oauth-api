@@ -43,13 +43,18 @@ export default function OAuthCallbackPage() {
         confirm: true,
       });
 
-      const { user, tokens } = response.data.data;
+      const { user, tokens } = response.data;
       const { accessToken, refreshToken } = tokens;
 
       // Check if user is admin or superadmin
       if (user.role !== 'admin' && user.role !== 'superadmin') {
         setError('Access denied. Only administrators can access this panel.');
         return;
+      }
+
+      // Set locale cookie from user preference
+      if (user.locale) {
+        document.cookie = `locale=${user.locale}; path=/; max-age=31536000`;
       }
 
       setAuth(user, accessToken, refreshToken);
@@ -110,6 +115,11 @@ export default function OAuthCallbackPage() {
         if (user.role !== 'admin' && user.role !== 'superadmin') {
           setError('Access denied. Only administrators can access this panel.');
           return;
+        }
+
+        // Set locale cookie from user preference
+        if (user.locale) {
+          document.cookie = `locale=${user.locale}; path=/; max-age=31536000`;
         }
 
         setAuth(user, accessToken, refreshToken);

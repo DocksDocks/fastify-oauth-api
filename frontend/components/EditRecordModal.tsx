@@ -85,7 +85,13 @@ export function EditRecordModal({
   const handleConfirmSave = async () => {
     setIsSaving(true);
     try {
-      await onSave(formData);
+      // Filter out readonly fields before saving
+      const readonlyFields = ['id', 'createdAt', 'updatedAt', 'created_at', 'updated_at'];
+      const editableData = Object.fromEntries(
+        Object.entries(formData).filter(([key]) => !readonlyFields.includes(key) && !columns.find(col => col.name === key)?.readonly)
+      );
+
+      await onSave(editableData);
       setShowConfirmation(false);
       onOpenChange(false);
     } catch (error) {

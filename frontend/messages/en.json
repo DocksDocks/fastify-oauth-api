@@ -1,0 +1,262 @@
+{
+  "navigation": {
+    "title": "Admin Panel",
+    "menu": {
+      "dashboard": "Dashboard",
+      "apiKeys": "API Keys",
+      "collections": "Collections",
+      "authorizedAdmins": "Authorized Admins"
+    },
+    "user": {
+      "profile": "Profile",
+      "theme": "Theme",
+      "language": "Language",
+      "logout": "Logout"
+    },
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "language": {
+      "pt-BR": "Português (Brasil)",
+      "en": "English"
+    }
+  },
+  "login": {
+    "title": "Sign in to Admin Panel",
+    "subtitle": "Login with your administrator account",
+    "googleButton": "Continue with Google",
+    "appleButton": "Continue with Apple",
+    "adminOnly": "Access restricted to administrators only",
+    "redirecting": "Redirecting...",
+    "error": {
+      "title": "Login Error",
+      "description": "An error occurred while trying to login. Please try again.",
+      "unauthorized": "You don't have permission to access the admin panel.",
+      "tryAgain": "Try Again"
+    }
+  },
+  "authorizedAdmins": {
+    "title": "Authorized Admins",
+    "subtitle": "Manage pre-authorized emails for automatic admin promotion",
+    "info": {
+      "howItWorks": "How it works:",
+      "description": "When a user signs in via Google OAuth with an email listed here, they will automatically be promoted to the admin role. This works for both new users and existing users."
+    },
+    "badges": {
+      "autoPromoted": "Auto-promoted",
+      "addedBy": "Added by"
+    },
+    "actions": {
+      "addEmail": "Add Email",
+      "adding": "Adding...",
+      "remove": "Remove",
+      "refresh": "Refresh"
+    },
+    "form": {
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "admin@example.com"
+    },
+    "table": {
+      "email": "Email",
+      "addedBy": "Added By",
+      "dateAdded": "Date Added",
+      "actions": "Actions",
+      "addedByName": "Added by {name} on {date}",
+      "on": "on"
+    },
+    "dialogs": {
+      "addEmail": {
+        "title": "Add Authorized Admin",
+        "description": "Add an email address to the list of pre-authorized admins. Users with this email will be automatically promoted to admin on login."
+      },
+      "removeConfirm": {
+        "title": "Remove Authorized Admin",
+        "description": "Are you sure you want to remove this email from the authorized admins list? This will not affect existing users with this email."
+      }
+    },
+    "messages": {
+      "noEmails": "No authorized emails found",
+      "emailRequired": "Email is required",
+      "emailAdded": "Email added successfully!",
+      "emailRemoved": "Email removed successfully!",
+      "failedToLoad": "Failed to load authorized admins",
+      "failedToAdd": "Failed to add email",
+      "failedToRemove": "Failed to remove authorized admin"
+    }
+  },
+  "collections": {
+    "title": "Collection: {name}",
+    "subtitle": "Browse and manage database records",
+    "recordsFound": "{count} record found",
+    "recordsFoundPlural": "{count} records found",
+    "actions": {
+      "search": "Search...",
+      "viewDetails": "View details",
+      "editRecord": "Edit record",
+      "deleteRecord": "Delete record",
+      "previousPage": "Previous page",
+      "nextPage": "Next page"
+    },
+    "table": {
+      "noData": "No data found",
+      "actions": "Actions"
+    },
+    "modals": {
+      "recordDetails": "Record Details",
+      "editRecord": "Edit Record",
+      "deleteConfirm": {
+        "title": "Delete Record",
+        "description": "Are you sure you want to delete this record? This action cannot be undone."
+      }
+    },
+    "pagination": {
+      "pageInfo": "Page {current} of {total}",
+      "noPages": "No pages"
+    },
+    "messages": {
+      "loadingCollection": "Loading collection...",
+      "loadingData": "Loading data...",
+      "recordUpdated": "Record updated successfully",
+      "recordDeleted": "Record deleted successfully",
+      "failedToLoad": "Failed to load collections",
+      "failedToLoadMeta": "Failed to load collection metadata",
+      "failedToLoadData": "Failed to load data",
+      "failedToUpdate": "Failed to update record",
+      "failedToDelete": "Failed to delete record"
+    }
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "subtitle": "Manage API keys for authentication",
+    "card": {
+      "title": "API Keys",
+      "description": "These keys are used to authenticate API requests. Keep them secure."
+    },
+    "actions": {
+      "generateNew": "Generate New Key",
+      "regenerate": "Regenerate",
+      "revoke": "Revoke",
+      "copy": "Copy",
+      "done": "Done"
+    },
+    "table": {
+      "name": "Name",
+      "status": "Status",
+      "created": "Created",
+      "createdBy": "Created By",
+      "actions": "Actions",
+      "userPrefix": "User #"
+    },
+    "dialogs": {
+      "generate": {
+        "title": "Generate New API Key",
+        "descriptionBefore": "Create a new API key for authenticating requests. Only one active key per platform is allowed.",
+        "descriptionAfter": "Your API key has been generated. Copy it now - you won't be able to see it again!",
+        "alertTitle": "API Key Generated",
+        "alertDescription": "Make sure to copy your API key now. You won't be able to see it again!",
+        "platformLabel": "Platform",
+        "platformPlaceholder": "Select platform",
+        "platformIos": "iOS App",
+        "platformAndroid": "Android App",
+        "platformAdminPanel": "Admin Panel",
+        "generating": "Generating..."
+      },
+      "regenerate": {
+        "title": "Regenerate API Key",
+        "descriptionBefore": "This will generate a new key and invalidate the old one. This action cannot be undone.",
+        "descriptionAfter": "Your API key has been regenerated. Copy it now - you won't be able to see it again!",
+        "alertTitle": "API Key Regenerated",
+        "alertDescription": "The old key has been invalidated. Make sure to update all services using this key.",
+        "action": "Regenerate"
+      },
+      "revoke": {
+        "title": "Revoke API Key",
+        "description": "This will permanently revoke this API key. All requests using this key will fail. This action cannot be undone.",
+        "action": "Revoke"
+      }
+    },
+    "messages": {
+      "noKeys": "No API keys found. Generate one to get started.",
+      "failedToLoad": "Failed to load API keys",
+      "failedToGenerate": "Failed to generate API key",
+      "failedToRegenerate": "Failed to regenerate API key",
+      "failedToRevoke": "Failed to revoke API key"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your admin panel",
+    "cards": {
+      "totalUsers": {
+        "title": "Total Users",
+        "description": "All registered users"
+      },
+      "activeApiKeys": {
+        "title": "Active API Keys",
+        "description": "{count} revoked"
+      },
+      "admins": {
+        "title": "Admins",
+        "description": "{count} superadmin(s)"
+      },
+      "collections": {
+        "title": "Collections",
+        "description": "Available tables"
+      }
+    },
+    "sections": {
+      "usersByRole": {
+        "title": "Users by Role",
+        "description": "Breakdown of user roles in the system"
+      },
+      "usersByProvider": {
+        "title": "Users by Provider",
+        "description": "Authentication provider distribution"
+      }
+    },
+    "errors": {
+      "failedToLoad": "Failed to load dashboard stats"
+    }
+  },
+  "common": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "view": "View",
+      "close": "Close",
+      "confirm": "Confirm",
+      "back": "Back",
+      "next": "Next",
+      "search": "Search",
+      "loading": "Loading...",
+      "retry": "Retry"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "revoked": "Revoked",
+      "pending": "Pending"
+    },
+    "roles": {
+      "user": "User",
+      "admin": "Administrator",
+      "superadmin": "Super Administrator"
+    },
+    "providers": {
+      "google": "Google",
+      "apple": "Apple",
+      "system": "System"
+    },
+    "messages": {
+      "success": "Operation completed successfully",
+      "error": "An error occurred",
+      "noData": "No data found",
+      "confirmDelete": "Are you sure you want to delete?",
+      "cannotUndo": "This action cannot be undone"
+    }
+  }
+}

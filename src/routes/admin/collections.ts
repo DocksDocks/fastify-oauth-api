@@ -42,16 +42,17 @@ async function listCollections(request: FastifyRequest, reply: FastifyReply): Pr
 
     return reply.send({
       success: true,
-      data: {
-        collections: accessibleCollections,
-        total: accessibleCollections.length,
-      },
+      collections: accessibleCollections,
+      total: accessibleCollections.length,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to list collections');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to list collections',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to list collections',
+      },
     });
   }
 }
@@ -75,7 +76,10 @@ async function getCollectionMeta(
     if (!collection) {
       return reply.status(404).send({
         success: false,
-        error: `Collection '${table}' not found or not accessible`,
+        error: {
+          code: 'COLLECTION_NOT_FOUND',
+          message: `Collection '${table}' not found or not accessible`,
+        },
       });
     }
 
@@ -83,19 +87,25 @@ async function getCollectionMeta(
     if (!hasRequiredRole(userRole, collection.requiredRole)) {
       return reply.status(403).send({
         success: false,
-        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        },
       });
     }
 
     return reply.send({
       success: true,
-      data: collection,
+      collection,
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to get collection metadata');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to get collection metadata',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get collection metadata',
+      },
     });
   }
 }
@@ -192,7 +202,10 @@ async function getCollectionData(
     if (!collection) {
       return reply.status(404).send({
         success: false,
-        error: `Collection '${table}' not found or not accessible`,
+        error: {
+          code: 'COLLECTION_NOT_FOUND',
+          message: `Collection '${table}' not found or not accessible`,
+        },
       });
     }
 
@@ -200,7 +213,10 @@ async function getCollectionData(
     if (!hasRequiredRole(userRole, collection.requiredRole)) {
       return reply.status(403).send({
         success: false,
-        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        },
       });
     }
 
@@ -210,7 +226,10 @@ async function getCollectionData(
     if (!tableSchema) {
       return reply.status(500).send({
         success: false,
-        error: `Table '${table}' not found in schema map`,
+        error: {
+          code: 'TABLE_SCHEMA_NOT_FOUND',
+          message: `Table '${table}' not found in schema map`,
+        },
       });
     }
 
@@ -249,18 +268,16 @@ async function getCollectionData(
     // Always return success with empty array if no data
     return reply.send({
       success: true,
-      data: {
-        collection: collection.name,
-        table: collection.table,
-        rows: data || [], // Ensure array
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1,
-        },
+      collection: collection.name,
+      table: collection.table,
+      rows: data || [], // Ensure array
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
       },
     });
   } catch (error) {
@@ -277,7 +294,10 @@ async function getCollectionData(
     );
     return reply.status(500).send({
       success: false,
-      error: 'Failed to query collection data',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to query collection data',
+      },
     });
   }
 }
@@ -301,7 +321,10 @@ async function getCollectionRecord(
     if (!collection) {
       return reply.status(404).send({
         success: false,
-        error: `Collection '${table}' not found or not accessible`,
+        error: {
+          code: 'COLLECTION_NOT_FOUND',
+          message: `Collection '${table}' not found or not accessible`,
+        },
       });
     }
 
@@ -309,7 +332,10 @@ async function getCollectionRecord(
     if (!hasRequiredRole(userRole, collection.requiredRole)) {
       return reply.status(403).send({
         success: false,
-        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        },
       });
     }
 
@@ -319,7 +345,10 @@ async function getCollectionRecord(
     if (!tableSchema) {
       return reply.status(500).send({
         success: false,
-        error: `Table '${table}' not found in schema map`,
+        error: {
+          code: 'TABLE_SCHEMA_NOT_FOUND',
+          message: `Table '${table}' not found in schema map`,
+        },
       });
     }
 
@@ -333,23 +362,27 @@ async function getCollectionRecord(
     if (data.length === 0) {
       return reply.status(404).send({
         success: false,
-        error: 'Record not found',
+        error: {
+          code: 'RECORD_NOT_FOUND',
+          message: 'Record not found',
+        },
       });
     }
 
     return reply.send({
       success: true,
-      data: {
-        collection: collection.name,
-        table: collection.table,
-        record: data[0],
-      },
+      collection: collection.name,
+      table: collection.table,
+      record: data[0],
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to get collection record');
     return reply.status(500).send({
       success: false,
-      error: 'Failed to get collection record',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get collection record',
+      },
     });
   }
 }
@@ -375,7 +408,10 @@ async function updateCollectionRecord(
     if (!collection) {
       return reply.status(404).send({
         success: false,
-        error: `Collection '${table}' not found or not accessible`,
+        error: {
+          code: 'COLLECTION_NOT_FOUND',
+          message: `Collection '${table}' not found or not accessible`,
+        },
       });
     }
 
@@ -383,7 +419,10 @@ async function updateCollectionRecord(
     if (!hasRequiredRole(userRole, collection.requiredRole)) {
       return reply.status(403).send({
         success: false,
-        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        },
       });
     }
 
@@ -393,7 +432,10 @@ async function updateCollectionRecord(
     if (!tableSchema) {
       return reply.status(500).send({
         success: false,
-        error: `Table '${table}' not found in schema map`,
+        error: {
+          code: 'TABLE_SCHEMA_NOT_FOUND',
+          message: `Table '${table}' not found in schema map`,
+        },
       });
     }
 
@@ -411,7 +453,10 @@ async function updateCollectionRecord(
         if (recordRole === 'superadmin') {
           return reply.status(403).send({
             success: false,
-            error: 'Only superadmins can modify superadmin users.',
+            error: {
+              code: 'INSUFFICIENT_PERMISSIONS',
+              message: 'Only superadmins can modify superadmin users.',
+            },
           });
         }
       }
@@ -442,14 +487,20 @@ async function updateCollectionRecord(
     if (attemptedProtectedFields.length > 0) {
       return reply.status(403).send({
         success: false,
-        error: `Cannot update readonly fields: ${attemptedProtectedFields.join(', ')}`,
+        error: {
+          code: 'READONLY_FIELDS',
+          message: `Cannot update readonly fields: ${attemptedProtectedFields.join(', ')}`,
+        },
       });
     }
 
     if (Object.keys(filteredUpdates).length === 0) {
       return reply.status(400).send({
         success: false,
-        error: 'No valid fields to update',
+        error: {
+          code: 'NO_VALID_FIELDS',
+          message: 'No valid fields to update',
+        },
       });
     }
 
@@ -459,13 +510,15 @@ async function updateCollectionRecord(
       if (newRole === 'superadmin' && userRole !== 'superadmin') {
         return reply.status(403).send({
           success: false,
-          error: 'Only superadmins can assign the superadmin role.',
+          error: {
+            code: 'INSUFFICIENT_PERMISSIONS',
+            message: 'Only superadmins can assign the superadmin role.',
+          },
         });
       }
     }
 
-    // Add updatedAt timestamp
-    filteredUpdates.updatedAt = new Date();
+    // Note: updated_at is automatically updated by the database trigger/default
 
     // Build UPDATE query using raw SQL for dynamic fields
     const setClauses = Object.entries(filteredUpdates)
@@ -495,23 +548,27 @@ async function updateCollectionRecord(
     if (updatedData.length === 0) {
       return reply.status(404).send({
         success: false,
-        error: 'Record not found after update',
+        error: {
+          code: 'RECORD_NOT_FOUND',
+          message: 'Record not found after update',
+        },
       });
     }
 
     return reply.send({
       success: true,
-      data: {
-        collection: collection.name,
-        table: collection.table,
-        record: updatedData[0],
-      },
+      collection: collection.name,
+      table: collection.table,
+      record: updatedData[0],
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to update collection record');
     return reply.status(500).send({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update collection record',
+      error: {
+        code: 'UPDATE_FAILED',
+        message: 'Failed to update collection record',
+      },
     });
   }
 }
@@ -535,7 +592,10 @@ async function deleteCollectionRecord(
     if (!collection) {
       return reply.status(404).send({
         success: false,
-        error: `Collection '${table}' not found or not accessible`,
+        error: {
+          code: 'COLLECTION_NOT_FOUND',
+          message: `Collection '${table}' not found or not accessible`,
+        },
       });
     }
 
@@ -543,7 +603,10 @@ async function deleteCollectionRecord(
     if (!hasRequiredRole(userRole, collection.requiredRole)) {
       return reply.status(403).send({
         success: false,
-        error: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        },
       });
     }
 
@@ -553,7 +616,10 @@ async function deleteCollectionRecord(
     if (!tableSchema) {
       return reply.status(500).send({
         success: false,
-        error: `Table '${table}' not found in schema map`,
+        error: {
+          code: 'TABLE_SCHEMA_NOT_FOUND',
+          message: `Table '${table}' not found in schema map`,
+        },
       });
     }
 
@@ -567,7 +633,10 @@ async function deleteCollectionRecord(
     if (data.length === 0) {
       return reply.status(404).send({
         success: false,
-        error: 'Record not found',
+        error: {
+          code: 'RECORD_NOT_FOUND',
+          message: 'Record not found',
+        },
       });
     }
 
@@ -579,7 +648,10 @@ async function deleteCollectionRecord(
       if (recordRole === 'superadmin') {
         return reply.status(403).send({
           success: false,
-          error: 'Only superadmins can delete superadmin users.',
+          error: {
+            code: 'INSUFFICIENT_PERMISSIONS',
+            message: 'Only superadmins can delete superadmin users.',
+          },
         });
       }
     }
@@ -591,18 +663,19 @@ async function deleteCollectionRecord(
 
     return reply.send({
       success: true,
-      data: {
-        collection: collection.name,
-        table: collection.table,
-        record: deletedRecord,
-        message: 'Record deleted successfully',
-      },
+      collection: collection.name,
+      table: collection.table,
+      record: deletedRecord,
+      message: 'Record deleted successfully',
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to delete collection record');
     return reply.status(500).send({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete collection record',
+      error: {
+        code: 'DELETE_FAILED',
+        message: 'Failed to delete collection record',
+      },
     });
   }
 }
@@ -626,13 +699,8 @@ export default async function collectionsRoutes(fastify: FastifyInstance): Promi
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                collections: { type: 'array' },
-                total: { type: 'number' },
-              },
-            },
+            collections: { type: 'array' },
+            total: { type: 'number' },
           },
         },
       },

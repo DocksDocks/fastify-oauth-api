@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,6 +27,8 @@ interface Stats {
 }
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,15 +49,15 @@ export default function DashboardPage() {
         ]);
 
         setStats({
-          users: usersResponse.data.data,
-          apiKeys: apiKeysResponse.data.data,
-          collections: { total: collectionsResponse.data.data.total },
+          users: usersResponse.data.stats,
+          apiKeys: apiKeysResponse.data.stats,
+          collections: { total: collectionsResponse.data.total },
         });
       } catch (err: unknown) {
         if (isAxiosError(err) && err.response?.data?.error) {
-          setError(err.response.data.error.message || 'Failed to load dashboard stats');
+          setError(err.response.data.error.message || t('errors.failedToLoad'));
         } else {
-          setError('Failed to load dashboard stats');
+          setError(t('errors.failedToLoad'));
         }
       } finally {
         setLoading(false);
@@ -68,8 +71,8 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your admin panel</p>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -91,12 +94,12 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your admin panel</p>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error || 'Failed to load stats'}</AlertDescription>
+          <AlertDescription>{error || t('errors.failedToLoad')}</AlertDescription>
         </Alert>
       </div>
     );
@@ -105,39 +108,39 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your admin panel</p>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
+        <p className="text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.totalUsers.title')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.users.total}</div>
-            <p className="text-xs text-muted-foreground">All registered users</p>
+            <p className="text-xs text-muted-foreground">{t('cards.totalUsers.description')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active API Keys</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.activeApiKeys.title')}</CardTitle>
             <Key className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.apiKeys.active}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.apiKeys.revoked} revoked
+              {t('cards.activeApiKeys.description', { count: stats.apiKeys.revoked })}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.admins.title')}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -145,19 +148,19 @@ export default function DashboardPage() {
               {(stats.users.byRole?.admin || 0) + (stats.users.byRole?.superadmin || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.users.byRole?.superadmin || 0} superadmins
+              {t('cards.admins.description', { count: stats.users.byRole?.superadmin || 0 })}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Collections</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.collections.title')}</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.collections.total}</div>
-            <p className="text-xs text-muted-foreground">Available tables</p>
+            <p className="text-xs text-muted-foreground">{t('cards.collections.description')}</p>
           </CardContent>
         </Card>
       </div>
@@ -166,15 +169,15 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Users by Role</CardTitle>
-            <CardDescription>Breakdown of user roles in the system</CardDescription>
+            <CardTitle>{t('sections.usersByRole.title')}</CardTitle>
+            <CardDescription>{t('sections.usersByRole.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {Object.entries(stats.users?.byRole || {}).map(([role, count]) => (
               <div key={role} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant={role === 'superadmin' ? 'destructive' : 'default'}>
-                    {role}
+                    {tCommon(`roles.${role}` as 'roles.user' | 'roles.admin' | 'roles.superadmin')}
                   </Badge>
                 </div>
                 <span className="font-semibold">{count}</span>
@@ -185,15 +188,15 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Users by Provider</CardTitle>
-            <CardDescription>Authentication provider distribution</CardDescription>
+            <CardTitle>{t('sections.usersByProvider.title')}</CardTitle>
+            <CardDescription>{t('sections.usersByProvider.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {Object.entries(stats.users?.byProvider || {}).map(([provider, count]) => (
               <div key={provider} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="capitalize">
-                    {provider}
+                    {tCommon(`providers.${provider}` as 'providers.google' | 'providers.apple' | 'providers.system')}
                   </Badge>
                 </div>
                 <span className="font-semibold">{count}</span>
