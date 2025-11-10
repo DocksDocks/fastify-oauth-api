@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck, Sun, Moon, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import type { Collection } from '@/types';
+import { useTheme } from 'next-themes';
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,6 +39,7 @@ interface SidebarProps {
 export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProps = {}) {
   const pathname = usePathname();
   const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { setTheme } = useTheme();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
 
@@ -200,6 +202,22 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
                 )}
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Theme
+            </DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setTheme('light')} className="cursor-pointer">
+              <Sun className="mr-2 h-4 w-4" />
+              <span>Light</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('dark')} className="cursor-pointer">
+              <Moon className="mr-2 h-4 w-4" />
+              <span>Dark</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('system')} className="cursor-pointer">
+              <Monitor className="mr-2 h-4 w-4" />
+              <span>System</span>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />

@@ -131,7 +131,7 @@ export function EditRecordModal({
           <Label className="text-sm font-medium text-text-secondary">
             {column.label} <span className="text-text-tertiary text-xs">(readonly)</span>
           </Label>
-          <div className="w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-text-secondary">
+          <div className="w-full rounded-md border border-border bg-input-readonly px-3 py-2 text-sm text-text-secondary">
             {displayValue || <span className="text-text-muted italic">Empty</span>}
           </div>
         </div>

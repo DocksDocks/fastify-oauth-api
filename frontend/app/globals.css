@@ -35,6 +35,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-input-readonly: var(--input-readonly);
   --color-ring: var(--ring);
 
   /* Charts */
@@ -100,6 +101,7 @@
   /* Borders & Inputs */
   --border: oklch(0.89 0.008 252.42);            /* Light slate border */
   --input: oklch(0.89 0.008 252.42);             /* Same as border */
+  --input-readonly: oklch(0.96 0.04 220);        /* Readonly - light blue/cyan tint (professional, matches theme) */
   --ring: oklch(0.52 0.195 252.42);              /* Primary blue for focus */
 
   /* Charts - Vibrant & Distinct */
@@ -157,6 +159,7 @@
   /* Borders & Inputs - Subtle contrast */
   --border: oklch(0.28 0.025 252.42);            /* Medium slate border */
   --input: oklch(0.28 0.025 252.42);
+  --input-readonly: oklch(0.26 0.04 240);        /* Readonly - blue tint (visible, matches theme) */
   --ring: oklch(0.65 0.220 252.42);              /* Bright blue focus */
 
   /* Charts - Vibrant for dark backgrounds */
