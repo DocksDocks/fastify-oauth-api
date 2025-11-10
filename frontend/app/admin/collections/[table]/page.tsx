@@ -283,6 +283,19 @@ export default function CollectionsPage() {
     }
   };
 
+  // Get featured columns (ID + 2 main attributes, excluding timestamps)
+  const getFeaturedColumns = () => {
+    if (!selectedCollection?.columns) return [];
+
+    // Filter out timestamp columns (created_at, updated_at, deleted_at, etc.)
+    const nonTimestampColumns = selectedCollection.columns.filter(
+      (col) => col.type !== 'timestamp' && col.type !== 'date'
+    );
+
+    // Return first 3 non-timestamp columns (ID + 2 main attributes)
+    return nonTimestampColumns.slice(0, 3);
+  };
+
   if (loading && (!collections || collections.length === 0)) {
     return (
       <div className="space-y-6">
@@ -349,133 +362,121 @@ export default function CollectionsPage() {
                     {t('table.noData')}
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader className="sticky top-0 z-10 bg-background">
-                      <TableRow className="hover:shadow-md transition-shadow">
-                        {selectedCollection?.columns?.map((column, colIndex) => (
-                          <TableHead
-                            key={column.name}
-                            className={`${colIndex % 2 === 0 ? 'bg-primary/10' : 'bg-primary/5'}`}
-                          >
-                            <div className="flex items-center gap-1">
-                              <span className="font-semibold">{column.label}</span>
-                              {column.sortable && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => handleSort(column.name)}
-                                >
-                                  <ArrowUpDown
-                                    className={`h-3 w-3 ${
-                                      sortColumn === column.name
-                                        ? 'text-primary'
-                                        : 'text-muted-foreground'
-                                    }`}
-                                  />
-                                </Button>
-                              )}
-                            </div>
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.map((row, rowIndex) => (
-                        <TableRow key={rowIndex} className="hover:shadow-md transition-shadow">
-                          {selectedCollection?.columns?.map((column, colIndex) => {
-                            const value = row[column.name];
-                            const formattedValue = formatValue(value, column.type);
-                            const isFirstColumn = colIndex === 0;
+                  <div className="px-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {getFeaturedColumns().map((column) => (
+                            <TableHead key={column.name} className="px-4">
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">{column.label}</span>
+                                {column.sortable && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => handleSort(column.name)}
+                                  >
+                                    <ArrowUpDown
+                                      className={`h-3 w-3 ${
+                                        sortColumn === column.name
+                                          ? 'text-primary'
+                                          : 'text-muted-foreground'
+                                      }`}
+                                    />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableHead>
+                          ))}
+                          <TableHead className="px-4 text-center">{t('table.actions')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.map((row, rowIndex) => {
+                          // RBAC: Check if current user can edit/delete this record
+                          const canModifyRecord = () => {
+                            // Only apply RBAC to users table
+                            if (selectedCollection.table !== 'users') return true;
 
-                            // RBAC: Check if current user can edit/delete this record
-                            const canModifyRecord = () => {
-                              // Only apply RBAC to users table
-                              if (selectedCollection.table !== 'users') return true;
+                            // Get the role of the record being viewed
+                            const recordRole = row.role as string;
+                            const currentUserRole = user?.role;
 
-                              // Get the role of the record being viewed
-                              const recordRole = row.role as string;
-                              const currentUserRole = user?.role;
+                            // Superadmin can modify everything
+                            if (currentUserRole === 'superadmin') return true;
 
-                              // Superadmin can modify everything
-                              if (currentUserRole === 'superadmin') return true;
+                            // Non-superadmin cannot modify superadmin records
+                            if (recordRole === 'superadmin') return false;
 
-                              // Non-superadmin cannot modify superadmin records
-                              if (recordRole === 'superadmin') return false;
+                            // Admin can modify user and admin records
+                            return true;
+                          };
 
-                              // Admin can modify user and admin records
-                              return true;
-                            };
+                          const canModify = canModifyRecord();
 
-                            const canModify = canModifyRecord();
+                          return (
+                            <TableRow key={rowIndex}>
+                              {getFeaturedColumns().map((column) => {
+                                const value = row[column.name];
+                                const formattedValue = formatValue(value, column.type);
 
-                            return (
-                              <TableCell
-                                key={column.name}
-                                className={`${colIndex % 2 === 0 ? 'bg-primary/10' : 'bg-primary/5'}`}
-                              >
-                                {isFirstColumn ? (
-                                  <div className="flex items-center gap-2">
-                                    <span className="block truncate max-w-xs">
-                                      {formattedValue}
-                                    </span>
-                                    <div className="flex items-center gap-1 shrink-0">
+                                return (
+                                  <TableCell key={column.name} className="px-4">
+                                    {column.name === 'role' ? (
+                                      <Badge variant="outline" className="capitalize">
+                                        {String(value ?? '')}
+                                      </Badge>
+                                    ) : column.type === 'boolean' ? (
+                                      <Badge variant={value ? 'default' : 'secondary'}>
+                                        {formattedValue}
+                                      </Badge>
+                                    ) : (
+                                      <span className="block truncate max-w-xs">
+                                        {formattedValue}
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                );
+                              })}
+                              <TableCell className="px-4">
+                                <div className="flex justify-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewContent(row)}
+                                    title={t('actions.viewDetails')}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  {canModify && (
+                                    <>
                                       <Button
                                         variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6"
-                                        onClick={() => handleViewContent(row)}
-                                        title={t('actions.viewDetails')}
+                                        size="sm"
+                                        onClick={() => handleEdit(row)}
+                                        title={t('actions.editRecord')}
                                       >
-                                        <Eye className="h-3 w-3" />
+                                        <Pencil className="h-4 w-4" />
                                       </Button>
-                                      {canModify && (
-                                        <>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6"
-                                            onClick={() => handleEdit(row)}
-                                            title={t('actions.editRecord')}
-                                          >
-                                            <Pencil className="h-3 w-3" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive"
-                                            onClick={() => handleDelete(row)}
-                                            title={t('actions.deleteRecord')}
-                                          >
-                                            <Trash2 className="h-3 w-3" />
-                                          </Button>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : column.name === 'role' ? (
-                                  <Badge variant="outline" className="capitalize">
-                                    {String(value ?? '')}
-                                  </Badge>
-                                ) : column.type === 'boolean' ? (
-                                  <Badge variant={value ? 'default' : 'destructive'}>
-                                    {formattedValue}
-                                  </Badge>
-                                ) : (
-                                  <span
-                                    className={`block truncate max-w-xs ${column.type === 'json' ? 'font-mono text-xs' : ''}`}
-                                    title={formattedValue}
-                                  >
-                                    {formattedValue}
-                                  </span>
-                                )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDelete(row)}
+                                        title={t('actions.deleteRecord')}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </div>
             </CardContent>
