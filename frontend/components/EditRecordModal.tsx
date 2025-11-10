@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface EditRecordModalProps {
@@ -134,11 +134,18 @@ export function EditRecordModal({
 
       return (
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-text-secondary">
-            {column.label} <span className="text-text-tertiary text-xs">(readonly)</span>
+          <Label className="text-sm font-medium text-text-secondary flex items-center gap-2">
+            {column.label}
+            <span className="text-text-tertiary text-xs flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              (readonly)
+            </span>
           </Label>
-          <div className="w-full rounded-md border border-border bg-input-readonly px-3 py-2 text-sm text-text-secondary">
-            {displayValue || <span className="text-text-muted italic">Empty</span>}
+          <div className="w-full rounded-md border border-border bg-input-readonly px-3 py-2 text-sm text-text-secondary flex items-center gap-2">
+            <span className="flex-1">
+              {displayValue || <span className="text-text-muted italic">Empty</span>}
+            </span>
+            <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </div>
         </div>
       );
