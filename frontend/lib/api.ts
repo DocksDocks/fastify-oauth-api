@@ -4,10 +4,12 @@
  * API Client (Next.js)
  *
  * Axios instance with interceptors for:
- * - API key injection
  * - JWT token injection
  * - Token refresh on 401
  * - Error handling
+ *
+ * Note: Admin panel uses JWT authentication only (no API key required)
+ * API routes are whitelisted in backend middleware
  */
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
@@ -26,10 +28,6 @@ const BASE_URL = NEXT_PUBLIC_API_URL
     ? '/api'
     : 'http://localhost:1337/api';
 
-// API key (from env or localStorage - only access localStorage if in browser)
-const API_KEY = process.env.NEXT_PUBLIC_ADMIN_PANEL_API_KEY ||
-  (isClient ? localStorage.getItem('api_key') : '') || '';
-
 // Create axios instance
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -38,14 +36,9 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor: Add API key and JWT token
+// Request interceptor: Add JWT token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Add API key header (required for all routes except whitelisted)
-    if (API_KEY) {
-      config.headers['X-API-Key'] = API_KEY;
-    }
-
     // Add JWT token if available (only in browser)
     if (isClient) {
       const token = localStorage.getItem('access_token');
@@ -105,10 +98,6 @@ api.interceptors.response.use(
           // Try to refresh access token
           const response = await axios.post(`${BASE_URL}/auth/refresh`, {
             refreshToken,
-          }, {
-            headers: {
-              'X-API-Key': API_KEY,
-            },
           });
 
           const { accessToken, refreshToken: newRefreshToken } = response.data.tokens;

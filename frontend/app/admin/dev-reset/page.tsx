@@ -37,7 +37,6 @@ export default function DevResetPage() {
 
     try {
       const accessToken = localStorage.getItem('access_token');
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_PANEL_API_KEY;
 
       if (!accessToken) {
         throw new Error('No access token found. Please login first.');
@@ -51,7 +50,6 @@ export default function DevResetPage() {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
-            'X-API-Key': apiKey || '',
           },
         }
       );

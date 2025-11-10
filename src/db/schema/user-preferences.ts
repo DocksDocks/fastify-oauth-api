@@ -88,7 +88,7 @@ export const userPreferences = pgTable('user_preferences', {
   timezone: timezoneEnum('timezone').notNull().default('America/Sao_Paulo'),
   currency: currencyEnum('currency').notNull().default('USD'),
   dateFormat: dateFormatEnum('date_format').notNull().default('MM/DD/YYYY'),
-  timeFormat: timeFormatEnum('time_format').notNull().default('12h'),
+  timeFormat: timeFormatEnum('time_format').notNull().default('24h'),
 
   // Notifications
   emailNotifications: boolean('email_notifications').notNull().default(true),

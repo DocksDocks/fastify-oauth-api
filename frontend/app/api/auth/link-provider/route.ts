@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
-const API_KEY = process.env.NEXT_PUBLIC_ADMIN_PANEL_API_KEY;
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': API_KEY || '',
       },
       body: JSON.stringify({ linkingToken, confirm }),
     });

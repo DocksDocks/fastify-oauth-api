@@ -375,7 +375,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USD'"
+          "default": "'BRL'"
         },
         "date_format": {
           "name": "date_format",
@@ -391,7 +391,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'12h'"
+          "default": "'24h'"
         },
         "email_notifications": {
           "name": "email_notifications",

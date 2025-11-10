@@ -70,7 +70,7 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
             apiKeys: {
               ios: apiKeys.iosApiKey,
               android: apiKeys.androidApiKey,
-              adminPanel: apiKeys.adminPanelApiKey,
+              web: apiKeys.webApiKey,
             },
           },
         });

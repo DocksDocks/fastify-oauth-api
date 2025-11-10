@@ -13,7 +13,6 @@ import { eq, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { logger } from '@/utils/logger';
-import { updateEnvFile, removeEnvVariable } from '@/utils/env-file.service';
 
 /**
  * Check if setup is complete
@@ -66,13 +65,13 @@ async function hashApiKey(apiKey: string): Promise<string> {
 export async function initializeSetup(userId: number): Promise<{
   iosApiKey: string;
   androidApiKey: string;
-  adminPanelApiKey: string;
+  webApiKey: string;
 }> {
   try {
-    // Generate API keys
+    // Generate API keys (mobile apps + website)
     const iosApiKey = generateApiKey();
     const androidApiKey = generateApiKey();
-    const adminPanelApiKey = generateApiKey();
+    const webApiKey = generateApiKey();
 
     logger.info({ userId }, 'Initializing first-time setup');
 
@@ -85,7 +84,7 @@ export async function initializeSetup(userId: number): Promise<{
         createdBy: userId, // Created by the first superadmin user
       });
 
-      // 2. Create API keys
+      // 2. Create API keys (mobile apps + website)
       await tx.insert(apiKeys).values([
         {
           name: 'ios_api_key',
@@ -98,8 +97,8 @@ export async function initializeSetup(userId: number): Promise<{
           createdBy: userId,
         },
         {
-          name: 'admin_panel_api_key',
-          keyHash: await hashApiKey(adminPanelApiKey),
+          name: 'web_api_key',
+          keyHash: await hashApiKey(webApiKey),
           createdBy: userId,
         },
       ]);
@@ -114,15 +113,12 @@ export async function initializeSetup(userId: number): Promise<{
         .where(eq(setupStatus.id, 1)); // Assuming id=1 for setup status
     });
 
-    // 5. Update .env file with admin panel API key
-    await updateEnvFile('NEXT_PUBLIC_ADMIN_PANEL_API_KEY', adminPanelApiKey);
-
     logger.info({ userId }, 'Setup completed successfully');
 
     return {
       iosApiKey,
       androidApiKey,
-      adminPanelApiKey,
+      webApiKey,
     };
   } catch (error) {
     logger.error(error, 'Failed to initialize setup');
@@ -148,9 +144,6 @@ export async function resetSetup(): Promise<void> {
         completedAt: null,
       });
     });
-
-    // 3. Remove NEXT_PUBLIC_ADMIN_PANEL_API_KEY from .env
-    await removeEnvVariable('NEXT_PUBLIC_ADMIN_PANEL_API_KEY');
 
     logger.info('Setup reset completed');
   } catch (error) {

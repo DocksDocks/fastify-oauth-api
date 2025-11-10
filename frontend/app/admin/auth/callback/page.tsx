@@ -40,7 +40,7 @@ export default function OAuthCallbackPage() {
   const [setupApiKeys, setSetupApiKeys] = useState<{
     ios: string;
     android: string;
-    adminPanel: string;
+    web: string;
   } | null>(null);
   const [showSetupModal, setShowSetupModal] = useState(false);
 

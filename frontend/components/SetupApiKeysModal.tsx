@@ -8,20 +8,19 @@
  */
 
 import { useState } from 'react';
-import { CheckCircle2, AlertTriangle, Monitor, Smartphone, Copy, Check } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Smartphone, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { ApiKeyCard } from '@/components/ApiKeyCard';
 
 interface ApiKeys {
   ios: string;
   android: string;
-  adminPanel: string;
+  web: string;
 }
 
 interface SetupApiKeysModalProps {
@@ -31,22 +30,6 @@ interface SetupApiKeysModalProps {
 
 export function SetupApiKeysModal({ apiKeys, onComplete }: SetupApiKeysModalProps) {
   const [keySaved, setKeySaved] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  const copyToClipboard = async (text: string, keyName: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedKey(keyName);
-      setTimeout(() => setCopiedKey(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      alert('Failed to copy to clipboard');
-    }
-  };
-
-  const handleComplete = () => {
-    onComplete();
-  };
 
   return (
     <Dialog open={true} modal>
@@ -75,142 +58,40 @@ export function SetupApiKeysModal({ apiKeys, onComplete }: SetupApiKeysModalProp
             </AlertDescription>
           </Alert>
 
-          {/* Admin Panel Key */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Monitor className="h-4 w-4 text-primary" />
-                  Admin Panel API Key
-                </CardTitle>
-                <Badge variant="outline" className="text-green-600 border-green-600">
-                  Saved to .env
-                </Badge>
-              </div>
-              <CardDescription className="text-xs">
-                Already added to .env file. Admin panel will restart automatically.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  readOnly
-                  value={apiKeys.adminPanel}
-                  className="font-mono text-sm"
-                />
-                <Button
-                  variant="default"
-                  size="default"
-                  onClick={() => copyToClipboard(apiKeys.adminPanel, 'adminPanel')}
-                >
-                  {copiedKey === 'adminPanel' ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ApiKeyCard
+            title="Web API Key"
+            description="Store this key in your website configuration (frontend or backend)."
+            apiKey={apiKeys.web}
+            icon={Globe}
+            keyName="web"
+          />
 
-          {/* iOS Key */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Smartphone className="h-4 w-4 text-primary" />
-                iOS API Key
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Store this key in your iOS mobile app configuration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  readOnly
-                  value={apiKeys.ios}
-                  className="font-mono text-sm"
-                />
-                <Button
-                  variant="default"
-                  size="default"
-                  onClick={() => copyToClipboard(apiKeys.ios, 'ios')}
-                >
-                  {copiedKey === 'ios' ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ApiKeyCard
+            title="iOS API Key"
+            description="Store this key in your iOS mobile app configuration."
+            apiKey={apiKeys.ios}
+            icon={Smartphone}
+            keyName="ios"
+          />
 
-          {/* Android Key */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Smartphone className="h-4 w-4 text-primary" />
-                Android API Key
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Store this key in your Android mobile app configuration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  readOnly
-                  value={apiKeys.android}
-                  className="font-mono text-sm"
-                />
-                <Button
-                  variant="default"
-                  size="default"
-                  onClick={() => copyToClipboard(apiKeys.android, 'android')}
-                >
-                  {copiedKey === 'android' ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ApiKeyCard
+            title="Android API Key"
+            description="Store this key in your Android mobile app configuration."
+            apiKey={apiKeys.android}
+            icon={Smartphone}
+            keyName="android"
+          />
 
           {/* Confirmation */}
           <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border">
             <Switch id="keys-saved" checked={keySaved} onCheckedChange={setKeySaved} />
             <Label htmlFor="keys-saved" className="text-sm cursor-pointer leading-relaxed">
-              I have saved the iOS and Android API keys. I understand these keys won&apos;t be
-              shown again.
+              I have saved all API keys (Web, iOS, Android). I understand these keys won&apos;t be shown again.
             </Label>
           </div>
 
           {/* Complete Button */}
-          <Button onClick={handleComplete} disabled={!keySaved} className="w-full" size="lg">
+          <Button onClick={onComplete} disabled={!keySaved} className="w-full" size="lg">
             Complete Setup
           </Button>
 
@@ -221,9 +102,9 @@ export function SetupApiKeysModal({ apiKeys, onComplete }: SetupApiKeysModalProp
             </CardHeader>
             <CardContent>
               <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• Admin panel will reload automatically</li>
                 <li>• Login with your OAuth account to access the dashboard</li>
                 <li>• Add more authorized admins from the admin panel</li>
+                <li>• Configure your website with the Web API key</li>
                 <li>• Configure your mobile apps with the iOS/Android keys</li>
               </ul>
             </CardContent>
