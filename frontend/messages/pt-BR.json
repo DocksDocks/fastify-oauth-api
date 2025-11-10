@@ -120,11 +120,13 @@
       "loadingData": "Carregando dados...",
       "recordUpdated": "Registro atualizado com sucesso",
       "recordDeleted": "Registro excluído com sucesso",
+      "columnPreferencesUpdated": "Preferências de colunas atualizadas com sucesso",
       "failedToLoad": "Falha ao carregar coleções",
       "failedToLoadMeta": "Falha ao carregar metadados da coleção",
       "failedToLoadData": "Falha ao carregar dados",
       "failedToUpdate": "Falha ao atualizar registro",
-      "failedToDelete": "Falha ao excluir registro"
+      "failedToDelete": "Falha ao excluir registro",
+      "failedToUpdatePreferences": "Falha ao atualizar preferências de colunas"
     }
   },
   "apiKeys": {

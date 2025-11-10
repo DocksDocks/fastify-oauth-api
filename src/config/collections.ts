@@ -18,6 +18,11 @@ export interface CollectionColumn {
   searchable?: boolean;
   enumValues?: string[]; // Available values for enum fields
   readonly?: boolean; // Prevent editing this field
+  foreignKey?: {
+    table: string; // Referenced table name
+    displayField: string; // Field to display (e.g., 'provider', 'email')
+    labelField?: string; // Optional secondary field for display (e.g., 'name')
+  };
 }
 
 export interface Collection {
@@ -40,7 +45,34 @@ interface CollectionColumnWithPriority extends CollectionColumn {
 /**
  * Tables to exclude from collections (internal system tables)
  */
-const EXCLUDED_TABLES = new Set(['seed_status', 'setup_status', 'refresh_tokens', 'api_keys']);
+const EXCLUDED_TABLES = new Set(['seed_status', 'setup_status', 'refresh_tokens', 'api_keys', 'collection_preferences']);
+
+/**
+ * Foreign key relationships configuration
+ * Maps table.column to the referenced table and display field
+ */
+const FOREIGN_KEY_RELATIONSHIPS: Record<string, { table: string; displayField: string; labelField?: string }> = {
+  'users.primaryProviderAccountId': {
+    table: 'provider_accounts',
+    displayField: 'provider',
+    labelField: 'email',
+  },
+  'provider_accounts.userId': {
+    table: 'users',
+    displayField: 'email',
+    labelField: 'name',
+  },
+  'authorized_admins.createdBy': {
+    table: 'users',
+    displayField: 'email',
+    labelField: 'name',
+  },
+  'collection_preferences.updatedBy': {
+    table: 'users',
+    displayField: 'email',
+    labelField: 'name',
+  },
+};
 
 /**
  * Column name patterns that should not be searchable
@@ -227,6 +259,12 @@ function generateCollection(table: PgTable, tableName: string): Collection {
         readonly: isReadonly(dbColName, tableName),
         _priority: getColumnPriority(dbColName), // Temporary field for sorting
       };
+
+      // Add foreign key relationship if exists
+      const fkKey = `${tableName}.${columnName}`;
+      if (FOREIGN_KEY_RELATIONSHIPS[fkKey]) {
+        columnConfig.foreignKey = FOREIGN_KEY_RELATIONSHIPS[fkKey];
+      }
 
       // Add enum values if this is an enum column
       if (type === 'enum' && pgColumn.enumValues && pgColumn.enumValues.length > 0) {

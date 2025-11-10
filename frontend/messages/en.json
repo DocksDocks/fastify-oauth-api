@@ -120,11 +120,13 @@
       "loadingData": "Loading data...",
       "recordUpdated": "Record updated successfully",
       "recordDeleted": "Record deleted successfully",
+      "columnPreferencesUpdated": "Column preferences updated successfully",
       "failedToLoad": "Failed to load collections",
       "failedToLoadMeta": "Failed to load collection metadata",
       "failedToLoadData": "Failed to load data",
       "failedToUpdate": "Failed to update record",
-      "failedToDelete": "Failed to delete record"
+      "failedToDelete": "Failed to delete record",
+      "failedToUpdatePreferences": "Failed to update column preferences"
     }
   },
   "apiKeys": {

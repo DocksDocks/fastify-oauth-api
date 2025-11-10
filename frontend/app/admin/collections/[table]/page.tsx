@@ -32,6 +32,7 @@ import type { Collection, CollectionMeta } from '@/types';
 import { Search, ChevronLeft, ChevronRight, AlertCircle, ArrowUpDown, Eye, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { ViewContentModal } from '@/components/ViewContentModal';
 import { EditRecordModal } from '@/components/EditRecordModal';
+import { ColumnSelector } from '@/components/ColumnSelector';
 import { useAuthStore } from '@/store/auth';
 
 export default function CollectionsPage() {
@@ -48,6 +49,9 @@ export default function CollectionsPage() {
   const [loading, setLoading] = useState(true);
   const [isPaginating, setIsPaginating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Column preferences state
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -100,6 +104,19 @@ export default function CollectionsPage() {
       setLoading(true);
       const response = await adminApi.getCollectionMeta(tableName);
       setSelectedCollection(response.data.collection);
+
+      // Fetch column preferences
+      try {
+        const prefsResponse = await adminApi.getCollectionPreferences(tableName);
+        setVisibleColumns(prefsResponse.data.preferences.visibleColumns);
+      } catch (prefsErr) {
+        // If preferences don't exist, use default (first 4 non-timestamp columns)
+        const defaultColumns = response.data.collection.columns
+          .filter((col: { type: string }) => col.type !== 'timestamp' && col.type !== 'date')
+          .slice(0, 4)
+          .map((col: { name: string }) => col.name);
+        setVisibleColumns(defaultColumns);
+      }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } } };
       setError(error.response?.data?.error?.message || t('messages.failedToLoadMeta'));
@@ -135,7 +152,7 @@ export default function CollectionsPage() {
       setLoading(false);
       setIsPaginating(false);
     }
-  }, [page, searchTerm, sortColumn, sortOrder]);
+  }, [page, searchTerm, sortColumn, sortOrder, t]);
 
   useEffect(() => {
     fetchCollections();
@@ -283,17 +300,28 @@ export default function CollectionsPage() {
     }
   };
 
-  // Get featured columns (ID + 2 main attributes, excluding timestamps)
+  // Get featured columns based on preferences
   const getFeaturedColumns = () => {
-    if (!selectedCollection?.columns) return [];
+    if (!selectedCollection?.columns || visibleColumns.length === 0) return [];
 
-    // Filter out timestamp columns (created_at, updated_at, deleted_at, etc.)
-    const nonTimestampColumns = selectedCollection.columns.filter(
-      (col) => col.type !== 'timestamp' && col.type !== 'date'
-    );
+    // Return columns in the order specified by visibleColumns
+    return visibleColumns
+      .map((columnName) => selectedCollection.columns.find((col) => col.name === columnName))
+      .filter(Boolean);
+  };
 
-    // Return first 3 non-timestamp columns (ID + 2 main attributes)
-    return nonTimestampColumns.slice(0, 3);
+  const handleSaveColumnPreferences = async (selectedColumns: string[]) => {
+    if (!table) return;
+
+    try {
+      await adminApi.updateCollectionPreferences(table, selectedColumns);
+      setVisibleColumns(selectedColumns);
+      setSuccessMessage(t('messages.columnPreferencesUpdated'));
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(error.response?.data?.error?.message || t('messages.failedToUpdatePreferences'));
+    }
   };
 
   if (loading && (!collections || collections.length === 0)) {
@@ -345,6 +373,13 @@ export default function CollectionsPage() {
                       onChange={(e) => handleSearch(e.target.value)}
                     />
                   </div>
+                  {selectedCollection && (
+                    <ColumnSelector
+                      columns={selectedCollection.columns}
+                      visibleColumns={visibleColumns}
+                      onSave={handleSaveColumnPreferences}
+                    />
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -420,10 +455,32 @@ export default function CollectionsPage() {
                               {getFeaturedColumns().map((column) => {
                                 const value = row[column.name];
                                 const formattedValue = formatValue(value, column.type);
+                                const fkData = row[`_fk_${column.name}`] as { id: number; displayValue: string; labelValue?: string; table: string; record?: Record<string, unknown> } | undefined;
 
                                 return (
                                   <TableCell key={column.name} className="px-4">
-                                    {column.name === 'role' ? (
+                                    {fkData ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          // Open related record in view modal
+                                          const recordToShow = fkData.record || { id: fkData.id, displayValue: fkData.displayValue, labelValue: fkData.labelValue, table: fkData.table };
+                                          setModalContent(JSON.stringify(recordToShow, null, 2));
+                                          setModalTitle(`${column.label}: ${fkData.displayValue}`);
+                                          setModalType('row');
+                                          setModalOpen(true);
+                                        }}
+                                        className="text-primary hover:underline font-medium cursor-pointer inline"
+                                        title={fkData.labelValue || `View ${fkData.table} record`}
+                                      >
+                                        {fkData.displayValue}
+                                        {fkData.labelValue && (
+                                          <span className="text-muted-foreground ml-1">
+                                            ({fkData.labelValue})
+                                          </span>
+                                        )}
+                                      </button>
+                                    ) : column.name === 'role' ? (
                                       <Badge variant="outline" className="capitalize">
                                         {String(value ?? '')}
                                       </Badge>

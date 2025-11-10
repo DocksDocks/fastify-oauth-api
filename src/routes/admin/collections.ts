@@ -7,6 +7,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { sql, type SQL } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { requireAdmin } from '@/middleware/authorize';
 import {
@@ -15,6 +16,7 @@ import {
   getTableMap,
   type Collection,
 } from '@/config/collections';
+import { collectionPreferences } from '@/db/schema';
 
 /**
  * Check if user has required role for collection access
@@ -170,6 +172,68 @@ function buildOrderClause(
 }
 
 /**
+ * Enrich rows with foreign key data
+ * Adds _fk_<columnName> fields with related record data
+ */
+async function enrichRowsWithForeignKeys(
+  rows: Record<string, unknown>[],
+  collection: Collection,
+  tableMap: Record<string, unknown>,
+): Promise<Record<string, unknown>[]> {
+  if (rows.length === 0) return rows;
+
+  // Find columns with foreign keys
+  const fkColumns = collection.columns.filter((col) => col.foreignKey);
+  if (fkColumns.length === 0) return rows;
+
+  // Enrich each row
+  const enrichedRows = await Promise.all(
+    rows.map(async (row) => {
+      const enrichedRow = { ...row };
+
+      for (const fkColumn of fkColumns) {
+        const fkValue = row[fkColumn.name];
+        if (fkValue && fkColumn.foreignKey) {
+          try {
+            // Get the related table schema
+            const relatedTable = tableMap[fkColumn.foreignKey.table];
+            if (relatedTable) {
+              // Fetch the related record
+              const relatedRecords = await db
+                .select()
+                .from(relatedTable as any)
+                .where(sql`id = ${fkValue}`)
+                .limit(1);
+
+              if (relatedRecords.length > 0) {
+                const relatedRecord = relatedRecords[0] as Record<string, unknown>;
+                // Add foreign key data with _fk_ prefix
+                enrichedRow[`_fk_${fkColumn.name}`] = {
+                  id: fkValue,
+                  displayValue: relatedRecord[fkColumn.foreignKey.displayField] || fkValue,
+                  labelValue: fkColumn.foreignKey.labelField
+                    ? relatedRecord[fkColumn.foreignKey.labelField]
+                    : null,
+                  table: fkColumn.foreignKey.table,
+                  record: relatedRecord, // Include full related record
+                };
+              }
+            }
+          } catch (error) {
+            // If foreign key fetch fails, just skip it
+            console.error(`Failed to fetch foreign key for ${fkColumn.name}:`, error);
+          }
+        }
+      }
+
+      return enrichedRow;
+    })
+  );
+
+  return enrichedRows;
+}
+
+/**
  * Query collection data
  * GET /api/admin/collections/:table/data
  */
@@ -254,6 +318,9 @@ async function getCollectionData(
     // Execute query
     const data = await queryWithPagination;
 
+    // Enrich rows with foreign key data
+    const enrichedData = await enrichRowsWithForeignKeys(data, collection, tableMap);
+
     // Get total count
     const baseCountQuery = db
       .select({ count: sql<number>`cast(count(*) as integer)` })
@@ -270,7 +337,7 @@ async function getCollectionData(
       success: true,
       collection: collection.name,
       table: collection.table,
-      rows: data || [], // Ensure array
+      rows: enrichedData || [], // Ensure array
       pagination: {
         page,
         limit,
@@ -681,6 +748,219 @@ async function deleteCollectionRecord(
 }
 
 /**
+ * Get collection column preferences
+ * GET /api/admin/collections/:table/preferences
+ */
+async function getCollectionPreferences(
+  request: FastifyRequest<{
+    Params: { table: string };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { table } = request.params;
+    const userRole = request.user?.role || 'user';
+
+    const collection = getCollectionByTable(table);
+
+    if (!collection) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: 'COLLECTION_NOT_FOUND',
+          message: `Collection '${table}' not found or not accessible`,
+        },
+      });
+    }
+
+    // Check if user has required role to access this collection
+    if (!hasRequiredRole(userRole, collection.requiredRole)) {
+      return reply.status(403).send({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        },
+      });
+    }
+
+    // Fetch preferences from database
+    const preferences = await db
+      .select()
+      .from(collectionPreferences)
+      .where(eq(collectionPreferences.tableName, table))
+      .limit(1);
+
+    // If no preferences exist, return default (first 4 non-timestamp columns)
+    if (preferences.length === 0) {
+      const defaultColumns = collection.columns
+        .filter((col) => col.type !== 'timestamp' && col.type !== 'date')
+        .slice(0, 4)
+        .map((col) => col.name);
+
+      return reply.send({
+        success: true,
+        preferences: {
+          tableName: table,
+          visibleColumns: defaultColumns,
+          isDefault: true,
+        },
+      });
+    }
+
+    return reply.send({
+      success: true,
+      preferences: {
+        tableName: preferences[0].tableName,
+        visibleColumns: preferences[0].visibleColumns as string[],
+        updatedBy: preferences[0].updatedBy,
+        updatedAt: preferences[0].updatedAt,
+        isDefault: false,
+      },
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to get collection preferences');
+    return reply.status(500).send({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get collection preferences',
+      },
+    });
+  }
+}
+
+/**
+ * Update collection column preferences
+ * PATCH /api/admin/collections/:table/preferences
+ */
+async function updateCollectionPreferences(
+  request: FastifyRequest<{
+    Params: { table: string };
+    Body: { visibleColumns: string[] };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const { table } = request.params;
+    const { visibleColumns } = request.body;
+    const userRole = request.user?.role || 'user';
+    const userId = request.user?.id;
+
+    if (!userId) {
+      return reply.status(401).send({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User ID not found',
+        },
+      });
+    }
+
+    const collection = getCollectionByTable(table);
+
+    if (!collection) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: 'COLLECTION_NOT_FOUND',
+          message: `Collection '${table}' not found or not accessible`,
+        },
+      });
+    }
+
+    // Check if user has required role to access this collection
+    if (!hasRequiredRole(userRole, collection.requiredRole)) {
+      return reply.status(403).send({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Access denied. ${collection.requiredRole} role required for this collection.`,
+        },
+      });
+    }
+
+    // Validate visibleColumns array
+    if (!Array.isArray(visibleColumns) || visibleColumns.length === 0) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_COLUMNS',
+          message: 'visibleColumns must be a non-empty array',
+        },
+      });
+    }
+
+    // Validate that all columns exist in the collection
+    const availableColumnNames = collection.columns.map((col) => col.name);
+    const invalidColumns = visibleColumns.filter((col) => !availableColumnNames.includes(col));
+
+    if (invalidColumns.length > 0) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_COLUMNS',
+          message: `Invalid columns: ${invalidColumns.join(', ')}. Available columns: ${availableColumnNames.join(', ')}`,
+        },
+      });
+    }
+
+    // Upsert preferences (insert or update)
+    const existingPreferences = await db
+      .select()
+      .from(collectionPreferences)
+      .where(eq(collectionPreferences.tableName, table))
+      .limit(1);
+
+    if (existingPreferences.length > 0) {
+      // Update existing preferences
+      await db
+        .update(collectionPreferences)
+        .set({
+          visibleColumns: visibleColumns as unknown as string[],
+          updatedBy: userId,
+          updatedAt: new Date(),
+        })
+        .where(eq(collectionPreferences.tableName, table));
+    } else {
+      // Insert new preferences
+      await db.insert(collectionPreferences).values({
+        tableName: table,
+        visibleColumns: visibleColumns as unknown as string[],
+        updatedBy: userId,
+      });
+    }
+
+    // Fetch updated preferences
+    const updated = await db
+      .select()
+      .from(collectionPreferences)
+      .where(eq(collectionPreferences.tableName, table))
+      .limit(1);
+
+    return reply.send({
+      success: true,
+      preferences: {
+        tableName: updated[0].tableName,
+        visibleColumns: updated[0].visibleColumns as string[],
+        updatedBy: updated[0].updatedBy,
+        updatedAt: updated[0].updatedAt,
+      },
+      message: 'Column preferences updated successfully',
+    });
+  } catch (error) {
+    request.log.error({ error }, 'Failed to update collection preferences');
+    return reply.status(500).send({
+      success: false,
+      error: {
+        code: 'UPDATE_FAILED',
+        message: 'Failed to update collection preferences',
+      },
+    });
+  }
+}
+
+/**
  * Register collections management routes
  */
 export default async function collectionsRoutes(fastify: FastifyInstance): Promise<void> {
@@ -808,5 +1088,50 @@ export default async function collectionsRoutes(fastify: FastifyInstance): Promi
       },
     },
     handler: deleteCollectionRecord,
+  });
+
+  // Get collection column preferences
+  fastify.get('/:table/preferences', {
+    schema: {
+      description: 'Get collection column visibility preferences',
+      tags: ['admin', 'collections'],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['table'],
+        properties: {
+          table: { type: 'string' },
+        },
+      },
+    },
+    handler: getCollectionPreferences,
+  });
+
+  // Update collection column preferences
+  fastify.patch('/:table/preferences', {
+    schema: {
+      description: 'Update collection column visibility preferences (applies globally)',
+      tags: ['admin', 'collections'],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['table'],
+        properties: {
+          table: { type: 'string' },
+        },
+      },
+      body: {
+        type: 'object',
+        required: ['visibleColumns'],
+        properties: {
+          visibleColumns: {
+            type: 'array',
+            items: { type: 'string' },
+            minItems: 1,
+          },
+        },
+      },
+    },
+    handler: updateCollectionPreferences,
   });
 }

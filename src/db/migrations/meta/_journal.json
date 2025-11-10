@@ -50,6 +50,20 @@
       "when": 1762814957000,
       "tag": "0006_convert_primary_provider_to_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1762818720000,
+      "tag": "0007_add_setup_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1762818820000,
+      "tag": "0008_add_collection_preferences",
+      "breakpoints": true
     }
   ]
 }

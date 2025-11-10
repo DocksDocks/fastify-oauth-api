@@ -13,6 +13,12 @@ import { eq, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { logger } from '@/utils/logger';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Check if setup is complete
@@ -127,11 +133,11 @@ export async function initializeSetup(userId: number): Promise<{
 }
 
 /**
- * Reset setup for development (full reset - clear all data)
+ * Reset setup for development (full reset - clear all data + run migrations)
  */
 export async function resetSetup(): Promise<void> {
   try {
-    logger.warn('Resetting setup - clearing all data');
+    logger.warn('Resetting setup - clearing all data and running migrations');
 
     // Use transaction to ensure atomicity
     await db.transaction(async (tx) => {
@@ -145,7 +151,15 @@ export async function resetSetup(): Promise<void> {
       });
     });
 
-    logger.info('Setup reset completed');
+    logger.info('Data cleared, running migrations...');
+
+    // 3. Run migrations to ensure schema is up-to-date
+    // Path: src/services/setup.service.ts -> src/db/migrations
+    const migrationsFolder = path.resolve(__dirname, '../db/migrations');
+    logger.info({ migrationsFolder }, 'Running migrations from folder');
+    await migrate(db, { migrationsFolder });
+
+    logger.info('Setup reset completed with migrations');
   } catch (error) {
     logger.error(error, 'Failed to reset setup');
     throw error;

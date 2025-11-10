@@ -218,6 +218,12 @@ export const adminApi = {
   deleteCollectionRecord: (table: string, id: number) =>
     api.delete(`/admin/collections/${table}/data/${id}`),
 
+  // Collection Preferences
+  getCollectionPreferences: (table: string) =>
+    api.get(`/admin/collections/${table}/preferences`),
+  updateCollectionPreferences: (table: string, visibleColumns: string[]) =>
+    api.patch(`/admin/collections/${table}/preferences`, { visibleColumns }),
+
   // Authorized Admins (superadmin only)
   getAuthorizedAdmins: () => api.get('/admin/authorized-admins'),
   addAuthorizedAdmin: (email: string) => api.post('/admin/authorized-admins', { email }),

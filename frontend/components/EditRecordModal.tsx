@@ -145,7 +145,7 @@ export function EditRecordModal({
             <span className="flex-1">
               {displayValue || <span className="text-text-muted italic">Empty</span>}
             </span>
-            <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
           </div>
         </div>
       );
