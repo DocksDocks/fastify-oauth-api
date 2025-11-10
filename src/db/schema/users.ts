@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, timestamp, pgEnum, integer, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { userPreferences } from './user-preferences';
 
@@ -10,16 +10,16 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }),
   avatar: text('avatar'),
-  provider: providerEnum('provider').notNull(), // Legacy field (kept for backward compatibility)
-  providerId: varchar('provider_id', { length: 255 }).notNull(), // Legacy field (kept for backward compatibility)
-  primaryProvider: providerEnum('primary_provider'), // Primary OAuth provider for this user
+  primaryProviderAccountId: integer('primary_provider_account_id'), // FK to provider_accounts table
   role: roleEnum('role').notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
-});
+}, (table) => ({
+  primaryProviderAccountIdIdx: index('idx_users_primary_provider_account_id').on(table.primaryProviderAccountId),
+}));
 
-// Relations
+// Relations (forward reference to avoid circular dependency)
 export const usersRelations = relations(users, ({ one }) => ({
   preferences: one(userPreferences, {
     fields: [users.id],

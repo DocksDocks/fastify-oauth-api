@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,11 +11,21 @@ import { AlertCircle } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
+import { useSetupStatus } from '@/hooks/useSetupStatus';
 
 export default function LoginPage() {
   const t = useTranslations('login');
+  const router = useRouter();
+  const { setupComplete, loading: setupLoading } = useSetupStatus();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect to setup if not complete
+  useEffect(() => {
+    if (setupComplete === false) {
+      router.push('/admin/setup');
+    }
+  }, [setupComplete, router]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -63,6 +74,18 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking setup status
+  if (setupLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking setup status...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">

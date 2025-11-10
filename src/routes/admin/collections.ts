@@ -466,7 +466,7 @@ async function updateCollectionRecord(
     const baseProtectedFields = ['id', 'createdAt', 'updatedAt', 'created_at', 'updated_at', 'last_login_at', 'lastLoginAt'];
 
     // Additional readonly fields for users table (authentication-related fields)
-    const usersReadonlyFields = ['email', 'provider', 'providerId', 'provider_id', 'primaryProvider', 'primary_provider'];
+    const usersReadonlyFields = ['email', 'primaryProviderAccountId', 'primary_provider_account_id'];
 
     const protectedFields = table === 'users'
       ? [...baseProtectedFields, ...usersReadonlyFields]

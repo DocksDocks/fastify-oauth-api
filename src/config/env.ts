@@ -27,10 +27,6 @@ const envSchema = z.object({
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
 
-  ADMIN_EMAIL: z.string().email(),
-  ADMIN_EMAILS_ADDITIONAL: z.string().optional().default(''),
-  SUPER_ADMIN_EMAIL: z.string().email().optional(),
-
   // Google OAuth - Admin Panel (Web Application)
   GOOGLE_CLIENT_ID_ADMIN: z.string(),
   GOOGLE_CLIENT_SECRET_ADMIN: z.string(),

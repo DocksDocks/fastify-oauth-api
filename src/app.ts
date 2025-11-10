@@ -18,6 +18,7 @@ import { AppError } from '@/utils/errors';
 import healthRoutes from '@/routes/health';
 import jwtPlugin from '@/plugins/jwt';
 import authRoutes from '@/modules/auth/auth.routes';
+import setupRoutes from '@/routes/setup';
 import profileRoutes from '@/routes/profile';
 import adminUserRoutes from '@/routes/admin/users';
 import adminApiKeysRoutes from '@/routes/admin/api-keys';
@@ -143,6 +144,9 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   // Register routes
   await app.register(healthRoutes);
+
+  // Setup routes (no auth required for status check)
+  await app.register(setupRoutes);
 
   // Authentication routes
   await app.register(authRoutes, { prefix: '/api/auth' });

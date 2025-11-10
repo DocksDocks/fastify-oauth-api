@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck, Sun, Moon, Monitor, Languages, Check } from 'lucide-react';
+import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck, Sun, Moon, Monitor, Languages, Check, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState, useEffect } from 'react';
@@ -61,7 +61,7 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
   useEffect(() => {
     // Only fetch collections if user is authenticated
     if (user && isAuthenticated) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       fetchCollections();
     }
   }, [user, isAuthenticated]);
@@ -69,7 +69,7 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
   useEffect(() => {
     // Auto-expand Collections dropdown if on a collection page
     if (pathname?.startsWith('/admin/collections/')) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setIsCollectionsOpen(true);
     }
   }, [pathname]);
@@ -153,7 +153,7 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
                   : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               )}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <item.icon className="h-5 w-5 shrink-0" />
               {item.name}
             </Link>
           );
@@ -170,11 +170,11 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
                   : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               )}
             >
-              <Database className="h-5 w-5 flex-shrink-0" />
+              <Database className="h-5 w-5 shrink-0" />
               <span className="flex-1 text-left">Collections</span>
               <ChevronDown
                 className={cn(
-                  'h-4 w-4 transition-transform flex-shrink-0',
+                  'h-4 w-4 transition-transform shrink-0',
                   isCollectionsOpen && 'rotate-180'
                 )}
               />
@@ -207,6 +207,26 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
             )}
           </CollapsibleContent>
         </Collapsible>
+
+        {/* Dev Reset - Only in Development */}
+        {process.env.NODE_ENV === 'development' && (
+          <>
+            <div className="my-2 border-t border-sidebar-border" />
+            <Link
+              href="/admin/dev-reset"
+              onClick={handleLinkClick}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
+                pathname === '/admin/dev-reset'
+                  ? 'bg-destructive text-destructive-foreground shadow-sm'
+                  : 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive border border-destructive/20'
+              )}
+            >
+              <Trash2 className="h-5 w-5 shrink-0" />
+              Dev Reset
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* User section */}
@@ -219,14 +239,14 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
                 alt={user.name || 'User'}
                 width={32}
                 height={32}
-                className="rounded-full ring-2 ring-sidebar-border flex-shrink-0"
+                className="rounded-full ring-2 ring-sidebar-border shrink-0"
               />
             )}
             <div className="flex-1 overflow-hidden text-left">
               <p className="truncate text-sm font-medium">{user?.name || 'User'}</p>
               <p className="truncate text-xs text-sidebar-foreground/60">{user?.email}</p>
             </div>
-            <ChevronDown className="h-4 w-4 text-sidebar-foreground/60 flex-shrink-0" />
+            <ChevronDown className="h-4 w-4 text-sidebar-foreground/60 shrink-0" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>

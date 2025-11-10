@@ -15,7 +15,12 @@ import env from '@/config/env';
 import type { JWTPayload } from '@/modules/auth/auth.types';
 
 export async function generateDevToken(userId: number): Promise<{
-  user: any;
+  user: {
+    id: number;
+    email: string;
+    name: string | null;
+    role: 'user' | 'admin' | 'superadmin';
+  };
   accessToken: string;
   refreshToken: string;
 }> {

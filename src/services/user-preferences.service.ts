@@ -26,8 +26,14 @@ export async function getUserPreferences(userId: number): Promise<UserPreference
  * Create default preferences for a new user
  * Called automatically during user registration
  */
-export async function createDefaultPreferences(userId: number, locale?: string): Promise<UserPreferences> {
-  const [prefs] = await db
+export async function createDefaultPreferences(
+  userId: number,
+  locale?: string,
+  tx?: typeof db // Optional transaction object
+): Promise<UserPreferences> {
+  const dbOrTx = tx || db; // Use transaction if provided, otherwise use global db
+
+  const [prefs] = await dbOrTx
     .insert(userPreferences)
     .values({
       userId,

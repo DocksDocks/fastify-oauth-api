@@ -11,7 +11,7 @@
     "postinstall": "cd frontend && npm install",
     "dev:init": "bash scripts/dev-init.sh",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\" --names \"API,FRONTEND\" --prefix-colors \"cyan,magenta\" --kill-others",
-    "dev:api": "dotenvx run -- tsx watch src/server.ts",
+    "dev:api": "dotenvx run -- tsx watch --ignore 'src/setup/**' src/server.ts",
     "dev:frontend": "cd frontend && npx dotenvx run --env-file=../.env -- bash -c 'PORT=$NEXT_PUBLIC_PORT npm run dev'",
     "kill": "dotenvx run -- bash -c 'lsof -ti:$PORT | xargs kill -9 2>/dev/null || true; lsof -ti:$NEXT_PUBLIC_PORT | xargs kill -9 2>/dev/null || true; echo \"Killed processes on ports $PORT and $NEXT_PUBLIC_PORT\"'",
     "build": "npm run build:frontend && tsc",

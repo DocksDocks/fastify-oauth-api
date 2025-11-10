@@ -32,6 +32,8 @@ import {
   revokeSession,
   extractTokenFromHeader,
 } from './jwt.service';
+import { checkSetupStatus } from '@/services/setup.service';
+import { handleSetupOAuthCallback } from '@/services/setup-auth.service';
 
 /**
  * Type guard to check if OAuth result requires account linking
@@ -137,7 +139,6 @@ export async function handleGoogleCallback(
         name: user.name,
         avatar: user.avatar,
         role: user.role,
-        locale: user.locale,
       },
       tokens,
     }));
@@ -250,7 +251,6 @@ export async function handleAppleCallback(
         name: userRecord.name,
         avatar: userRecord.avatar,
         role: userRecord.role,
-        locale: userRecord.locale,
       },
       tokens,
     }));
@@ -325,11 +325,16 @@ export async function handleAdminGoogleCallback(
       return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=missing_code`);
     }
 
+    // Check setup status
+    const { setupComplete } = await checkSetupStatus();
+
     // Exchange code for user profile (admin panel web flow)
     const profile = await handleGoogleOAuth(code, env.GOOGLE_REDIRECT_URI_ADMIN!, 'web');
 
-    // Validate user is existing admin/superadmin (does NOT create users)
-    const user = await handleAdminOAuthCallback(profile);
+    // Handle OAuth callback based on setup status
+    const user = setupComplete
+      ? await handleAdminOAuthCallback(profile) // Normal flow: requires authorized admin
+      : await handleSetupOAuthCallback(profile); // Setup flow: creates first user
 
     // Generate JWT tokens
     const tokens = await generateTokens(
@@ -349,15 +354,22 @@ export async function handleAdminGoogleCallback(
         role: user.role,
       },
       tokens,
+      setupRequired: !setupComplete, // Flag for frontend to show setup wizard
     }));
 
     return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback#data=${tokenData}`);
   } catch (error) {
     request.log.error({ error }, 'Admin Google callback failed');
     const err = error as Error;
-    // Use error message from handleAdminOAuthCallback for better UX
-    const errorMsg = encodeURIComponent(err.message || 'authentication_failed');
-    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${errorMsg}`);
+
+    // Sanitize error message - don't expose database errors
+    let errorMsg = 'authentication_failed';
+    if (err.message && !err.message.includes('Failed query') && !err.message.includes('insert into')) {
+      // Only use custom error messages, not database errors
+      errorMsg = err.message;
+    }
+
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${encodeURIComponent(errorMsg)}`);
   }
 }
 
@@ -430,11 +442,16 @@ export async function handleAdminAppleCallback(
       return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=missing_parameters`);
     }
 
+    // Check setup status
+    const { setupComplete } = await checkSetupStatus();
+
     // Verify ID token and get user profile
     const profile = await handleAppleOAuth(code, id_token, user);
 
-    // Validate user is existing admin/superadmin (does NOT create users)
-    const userRecord = await handleAdminOAuthCallback(profile);
+    // Handle OAuth callback based on setup status
+    const userRecord = setupComplete
+      ? await handleAdminOAuthCallback(profile) // Normal flow: requires authorized admin
+      : await handleSetupOAuthCallback(profile); // Setup flow: creates first user
 
     // Generate JWT tokens
     const tokens = await generateTokens(
@@ -454,15 +471,22 @@ export async function handleAdminAppleCallback(
         role: userRecord.role,
       },
       tokens,
+      setupRequired: !setupComplete, // Flag for frontend to show setup wizard
     }));
 
     return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback#data=${tokenData}`);
   } catch (error) {
     request.log.error({ error }, 'Admin Apple callback failed');
     const err = error as Error;
-    // Use error message from handleAdminOAuthCallback for better UX
-    const errorMsg = encodeURIComponent(err.message || 'authentication_failed');
-    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${errorMsg}`);
+
+    // Sanitize error message - don't expose database errors
+    let errorMsg = 'authentication_failed';
+    if (err.message && !err.message.includes('Failed query') && !err.message.includes('insert into')) {
+      // Only use custom error messages, not database errors
+      errorMsg = err.message;
+    }
+
+    return reply.redirect(`${env.ADMIN_PANEL_URL}/admin/auth/callback?error=${encodeURIComponent(errorMsg)}`);
   }
 }
 
@@ -608,8 +632,6 @@ export async function handleVerifyToken(
         name: user.name,
         avatar: user.avatar,
         role: user.role,
-        provider: user.provider,
-        providerId: user.providerId,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
         lastLoginAt: user.lastLoginAt?.toISOString() || null,

@@ -30,9 +30,8 @@ describe('Auth Service', () => {
       expect(user.email).toBe(profile.email);
       expect(user.name).toBe(profile.name);
       expect(user.avatar).toBe(profile.avatar);
-      expect(user.provider).toBe(profile.provider);
-      expect(user.providerId).toBe(profile.providerId);
       expect(user.role).toBe('user');
+      expect(user.primaryProviderAccountId).toBeDefined(); // FK to provider_accounts
       expect(user.lastLoginAt).toBeInstanceOf(Date);
     });
 
@@ -178,7 +177,7 @@ describe('Auth Service', () => {
 
       const user = await handleOAuthCallback(profile);
 
-      expect(user.provider).toBe('apple');
+      expect(user.primaryProviderAccountId).toBeDefined(); // Provider data is in provider_accounts
       expect(user.email).toBe('apple@example.com');
     });
 
@@ -194,7 +193,7 @@ describe('Auth Service', () => {
 
       const user = await handleOAuthCallback(profile);
 
-      expect(user.provider).toBe('google');
+      expect(user.primaryProviderAccountId).toBeDefined(); // Provider data is in provider_accounts
       expect(user.email).toBe('google@example.com');
       expect(user.avatar).toBe('https://google.com/photo.jpg');
     });

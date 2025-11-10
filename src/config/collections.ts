@@ -40,7 +40,7 @@ interface CollectionColumnWithPriority extends CollectionColumn {
 /**
  * Tables to exclude from collections (internal system tables)
  */
-const EXCLUDED_TABLES = new Set(['seed_status', 'refresh_tokens', 'api_keys']);
+const EXCLUDED_TABLES = new Set(['seed_status', 'setup_status', 'refresh_tokens', 'api_keys']);
 
 /**
  * Column name patterns that should not be searchable
@@ -84,7 +84,7 @@ function isReadonly(columnName: string, tableName: string): boolean {
   const baseReadonlyFields = ['id', 'created_at', 'updated_at', 'last_login_at', 'linked_at'];
 
   // Users table specific readonly fields (authentication-related)
-  const usersReadonlyFields = ['email', 'provider', 'provider_id', 'primary_provider'];
+  const usersReadonlyFields = ['email', 'primary_provider_account_id'];
 
   if (baseReadonlyFields.some((field) => columnName.toLowerCase() === field)) {
     return true;

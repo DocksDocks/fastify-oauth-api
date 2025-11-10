@@ -8,7 +8,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LinkProviderConfirmation } from '@/components/LinkProviderConfirmation';
-import { adminApi } from '@/lib/api';
+import { SetupApiKeysModal } from '@/components/SetupApiKeysModal';
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
 interface LinkingData {
   linkingToken: string;
@@ -34,16 +37,35 @@ export default function OAuthCallbackPage() {
   const [error, setError] = useState<string | null>(null);
   const [linkingData, setLinkingData] = useState<LinkingData | null>(null);
   const [showLinkingModal, setShowLinkingModal] = useState(false);
+  const [setupApiKeys, setSetupApiKeys] = useState<{
+    ios: string;
+    android: string;
+    adminPanel: string;
+  } | null>(null);
+  const [showSetupModal, setShowSetupModal] = useState(false);
 
   // Handle account linking confirmation
   const handleLinkConfirm = async (linkingToken: string) => {
     try {
-      const response = await adminApi.post('/api/auth/link-provider', {
-        linkingToken,
-        confirm: true,
+      // Call Next.js API route instead of backend directly
+      const response = await fetch('/api/auth/link-provider', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          linkingToken,
+          confirm: true,
+        }),
       });
 
-      const { user, tokens } = response.data;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to link accounts');
+      }
+
+      const { user, tokens } = data;
       const { accessToken, refreshToken } = tokens;
 
       // Check if user is admin or superadmin
@@ -72,8 +94,15 @@ export default function OAuthCallbackPage() {
     router.push('/admin/login');
   };
 
+  // Handle setup completion
+  const handleSetupComplete = () => {
+    setShowSetupModal(false);
+    // Redirect to admin dashboard (auth tokens already stored via setAuth)
+    router.replace('/admin');
+  };
+
   useEffect(() => {
-    const handleCallback = () => {
+    const handleCallback = async () => {
       // Check for error in query params
       const errorParam = searchParams?.get('error');
       if (errorParam) {
@@ -108,8 +137,41 @@ export default function OAuthCallbackPage() {
 
       try {
         const data = JSON.parse(decodeURIComponent(dataParam));
-        const { user, tokens } = data;
+        const { user, tokens, setupRequired } = data;
         const { accessToken, refreshToken } = tokens;
+
+        // Handle first-time setup
+        if (setupRequired) {
+          try {
+            // Store auth tokens BEFORE calling initialize
+            // User is already authenticated, we just need to complete setup
+            setAuth(user, accessToken, refreshToken);
+
+            // Call setup/initialize endpoint with JWT
+            const response = await axios.post(
+              `${API_URL}/api/setup/initialize`,
+              {},
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }
+            );
+
+            if (response.data.success) {
+              // Show API keys modal
+              setSetupApiKeys(response.data.data.apiKeys);
+              setShowSetupModal(true);
+            } else {
+              setError('Setup initialization failed');
+            }
+          } catch (err: unknown) {
+            console.error('Setup initialization failed:', err);
+            setError('Failed to initialize setup');
+          }
+          return;
+        }
 
         // Check if user is admin or superadmin
         if (user.role !== 'admin' && user.role !== 'superadmin') {
@@ -135,7 +197,7 @@ export default function OAuthCallbackPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
         <div className="w-full max-w-md space-y-4">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -152,7 +214,7 @@ export default function OAuthCallbackPage() {
 
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
         <div className="w-full max-w-md space-y-4">
           <div className="space-y-2">
             <Skeleton className="h-12 w-full" />
@@ -174,6 +236,11 @@ export default function OAuthCallbackPage() {
           onConfirm={handleLinkConfirm}
           onCancel={handleLinkCancel}
         />
+      )}
+
+      {/* Setup API Keys Modal */}
+      {setupApiKeys && showSetupModal && (
+        <SetupApiKeysModal apiKeys={setupApiKeys} onComplete={handleSetupComplete} />
       )}
     </>
   );

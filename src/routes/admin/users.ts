@@ -56,7 +56,6 @@ async function listUsers(
         name: users.name,
         avatar: users.avatar,
         role: users.role,
-        provider: users.provider,
         createdAt: users.createdAt,
         lastLoginAt: users.lastLoginAt,
       })
@@ -119,8 +118,6 @@ async function getUser(
         name: users.name,
         avatar: users.avatar,
         role: users.role,
-        provider: users.provider,
-        providerId: users.providerId,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         lastLoginAt: users.lastLoginAt,
@@ -344,14 +341,15 @@ async function getUserStats(request: FastifyRequest, reply: FastifyReply): Promi
       .from(users)
       .groupBy(users.role);
 
-    // Get users by provider
+    // Get users by provider (from provider_accounts table)
     const providerStats = await db
       .select({
-        provider: users.provider,
-        count: sql<number>`cast(count(*) as integer)`,
+        provider: sql<string>`provider_accounts.provider`,
+        count: sql<number>`cast(count(DISTINCT users.id) as integer)`,
       })
       .from(users)
-      .groupBy(users.provider);
+      .leftJoin(sql`provider_accounts`, sql`provider_accounts.user_id = users.id`)
+      .groupBy(sql`provider_accounts.provider`);
 
     // Convert arrays to objects for frontend consumption
     const byRole: Record<string, number> = {};
@@ -426,7 +424,6 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
                   name: { type: 'string', nullable: true },
                   avatar: { type: 'string', nullable: true },
                   role: { type: 'string', enum: ['user', 'coach', 'admin', 'superadmin'] },
-                  provider: { type: 'string' },
                   createdAt: { type: 'string' },
                   lastLoginAt: { type: 'string', nullable: true },
                 },
@@ -500,8 +497,6 @@ export default async function adminUserRoutes(fastify: FastifyInstance): Promise
                 name: { type: 'string', nullable: true },
                 avatar: { type: 'string', nullable: true },
                 role: { type: 'string', enum: ['user', 'coach', 'admin', 'superadmin'] },
-                provider: { type: 'string' },
-                providerId: { type: 'string' },
                 createdAt: { type: 'string' },
                 updatedAt: { type: 'string' },
                 lastLoginAt: { type: 'string', nullable: true },

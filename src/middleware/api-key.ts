@@ -14,12 +14,14 @@ import { validateApiKey as validateFromCache } from '@/services/api-key-cache.se
 /**
  * Routes that don't require API key validation
  * - Health check: Public endpoint
+ * - Setup routes: First-time setup wizard
  * - Auth routes: OAuth callbacks and initial authentication
  * - Admin static files: Frontend assets
  * - Admin API routes: Use JWT authentication instead of API keys
  */
 const WHITELISTED_PATHS = [
   '/health',
+  '/api/setup/*', // Setup wizard routes (first-time setup)
   '/api/auth/*', // All auth routes (OAuth callbacks, login, etc.)
   '/admin/*', // Admin panel static files and routes
   '/api/admin/*', // Admin API routes (use JWT auth instead)

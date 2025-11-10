@@ -16,8 +16,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const { isAuthenticated } = useAuthStore();
 
-  // Check if we're on a public page (login or OAuth callback)
-  const isPublicPage = pathname === '/admin/login' || pathname?.startsWith('/admin/auth/callback');
+  // Check if we're on a public page (login, OAuth callback, or setup)
+  const isPublicPage =
+    pathname === '/admin/login' ||
+    pathname?.startsWith('/admin/auth/callback') ||
+    pathname?.startsWith('/admin/setup');
 
   // Only show sidebar and mobile menu if authenticated and not on public pages
   const shouldShowSidebar = isAuthenticated && !isPublicPage;

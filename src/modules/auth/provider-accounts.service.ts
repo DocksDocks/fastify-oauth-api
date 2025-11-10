@@ -48,7 +48,7 @@ export async function getUserProviderAccounts(userId: number): Promise<ProviderA
     name: account.name,
     avatar: account.avatar,
     linkedAt: account.linkedAt.toISOString(),
-    isPrimary: user.primaryProvider === account.provider,
+    isPrimary: user.primaryProviderAccountId === account.id,
   }));
 }
 
@@ -122,14 +122,25 @@ export async function deleteProviderAccount(
     throw new Error(`User not found: ${userId}`);
   }
 
-  if (user.primaryProvider === provider) {
-    // Set a new primary provider before unlinking
-    const remainingProvider = userAccounts.find((acc) => acc.provider !== provider);
-    if (remainingProvider) {
-      await db
-        .update(users)
-        .set({ primaryProvider: remainingProvider.provider })
-        .where(eq(users.id, userId));
+  // Check if unlinking the primary provider account
+  if (user.primaryProviderAccountId) {
+    const accountToDelete = userAccounts.find((acc) => acc.provider === provider);
+
+    if (accountToDelete && user.primaryProviderAccountId === accountToDelete.id) {
+      // User is unlinking their primary provider - switch to another one
+      const remainingProvider = userAccounts.find((acc) => acc.provider !== provider);
+      if (remainingProvider) {
+        await db
+          .update(users)
+          .set({ primaryProviderAccountId: remainingProvider.id })
+          .where(eq(users.id, userId));
+      } else {
+        // No remaining providers (shouldn't happen due to validation above)
+        await db
+          .update(users)
+          .set({ primaryProviderAccountId: null })
+          .where(eq(users.id, userId));
+      }
     }
   }
 
@@ -144,17 +155,18 @@ export async function deleteProviderAccount(
  */
 export async function setPrimaryProvider(userId: number, provider: OAuthProvider): Promise<void> {
   // Verify user has this provider linked
-  const account = await db
+  const [account] = await db
     .select()
     .from(providerAccounts)
     .where(and(eq(providerAccounts.userId, userId), eq(providerAccounts.provider, provider)))
     .limit(1);
 
-  if (account.length === 0) {
+  if (!account) {
     throw new Error(`User does not have ${provider} provider linked`);
   }
 
-  await db.update(users).set({ primaryProvider: provider }).where(eq(users.id, userId));
+  // Set primaryProviderAccountId to this account's ID
+  await db.update(users).set({ primaryProviderAccountId: account.id }).where(eq(users.id, userId));
 }
 
 /**

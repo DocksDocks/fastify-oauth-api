@@ -10,7 +10,7 @@ import { OAuth2Client } from 'google-auth-library';
 import AppleSignIn from 'apple-signin-auth';
 import crypto from 'crypto';
 import { db } from '@/db/client';
-import { users, type User, authorizedAdmins } from '@/db/schema';
+import { users, type User, authorizedAdmins, providerAccounts } from '@/db/schema';
 import env from '@/config/env';
 import type {
   OAuthProfile,
@@ -29,52 +29,28 @@ import {
 import { createDefaultPreferences } from '@/services/user-preferences.service';
 
 /**
- * Get list of admin emails from environment
+ * Check if email should be auto-promoted to admin/superadmin
+ * Checks database authorized_admins table
  */
-function getAdminEmails(): string[] {
-  const adminEmails = [env.ADMIN_EMAIL];
-
-  if (env.ADMIN_EMAILS_ADDITIONAL) {
-    const additional = env.ADMIN_EMAILS_ADDITIONAL.split(',')
-      .map((email) => email.trim())
-      .filter((email) => email.length > 0);
-    adminEmails.push(...additional);
-  }
-
-  return adminEmails;
-}
-
-/**
- * Check if email should be auto-promoted to admin
- * Checks both environment variables and database
- */
-async function isAdminEmail(email: string): Promise<boolean> {
+async function isAuthorizedAdmin(email: string): Promise<{ isAdmin: boolean; isSuperAdmin: boolean }> {
   const normalizedEmail = email.toLowerCase();
 
-  // Check environment variables
-  const adminEmails = getAdminEmails();
-  if (adminEmails.includes(normalizedEmail)) {
-    return true;
-  }
-
-  // Check database
+  // Check database for authorized admin/superadmin
   const [authorizedAdmin] = await db
     .select()
     .from(authorizedAdmins)
     .where(eq(authorizedAdmins.email, normalizedEmail))
     .limit(1);
 
-  return !!authorizedAdmin;
-}
-
-/**
- * Check if email should be auto-promoted to superadmin
- */
-function isSuperAdminEmail(email: string): boolean {
-  if (!env.SUPER_ADMIN_EMAIL) {
-    return false;
+  if (!authorizedAdmin) {
+    return { isAdmin: false, isSuperAdmin: false };
   }
-  return env.SUPER_ADMIN_EMAIL.toLowerCase() === email.toLowerCase();
+
+  // If email exists in authorized_admins table, they're an admin
+  return {
+    isAdmin: true,
+    isSuperAdmin: false, // SuperAdmin promotion happens via setup flow only
+  };
 }
 
 /**
@@ -327,14 +303,13 @@ export async function handleOAuthCallback(
       updates.avatar = avatar;
     }
 
-    // Auto-promote if applicable
-    const shouldBeSuperAdmin = isSuperAdminEmail(email);
-    const shouldBeAdmin = await isAdminEmail(email);
+    // Auto-promote if applicable (check authorized_admins table)
+    const { isAdmin, isSuperAdmin } = await isAuthorizedAdmin(email);
 
-    if (shouldBeSuperAdmin && user.role !== 'superadmin') {
+    if (isSuperAdmin && user.role !== 'superadmin') {
       updates.role = 'superadmin';
       console.log(`[OAuth] Auto-promoted ${email} to superadmin role`);
-    } else if (shouldBeAdmin && user.role === 'user') {
+    } else if (isAdmin && user.role === 'user') {
       updates.role = 'admin';
       console.log(`[OAuth] Auto-promoted ${email} to admin role`);
     }
@@ -386,37 +361,52 @@ export async function handleOAuthCallback(
   }
 
   // Step 3: New user - create user and provider account
-  const shouldBeSuperAdmin = isSuperAdminEmail(email);
-  const shouldBeAdmin = await isAdminEmail(email);
-  const assignedRole = shouldBeSuperAdmin ? 'superadmin' : shouldBeAdmin ? 'admin' : 'user';
+  const { isAdmin, isSuperAdmin } = await isAuthorizedAdmin(email);
+  const assignedRole = isSuperAdmin ? 'superadmin' : isAdmin ? 'admin' : 'user';
 
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      email,
-      name: name || null,
-      avatar: avatar || null,
-      provider, // Legacy field
-      providerId, // Legacy field
-      primaryProvider: provider as OAuthProvider,
-      role: assignedRole,
-      lastLoginAt: new Date(),
-    })
-    .returning();
+  // Use transaction to create user + provider account + set primary provider
+  const newUser = await db.transaction(async (tx) => {
+    // Step 1: Create user without primaryProviderAccountId
+    const [user] = await tx
+      .insert(users)
+      .values({
+        email,
+        name: name || null,
+        avatar: avatar || null,
+        role: assignedRole,
+        lastLoginAt: new Date(),
+      })
+      .returning();
 
-  if (!newUser) {
-    throw new Error(`Failed to create user: ${email}`);
-  }
+    if (!user) {
+      throw new Error(`Failed to create user: ${email}`);
+    }
 
-  // Create provider account
-  await createProviderAccount(
-    newUser.id,
-    provider as OAuthProvider,
-    providerId,
-    email,
-    name || null,
-    avatar || null
-  );
+    // Step 2: Create provider account
+    const [providerAccount] = await tx
+      .insert(providerAccounts)
+      .values({
+        userId: user.id,
+        provider: provider as OAuthProvider,
+        providerId,
+        email,
+        name: name || null,
+        avatar: avatar || null,
+      })
+      .returning();
+
+    if (!providerAccount) {
+      throw new Error(`Failed to create provider account for ${provider}`);
+    }
+
+    // Step 3: Set primaryProviderAccountId
+    await tx
+      .update(users)
+      .set({ primaryProviderAccountId: providerAccount.id })
+      .where(eq(users.id, user.id));
+
+    return user;
+  });
 
   // Create default user preferences
   await createDefaultPreferences(newUser.id, 'pt-BR');
@@ -484,10 +474,9 @@ export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<U
   const { email, provider, name, avatar, providerId } = profile;
 
   // Check if email is authorized as admin/superadmin
-  const shouldBeSuperAdmin = isSuperAdminEmail(email);
-  const shouldBeAdmin = await isAdminEmail(email);
+  const { isAdmin, isSuperAdmin } = await isAuthorizedAdmin(email);
 
-  if (!shouldBeSuperAdmin && !shouldBeAdmin) {
+  if (!isSuperAdmin && !isAdmin) {
     // Email is not in authorized admin list - reject
     throw new Error('Access denied. You are not authorized as an administrator.');
   }
@@ -497,24 +486,51 @@ export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<U
 
   if (!user) {
     // User doesn't exist - create with appropriate admin role
-    const assignedRole = shouldBeSuperAdmin ? 'superadmin' : 'admin';
+    const assignedRole = isSuperAdmin ? 'superadmin' : 'admin';
 
-    [user] = await db
-      .insert(users)
-      .values({
-        email,
-        name: name || null,
-        avatar: avatar || null,
-        provider,
-        providerId,
-        role: assignedRole,
-        lastLoginAt: new Date(),
-      })
-      .returning();
+    // Use transaction to create user + provider account + set primary provider
+    user = await db.transaction(async (tx) => {
+      // Step 1: Create user without primaryProviderAccountId
+      const [newUser] = await tx
+        .insert(users)
+        .values({
+          email,
+          name: name || null,
+          avatar: avatar || null,
+          role: assignedRole,
+          lastLoginAt: new Date(),
+        })
+        .returning();
 
-    if (!user) {
-      throw new Error('Failed to create user');
-    }
+      if (!newUser) {
+        throw new Error('Failed to create user');
+      }
+
+      // Step 2: Create provider account
+      const [providerAccount] = await tx
+        .insert(providerAccounts)
+        .values({
+          userId: newUser.id,
+          provider: provider as OAuthProvider,
+          providerId,
+          email,
+          name: name || null,
+          avatar: avatar || null,
+        })
+        .returning();
+
+      if (!providerAccount) {
+        throw new Error(`Failed to create provider account for ${provider}`);
+      }
+
+      // Step 3: Set primaryProviderAccountId
+      await tx
+        .update(users)
+        .set({ primaryProviderAccountId: providerAccount.id })
+        .where(eq(users.id, newUser.id));
+
+      return newUser;
+    });
 
     console.log(`[Admin OAuth] Created new admin user: ${email} (${provider}) with role: ${assignedRole}`);
     return user;
@@ -527,12 +543,12 @@ export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<U
   };
 
   // Auto-promote to superadmin if email matches (highest priority)
-  if (shouldBeSuperAdmin && user.role !== 'superadmin') {
+  if (isSuperAdmin && user.role !== 'superadmin') {
     updates.role = 'superadmin';
     console.log(`[Admin OAuth] Auto-promoted ${email} to superadmin role`);
   }
   // Auto-promote to admin if email matches and not already superadmin
-  else if (shouldBeAdmin && user.role === 'user') {
+  else if (isAdmin && user.role === 'user') {
     updates.role = 'admin';
     console.log(`[Admin OAuth] Auto-promoted ${email} to admin role`);
   }
