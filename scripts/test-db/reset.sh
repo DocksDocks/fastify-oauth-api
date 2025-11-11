@@ -4,7 +4,7 @@
 # Reset Test Database
 # ==============================================================================
 # Drops and recreates the test database (clean slate)
-# Usage: npm run test:db:reset OR bash scripts/test-db/reset.sh
+# Usage: pnpm test:db:reset OR bash scripts/test-db/reset.sh
 # ==============================================================================
 
 set -e
@@ -39,5 +39,5 @@ echo -e "${GREEN}✓ Test database reset completed${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
-echo -e "  ${GREEN}→${NC} Run migrations: ${YELLOW}npm run test:db:migrate${NC}"
-echo -e "  ${GREEN}→${NC} Or full setup: ${YELLOW}npm run test:db:setup${NC}"
+echo -e "  ${GREEN}→${NC} Run migrations: ${YELLOW}pnpm test:db:migrate${NC}"
+echo -e "  ${GREEN}→${NC} Or full setup: ${YELLOW}pnpm test:db:setup${NC}"

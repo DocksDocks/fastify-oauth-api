@@ -4,7 +4,7 @@
 # Drop Test Database
 # ==============================================================================
 # Drops the test database if it exists
-# Usage: npm run test:db:drop OR bash scripts/test-db/drop.sh
+# Usage: pnpm test:db:drop OR bash scripts/test-db/drop.sh
 # ==============================================================================
 
 set -e
@@ -39,7 +39,7 @@ echo ""
 # Check if PostgreSQL container is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo -e "${RED}✗ PostgreSQL container '${CONTAINER_NAME}' is not running${NC}"
-    echo -e "${YELLOW}  Start it with: npm run docker:postgres${NC}"
+    echo -e "${YELLOW}  Start it with: pnpm docker:postgres${NC}"
     exit 1
 fi
 

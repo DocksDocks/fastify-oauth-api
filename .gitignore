@@ -7,7 +7,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-package-lock.json
 
 # ==========================================
 # Build outputs
@@ -22,6 +21,8 @@ build/
 # ==========================================
 .env
 .env.local
+!frontend/.env.local
+!backend/.env
 .env.*.local
 .env.production
 
@@ -68,6 +69,22 @@ coverage/
 *.lcov
 test-results/
 playwright-report/
+
+# ==========================================
+# Workspaces (Monorepo)
+# ==========================================
+# Backend workspace
+backend/node_modules/
+backend/dist/
+backend/coverage/
+backend/*.tsbuildinfo
+
+# Frontend workspace
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/*.tsbuildinfo
 
 # ==========================================
 # IDEs and editors

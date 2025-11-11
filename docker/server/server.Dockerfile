@@ -6,7 +6,7 @@ ARG NODE_VERSION=22-alpine
 # This Dockerfile is for PRODUCTION builds only.
 #
 # Development:
-#   - Run on host machine: npm run dev
+#   - Run on host machine: pnpm dev
 #   - Hot reload with tsx watch
 #   - Direct access to source code
 #   - Services run in Docker: postgres, redis
@@ -18,9 +18,9 @@ ARG NODE_VERSION=22-alpine
 #
 # Workflow:
 #   Local Development:
-#     1. Start services: npm run docker:postgres
-#     2. Setup test DB: npm run test:db:setup
-#     3. Run tests: npm test
+#     1. Start services: pnpm docker:postgres
+#     2. Setup test DB: pnpm test:db:setup
+#     3. Run tests: pnpm test
 #     4. Build production image: docker build ...
 #
 #   CI/CD Pipeline:
@@ -28,65 +28,82 @@ ARG NODE_VERSION=22-alpine
 #     2. Run tests with coverage
 #     3. Build Docker image ONLY if tests pass
 #
-# Test database management: npm run test:db:setup
+# Test database management: pnpm test:db:setup
 # See scripts/test-db/ for database management
 #==============================================================================
 
 #------------------------------------------------------------------------------
-# Stage 1: Dependencies
+# Stage 1: Backend Dependencies
 #------------------------------------------------------------------------------
-FROM node:${NODE_VERSION} AS deps
+FROM node:${NODE_VERSION} AS backend-deps
+
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy workspace configuration and root package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Install dependencies
-RUN npm ci --only=production && \
-    npm cache clean --force
+# Copy backend package file
+COPY backend/package.json ./backend/
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile --filter=@fastify-oauth-api/backend
 
 #------------------------------------------------------------------------------
-# Stage 2: Builder
+# Stage 2: Backend Builder
 #------------------------------------------------------------------------------
-FROM node:${NODE_VERSION} AS builder
+FROM node:${NODE_VERSION} AS backend-builder
+
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy workspace configuration and root package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+
+# Copy backend package file
+COPY backend/package.json ./backend/
 
 # Install all dependencies (including devDependencies)
-RUN npm ci && \
-    npm cache clean --force
+RUN pnpm install --frozen-lockfile --filter=@fastify-oauth-api/backend
 
-# Copy source code
-COPY tsconfig.json ./
-COPY drizzle.config.ts ./
-COPY src ./src
+# Copy backend config and source code
+COPY backend/tsconfig.json ./backend/
+COPY backend/drizzle.config.ts ./backend/
+COPY backend/src ./backend/src
 
 # Build TypeScript
-RUN npm run build:prod
+WORKDIR /app/backend
+RUN pnpm build:prod
 
 #------------------------------------------------------------------------------
-# Stage 3: Admin Panel Builder
+# Stage 3: Frontend Builder (Admin Panel)
 #------------------------------------------------------------------------------
-FROM node:${NODE_VERSION} AS admin-builder
+FROM node:${NODE_VERSION} AS frontend-builder
 
-WORKDIR /app/admin
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy admin package files
-COPY admin/package.json admin/package-lock.json* ./
+WORKDIR /app
 
-# Install admin dependencies
-RUN npm ci && \
-    npm cache clean --force
+# Copy workspace configuration and root package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Copy admin source code
-COPY admin/ ./
+# Copy frontend package file
+COPY frontend/package.json ./frontend/
 
-# Build admin panel
-RUN npm run build
+# Install frontend dependencies
+RUN pnpm install --frozen-lockfile --filter=frontend
+
+# Copy frontend source code
+COPY frontend/ ./frontend/
+
+# Build frontend (Next.js admin panel)
+WORKDIR /app/frontend
+RUN pnpm build
 
 #------------------------------------------------------------------------------
 # Stage 4: Production
@@ -100,27 +117,30 @@ RUN apk add --no-cache \
     curl
 
 # Create app directory
-WORKDIR /app
+WORKDIR /app/backend
 
 # Create non-root user (nodejs:nodejs with uid:gid 1001:1001)
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 -G nodejs
 
-# Copy built assets from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
+# Copy built backend assets from builder stage
+COPY --from=backend-builder --chown=nodejs:nodejs /app/backend/dist ./dist
+COPY --from=backend-builder --chown=nodejs:nodejs /app/backend/package.json ./
 
-# Copy production dependencies from deps stage
-COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Copy production dependencies from deps stage (pnpm workspace structure)
+COPY --from=backend-deps --chown=nodejs:nodejs /app/node_modules ../node_modules
+COPY --from=backend-deps --chown=nodejs:nodejs /app/backend/node_modules ./node_modules
 
 # Copy drizzle config for migrations
-COPY --from=builder --chown=nodejs:nodejs /app/drizzle.config.ts ./
+COPY --from=backend-builder --chown=nodejs:nodejs /app/backend/drizzle.config.ts ./
 
-# Copy database files
-COPY --chown=nodejs:nodejs src/db/migrations ./src/db/migrations
+# Copy database migrations
+COPY --chown=nodejs:nodejs backend/src/db/migrations ./src/db/migrations
 
-# Copy built admin panel from admin-builder stage
-COPY --from=admin-builder --chown=nodejs:nodejs /app/admin/dist ./admin/dist
+# Copy built frontend (admin panel) from frontend-builder stage
+COPY --from=frontend-builder --chown=nodejs:nodejs /app/frontend/.next ../frontend/.next
+COPY --from=frontend-builder --chown=nodejs:nodejs /app/frontend/public ../frontend/public
+COPY --from=frontend-builder --chown=nodejs:nodejs /app/frontend/package.json ../frontend/
 
 # Create keys directory (will be mounted as volume)
 RUN mkdir -p /app/keys && \
@@ -130,11 +150,11 @@ RUN mkdir -p /app/keys && \
 USER nodejs
 
 # Expose port
-EXPOSE 3000
+EXPOSE 1337
 
 # Health check
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=40s \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:1337/health || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

@@ -47,27 +47,27 @@ test/
 
 ### Run All Tests
 ```bash
-npm test
+pnpm test
 ```
 
 ### Run Tests with Coverage
 ```bash
-npm run test:coverage
+ppnpm test:coverage
 ```
 
 ### Run Specific Test File
 ```bash
-npm test -- test/services/jwt.service.test.ts
+pnpm test -- test/services/jwt.service.test.ts
 ```
 
 ### Run Tests in Watch Mode
 ```bash
-npm test -- --watch
+pnpm test -- --watch
 ```
 
 ### Run Tests with UI
 ```bash
-npm test -- --ui
+pnpm test -- --ui
 ```
 
 ## Coverage Journey
@@ -266,11 +266,11 @@ Located in `test/helper/app-helper.ts`:
 - **Statements**: 100% ✅
 
 **Note**: Thresholds are enforced during:
-1. Local development (`npm run test:coverage`)
+1. Local development (`ppnpm test:coverage`)
 2. Docker build (Stage 3: Testing & Coverage Validation)
 3. CI/CD pipelines
 
-**Docker Build Integration**: The production Docker image build includes a dedicated testing stage that runs `npm run test:coverage`. If any test fails or coverage drops below thresholds, the entire build fails, preventing broken code from reaching production.
+**Docker Build Integration**: The production Docker image build includes a dedicated testing stage that runs `ppnpm test:coverage`. If any test fails or coverage drops below thresholds, the entire build fails, preventing broken code from reaching production.
 
 ## Key Testing Patterns
 
@@ -361,22 +361,22 @@ Tests are designed to run in CI/CD pipelines:
 
 ### View Detailed Output
 ```bash
-npm test -- --reporter=verbose
+pnpm test -- --reporter=verbose
 ```
 
 ### Debug Single Test
 ```bash
-npm test -- test/services/jwt.service.test.ts --reporter=verbose
+pnpm test -- test/services/jwt.service.test.ts --reporter=verbose
 ```
 
 ### Check Coverage for Specific File
 ```bash
-npm run test:coverage -- test/routes/auth.routes.test.ts
+ppnpm test:coverage -- test/routes/auth.routes.test.ts
 ```
 
 ### View HTML Coverage Report
 ```bash
-npm run test:coverage
+ppnpm test:coverage
 open coverage/index.html
 ```
 

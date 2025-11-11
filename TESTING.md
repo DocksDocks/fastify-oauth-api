@@ -16,7 +16,7 @@ This guide shows how to test all new backend features without setting up Google/
 
 ## 📋 **Prerequisites**
 
-- Docker containers running (`npm run docker:start`)
+- Docker containers running (`pnpm docker:start`)
 - PostgreSQL database accessible
 - `.env` file configured with basic settings
 
@@ -29,7 +29,7 @@ This guide shows how to test all new backend features without setting up Google/
 Create the new tables (`api_keys`, `seed_status`):
 
 ```bash
-npm run db:migrate
+pnpm db:migrate
 ```
 
 **Expected output:**
@@ -41,7 +41,7 @@ npm run db:migrate
 **Verify tables created:**
 ```bash
 # Connect to PostgreSQL
-npm run docker:postgres:exec
+pnpm docker:postgres:exec
 
 # Inside PostgreSQL shell:
 \c fastify_oauth_db
@@ -63,7 +63,7 @@ npm run docker:postgres:exec
 Generate initial API keys:
 
 ```bash
-npm run db:seed:superadmin
+pnpm db:seed:superadmin
 ```
 
 **Expected output:**
@@ -142,7 +142,7 @@ ANDROID_API_KEY=<paste_android_api_key>
 Generate a JWT token for testing (no OAuth required):
 
 ```bash
-npm run dev:token
+pnpm dev:token
 ```
 
 **Expected output:**
@@ -175,7 +175,7 @@ Usage:
 ### **Step 5: Start API Server**
 
 ```bash
-npm run dev:api
+pnpm dev:api
 ```
 
 **Expected output:**
@@ -519,17 +519,17 @@ If all tests pass, you've successfully validated:
 
 ```bash
 # Check database is running
-npm run docker:postgres:log
+pnpm docker:postgres:log
 
 # Try manual migration
-npm run db:push
+pnpm db:push
 ```
 
 ### **Problem: Seed fails with "already ran"**
 
 ```bash
 # Delete seed status and re-run
-npm run docker:postgres:exec
+pnpm docker:postgres:exec
 
 # In PostgreSQL:
 \c fastify_oauth_db
@@ -537,7 +537,7 @@ DELETE FROM seed_status WHERE seed_name = 'super-admin-init';
 \q
 
 # Re-run seed
-npm run db:seed:superadmin
+pnpm db:seed:superadmin
 ```
 
 ### **Problem: API key validation fails**
@@ -550,7 +550,7 @@ npm run db:seed:superadmin
 
 ```bash
 # Generate a new token
-npm run dev:token
+pnpm dev:token
 
 # Copy the new token and use it in requests
 ```

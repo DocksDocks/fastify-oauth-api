@@ -102,10 +102,10 @@ echo "\n${BLUE}Service Status:${NC}"
 docker compose ps
 
 echo "\n${BLUE}Useful Commands:${NC}"
-echo "  • Health check:    ${YELLOW}npm run docker:health${NC}"
-echo "  • View all logs:   ${YELLOW}npm run docker:logs${NC}"
-echo "  • View API logs:   ${YELLOW}npm run docker:api:log${NC}"
-echo "  • Stop all:        ${YELLOW}npm run docker:stop${NC}"
+echo "  • Health check:    ${YELLOW}pnpm docker:health${NC}"
+echo "  • View all logs:   ${YELLOW}pnpm docker:logs${NC}"
+echo "  • View API logs:   ${YELLOW}pnpm docker:api:log${NC}"
+echo "  • Stop all:        ${YELLOW}pnpm docker:stop${NC}"
 
 echo "\n${BLUE}API Endpoints:${NC}"
 echo "  • Health:          ${YELLOW}http://localhost:${PORT:-3000}/health${NC}"

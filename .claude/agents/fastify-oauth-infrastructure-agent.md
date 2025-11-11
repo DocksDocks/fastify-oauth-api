@@ -85,7 +85,7 @@ Set up a complete, production-ready Fastify v5 TypeScript boilerplate with:
 ```bash
 mkdir fastify-oauth-api
 cd fastify-oauth-api
-npm init -y
+pnpm init
 ```
 
 **Step 1.2: Update package.json**
@@ -95,7 +95,7 @@ Add these fields to package.json:
   "type": "module",
   "engines": {
     "node": ">=22.0.0",
-    "npm": ">=10.0.0"
+    "pnpm": ">=10.0.0"
   }
 }
 ```
@@ -542,8 +542,8 @@ WORKDIR /app
 
 # Install production dependencies
 COPY package*.json ./
-RUN npm ci --production --ignore-scripts && \
-    npm cache clean --force
+RUN pnpm install --frozen-lockfile --production --ignore-scripts && \
+    pnpm store prune
 
 # Stage 2: Build
 FROM node:22-alpine AS builder
@@ -554,13 +554,13 @@ COPY package*.json ./
 COPY tsconfig.json ./
 
 # Install all dependencies (including dev)
-RUN npm ci --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy source code
 COPY src ./src
 
 # Build TypeScript
-RUN npm run build
+RUN pnpm build
 
 # Stage 3: Production
 FROM node:22-alpine AS production
@@ -1249,51 +1249,51 @@ LOG_PRETTY=true
 
 **Step 5.1: Install Core Dependencies**
 
-Execute these npm install commands:
+Execute these pnpm install commands:
 
 ```bash
 # Core Fastify v5
-npm install fastify@^5.6.1 fastify-plugin@^5.0.0
+pnpm install fastify@^5.6.1 fastify-plugin@^5.0.0
 
 # TypeScript and types
-npm install -D typescript@^5.9.3 @types/node@^22.0.0 tsx@^4.19.0
+pnpm install -D typescript@^5.9.3 @types/node@^22.0.0 tsx@^4.19.0
 
 # Drizzle ORM
-npm install drizzle-orm@^0.44.6 postgres@^3.4.0
-npm install -D drizzle-kit@latest @types/pg@^8.11.0
+pnpm install drizzle-orm@^0.44.6 postgres@^3.4.0
+pnpm install -D drizzle-kit@latest @types/pg@^8.11.0
 
 # Fastify plugins (all v5-compatible)
-npm install @fastify/jwt@^10.0.0 @fastify/oauth2@^8.1.2 @fastify/cookie@^11.0.1 @fastify/cors@^11.1.0 @fastify/helmet@^13.0.2 @fastify/rate-limit@^10.3.0 @fastify/redis@^7.1.0 @fastify/sensible@^6.0.3
+pnpm install @fastify/jwt@^10.0.0 @fastify/oauth2@^8.1.2 @fastify/cookie@^11.0.1 @fastify/cors@^11.1.0 @fastify/helmet@^13.0.2 @fastify/rate-limit@^10.3.0 @fastify/redis@^7.1.0 @fastify/sensible@^6.0.3
 
 # Additional plugins
-npm install @fastify/auth@latest @fastify/autoload@latest @fastify/swagger@latest @fastify/swagger-ui@latest @fastify/compress@latest @fastify/bearer-auth@latest @fastify/secure-session@latest @fastify/csrf-protection@latest @fastify/metrics@latest
+pnpm install @fastify/auth@latest @fastify/autoload@latest @fastify/swagger@latest @fastify/swagger-ui@latest @fastify/compress@latest @fastify/bearer-auth@latest @fastify/secure-session@latest @fastify/csrf-protection@latest @fastify/metrics@latest
 
 # Redis client
-npm install redis@latest ioredis@latest
+pnpm install redis@latest ioredis@latest
 
 # OAuth providers
-npm install google-auth-library@^10.4.1 apple-signin-auth@^2.0.0
+pnpm install google-auth-library@^10.4.1 apple-signin-auth@^2.0.0
 
 # Security and validation
-npm install argon2@^0.44.0 zod@^4.1.12 @sinclair/typebox@^0.33.0
+pnpm install argon2@^0.44.0 zod@^4.1.12 @sinclair/typebox@^0.33.0
 
 # Type providers
-npm install fastify-type-provider-zod@latest @fastify/type-provider-typebox@latest
+pnpm install fastify-type-provider-zod@latest @fastify/type-provider-typebox@latest
 
 # Environment variables
-npm install @dotenvx/dotenvx@latest
+pnpm install @dotenvx/dotenvx@latest
 
 # Utilities
-npm install nanoid@^5.1.6 pino@^10.0.0 dayjs@latest
+pnpm install nanoid@^5.1.6 pino@^10.0.0 dayjs@latest
 
 # Development utilities
-npm install -D pino-pretty@latest tsup@^8.0.0 @tsconfig/node22@^22.0.0
+pnpm install -D pino-pretty@latest tsup@^8.0.0 @tsconfig/node22@^22.0.0
 
 # Testing
-npm install -D vitest@^3.0.0 @vitest/ui@^3.0.0 @vitest/coverage-v8@^3.0.0
+pnpm install -D vitest@^3.0.0 @vitest/ui@^3.0.0 @vitest/coverage-v8@^3.0.0
 
 # Linting and formatting
-npm install -D eslint@^9.0.0 typescript-eslint@^8.0.0 prettier@^3.0.0 husky@^9.0.0 lint-staged@^15.0.0
+pnpm install -D eslint@^9.0.0 typescript-eslint@^8.0.0 prettier@^3.0.0 husky@^9.0.0 lint-staged@^15.0.0
 ```
 
 ### Phase 6: Package.json Scripts Configuration

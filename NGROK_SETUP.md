@@ -180,7 +180,7 @@ VITE_ADMIN_PANEL_API_KEY=your_admin_panel_api_key_here
 If you don't have an API key, generate one:
 
 ```bash
-npm run db:seed:superadmin
+pnpm db:seed:superadmin
 # Copy the admin_panel_api_key from the output
 ```
 
@@ -196,20 +196,20 @@ ngrok http 3000
 
 ### Terminal 2: Docker Services
 ```bash
-npm run docker:start
+pnpm docker:start
 # Wait for services to be healthy
 ```
 
 ### Terminal 3: Backend API
 ```bash
-npm run dev
+pnpm dev
 # Should start on http://localhost:1337
 ```
 
 ### Terminal 4: Admin Panel
 ```bash
 cd admin
-npm run dev
+pnpm dev
 # Should start on http://localhost:3000
 ```
 
@@ -264,7 +264,7 @@ npm run dev
 cat .env | grep VITE_ADMIN_PANEL_API_KEY
 
 # If empty, run seed and copy the key
-npm run db:seed:superadmin
+pnpm db:seed:superadmin
 ```
 
 ### Issue: CORS error
@@ -331,7 +331,7 @@ ngrok http 3000
 
 **Option A: Use the helper script** (Recommended)
 ```bash
-npm run ngrok:update
+pnpm ngrok:update
 # Enter your new ngrok URL when prompted
 # Script automatically updates API_URL and shows checklist
 ```
@@ -349,7 +349,7 @@ API_URL=https://xyz789new123.ngrok-free.app
 ```bash
 # In terminal where API is running, press Ctrl+C
 # Then restart:
-npm run dev
+pnpm dev
 ```
 
 ---

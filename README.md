@@ -1,17 +1,35 @@
 # Fastify v5 OAuth API
 
-Production-ready Fastify v5 OAuth API with PostgreSQL, Redis, Docker orchestration, and 2025 best practices.
+Production-ready Fastify v5 OAuth API with PostgreSQL, Redis, Next.js admin panel, and comprehensive testing (100% coverage). Features multi-provider authentication (Google + Apple), JWT tokens, role-based access control, and Docker orchestration following 2025 best practices.
+
+## Features
+
+- **OAuth 2.0 Authentication**: Google + Apple Sign-In with multi-provider account linking
+- **JWT Tokens**: Access tokens (15min) + refresh tokens (7 days) with rotation
+- **Role-Based Access Control**: 3-tier hierarchy (user → admin → superadmin)
+- **Admin Panel**: Next.js 16 dashboard with API key management and database browser
+- **Global API Keys**: Secure API access with bcrypt-hashed keys
+- **Comprehensive Testing**: Vitest with 100% coverage (lines/functions/statements)
+- **Docker Infrastructure**: PostgreSQL, Redis, Caddy reverse proxy with auto-HTTPS
+- **Code Quality**: TypeScript strict mode, ESLint, Prettier, Husky git hooks
 
 ## Tech Stack
 
-- **Runtime:** Node.js 22+ LTS (ES Modules only)
-- **Framework:** Fastify 5.6.1+
-- **Language:** TypeScript 5.9.3+ (strict mode)
-- **Database:** PostgreSQL 15-alpine + Drizzle ORM 0.44.6+
-- **Cache:** Redis 7-alpine
-- **Reverse Proxy:** Caddy 2-alpine (automatic HTTPS)
-- **Authentication:** OAuth 2.0 (Google + Apple Sign-In) + JWT
-- **Containerization:** Docker 27.0+ with Compose v2.39.4+
+**Backend:**
+- Node.js 22+ (ES Modules) | pnpm 10.21.0+ | Fastify 5.6.1+ | TypeScript 5.9.3+
+- PostgreSQL 15 | Redis 7 | Drizzle ORM 0.44.6+
+- OAuth 2.0 (Google + Apple) | JWT + RBAC
+- Docker 27.0+ with Compose v2.39.4+
+
+**Frontend (Admin Panel):**
+- Next.js 16.0.1 (App Router) | React 19 | TypeScript
+- shadcn/ui + Radix UI | TailwindCSS v4 (OKLCH colors)
+- Zustand state management | Axios
+
+**Infrastructure:**
+- Caddy 2 (reverse proxy + auto HTTPS)
+- Multi-stage Dockerfiles | Non-root containers
+- Modular scripts-docker/ architecture
 
 ## Quick Start
 
@@ -19,430 +37,126 @@ Production-ready Fastify v5 OAuth API with PostgreSQL, Redis, Docker orchestrati
 
 - Docker 27.0+ and Docker Compose v2.39.4+
 - Node.js 22+ (for local development)
-- npm 10+
+- pnpm 10.21.0+ (package manager)
 
 ### Setup
 
-1. **Clone and install:**
+1. **Install pnpm (if not already installed):**
    ```bash
-   npm install
+   npm install --global corepack@latest
+   corepack enable pnpm
+   corepack use pnpm@latest
+   pnpm -v  # Verify installation (should show 10.21.0+)
    ```
 
-2. **Configure environment:**
+2. **Clone and configure:**
    ```bash
+   git clone <repository-url>
+   cd fastify-oauth-api
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your credentials
    ```
 
-3. **Start the stack:**
+3. **Install dependencies:**
    ```bash
-   npm run docker:start
+   pnpm install
    ```
 
-4. **Check health:**
+4. **Initialize development environment:**
    ```bash
-   npm run docker:health
+   pnpm dev:init
    ```
+   This will:
+   - Start PostgreSQL + Redis containers
+   - Run migrations on development database
+   - Initialize setup wizard (generates API keys)
+   - Set up test database
 
-5. **View logs:**
+5. **Start development:**
    ```bash
-   npm run docker:logs
+   pnpm dev
    ```
+   - API: http://localhost:1337
+   - Admin Panel: http://localhost:3000/admin
+   - Health check: http://localhost:1337/health
 
-## Docker Architecture
+## Essential Commands
 
-### Services
-
-| Service | Port | Image | Description |
-|---------|------|-------|-------------|
-| **postgres** | 5432 | postgres:15-alpine | PostgreSQL database |
-| **redis** | 6379 | redis:7-alpine | Redis cache & sessions |
-| **api** | 3000 | custom (Node 22) | Fastify application |
-| **caddy** | 80, 443 | caddy:2-alpine | Reverse proxy + HTTPS |
-
-### Key Features
-
-- **Single docker-compose.yml** (NO version field - deprecated in v2.39.4+)
-- **All container names via environment variables** (`${CONTAINER_*_NAME}`)
-- **Multi-stage Dockerfiles** for optimized builds
-- **Non-root users** in all containers (nodejs:nodejs 1001:1001)
-- **Health checks** on ALL services
-- **Resource limits** (CPU, memory) defined
-- **Custom network:** `api-network`
-- **Named volumes:** `fastify_oauth_*_data`
-
-## Management Scripts
-
-All management scripts are in `scripts-docker/` with a modular structure:
-
-### Quick Commands
-
+**Development:**
 ```bash
-# Start entire stack
-npm run docker:start
-
-# Stop entire stack
-npm run docker:stop
-
-# Health check all services
-npm run docker:health
-
-# View all logs
-npm run docker:logs
+pnpm dev              # Start API + admin panel
+pnpm dev:api          # Start API only (backend)
+pnpm dev:frontend     # Start admin panel only
+pnpm dev:init         # Complete dev setup
 ```
 
-### Service-Specific Commands
-
-**PostgreSQL:**
+**Docker Services:**
 ```bash
-npm run docker:postgres         # Start
-npm run docker:postgres:stop    # Stop
-npm run docker:postgres:log     # Logs
-npm run docker:postgres:exec    # Open psql
-npm run docker:postgres:backup  # Create backup
+pnpm docker:start     # Start all services
+pnpm docker:stop      # Stop all services
+pnpm docker:health    # Check service health
+pnpm docker:postgres  # Start PostgreSQL
+pnpm docker:redis     # Start Redis
 ```
 
-**Redis:**
+**Database:**
 ```bash
-npm run docker:redis            # Start
-npm run docker:redis:stop       # Stop
-npm run docker:redis:log        # Logs
-npm run docker:redis:exec       # Open redis-cli
+pnpm db:generate      # Generate migrations
+pnpm db:migrate       # Run migrations
+pnpm db:studio        # Open Drizzle Studio GUI
 ```
 
-**API:**
+**Testing:**
 ```bash
-npm run docker:api              # Start
-npm run docker:api:stop         # Stop
-npm run docker:api:log          # Logs
-npm run docker:api:exec         # Open shell
-npm run docker:api:rebuild      # Rebuild & restart
+pnpm test             # Run tests
+pnpm test:coverage    # Coverage report
+pnpm test:db:setup    # Setup test database
 ```
 
-**Caddy:**
+**Code Quality:**
 ```bash
-npm run docker:caddy            # Start
-npm run docker:caddy:stop       # Stop
-npm run docker:caddy:log        # Logs
-npm run docker:caddy:reload     # Reload config
+pnpm lint             # ESLint
+pnpm format           # Prettier
+pnpm type-check       # TypeScript
 ```
 
-## Development Workflow
-
-### Local Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start Docker services (DB + Redis)
-npm run docker:postgres
-npm run docker:redis
-
-# Run API in development mode (hot reload)
-npm run dev
-```
-
-### Database Migrations
-
-```bash
-# Generate migration from schema changes
-npm run db:generate
-
-# Run migrations
-npm run db:migrate
-
-# Open Drizzle Studio (database GUI)
-npm run db:studio
-```
-
-### Code Quality
-
-```bash
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-
-# Type check
-npm run type-check
-```
-
-### Testing
-
-```bash
-# Run tests
-npm test
-
-# Run tests with UI
-npm run test:ui
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-## Project Structure
+## Project Structure (Monorepo)
 
 ```
 fastify-oauth-api/
-├── docker/                          # Service-specific Docker configs
-│   ├── caddy/                       # Caddy (reverse proxy)
-│   ├── database/                    # PostgreSQL
-│   ├── redis/                       # Redis cache
-│   └── server/                      # Fastify app
-├── scripts-docker/                  # Modular management scripts
-│   ├── postgres/                    # DB scripts
-│   ├── redis/                       # Cache scripts
-│   ├── api/                         # API scripts
-│   ├── caddy/                       # Proxy scripts
-│   └── system/                      # System-wide scripts
-├── src/
-│   ├── db/                          # Database layer
-│   │   ├── schema/                  # Drizzle schemas
-│   │   ├── migrations/              # SQL migrations
-│   │   ├── seeds/                   # Seed data
-│   │   └── client.ts                # DB connection
-│   ├── modules/                     # Feature modules
-│   │   ├── auth/                    # Authentication (TO IMPLEMENT)
-│   │   └── user/                    # User management (TO IMPLEMENT)
-│   ├── routes/                      # API endpoints
-│   │   ├── api/                     # API routes (TO IMPLEMENT)
-│   │   └── health.ts                # Health check ✓
-│   ├── plugins/                     # Fastify plugins (TO IMPLEMENT)
-│   ├── middleware/                  # Custom middleware (TO IMPLEMENT)
-│   ├── config/                      # Configuration ✓
-│   ├── utils/                       # Utilities ✓
-│   ├── types/                       # Type definitions (TO IMPLEMENT)
-│   ├── schemas/                     # Validation schemas (TO IMPLEMENT)
-│   ├── services/                    # Business logic (TO IMPLEMENT)
-│   ├── app.ts                       # Fastify app factory ✓
-│   └── server.ts                    # Server entry point ✓
-├── test/                            # Tests (TO IMPLEMENT)
-├── keys/                            # OAuth keys (gitignored)
-├── docker-compose.yml               # Orchestration ✓
-├── .env.example                     # Environment template ✓
-├── tsconfig.json                    # TypeScript config ✓
-├── drizzle.config.ts                # Drizzle config ✓
-└── package.json                     # Dependencies ✓
-```
-
-## Current Implementation Status
-
-### ✅ Completed
-
-- [x] Complete Docker infrastructure (compose + all Dockerfiles)
-- [x] Modular scripts-docker/ architecture
-- [x] Environment configuration (.env.example)
-- [x] TypeScript setup (strict mode)
-- [x] Database schema (users table)
-- [x] Database client (Drizzle ORM)
-- [x] Config layer (environment validation with Zod)
-- [x] Utils layer (logger, errors, response formatters)
-- [x] Basic Fastify app with essential plugins
-- [x] Health check endpoint
-- [x] Error handling
-- [x] Security headers (Helmet)
-- [x] Rate limiting
-- [x] CORS
-- [x] Compression
-- [x] Graceful shutdown
-
-### 🚧 To Implement
-
-The following features need to be implemented to complete the OAuth API:
-
-#### 1. Plugins (`src/plugins/`)
-
-Create the following Fastify plugins:
-
-- **`database.ts`**: Register Drizzle database plugin
-- **`redis.ts`**: Register @fastify/redis plugin
-- **`jwt.ts`**: Register @fastify/jwt plugin with config
-- **`oauth.ts`**: Register @fastify/oauth2 for Google & Apple
-- **`swagger.ts`**: API documentation with @fastify/swagger
-
-#### 2. Authentication Module (`src/modules/auth/`)
-
-Implement complete OAuth 2.0 flow:
-
-- **`oauth-google.service.ts`**:
-  - Initiate Google OAuth flow
-  - Handle callback
-  - Verify Google tokens with `google-auth-library`
-  - Extract user info
-
-- **`oauth-apple.service.ts`**:
-  - Initiate Apple Sign-In flow
-  - Handle callback
-  - Generate JWT for Apple authentication
-  - Verify Apple tokens with `apple-signin-auth`
-
-- **`jwt.service.ts`**:
-  - Generate access & refresh tokens
-  - Verify tokens
-  - Refresh token rotation
-  - Store refresh tokens in Redis
-
-- **`auth.service.ts`**:
-  - `findOrCreateUser()`: Get or create user from OAuth data
-  - `generateTokens()`: Create JWT pair
-  - `verifyRefreshToken()`: Validate and rotate refresh token
-
-- **`auth.controller.ts`**:
-  - Handle OAuth initiation
-  - Handle OAuth callbacks
-  - Token refresh endpoint
-  - Logout endpoint
-
-- **`auth.schemas.ts`**:
-  - Zod schemas for validation
-  - Request/response types
-
-#### 3. Authentication Routes (`src/routes/api/auth/`)
-
-- **`oauth.ts`**:
-  - `GET /api/auth/oauth/google` - Initiate Google OAuth
-  - `GET /api/auth/oauth/google/callback` - Google callback
-  - `GET /api/auth/oauth/apple` - Initiate Apple OAuth
-  - `POST /api/auth/oauth/apple/callback` - Apple callback
-
-- **`index.ts`**:
-  - `POST /api/auth/token/refresh` - Refresh access token
-  - `POST /api/auth/logout` - Logout user
-
-#### 4. Middleware (`src/middleware/`)
-
-- **`authenticate.ts`**:
-  - JWT authentication middleware
-  - Verify bearer token
-  - Attach user to request
-  - Return 401 if invalid
-
-- **`error-handler.ts`**:
-  - Enhanced global error handler
-  - Log errors with context
-  - Format error responses
-
-- **`request-logger.ts`**:
-  - Log all requests
-  - Include request ID, method, URL, status, duration
-
-#### 5. User Module (`src/modules/user/`)
-
-- **`user.service.ts`**:
-  - `getUserById()`
-  - `getUserByEmail()`
-  - `updateUser()`
-  - `deleteUser()` (soft delete)
-
-- **`user.controller.ts`**:
-  - Get authenticated user profile
-  - Update profile
-  - Delete account
-
-- **`user.schemas.ts`**:
-  - Validation schemas
-
-- **`src/routes/api/users/index.ts`**:
-  - `GET /api/users/me` - Get profile (protected)
-  - `PUT /api/users/me` - Update profile (protected)
-  - `DELETE /api/users/me` - Delete account (protected)
-
-#### 6. Types (`src/types/`)
-
-- **`auth.ts`**: Authentication type definitions
-- **`user.ts`**: User type definitions
-- **`index.ts`**: Barrel exports
-
-#### 7. Testing (`test/`)
-
-- **`test/helper/setup.ts`**: Test utilities
-- **`test/helper/fixtures.ts`**: Test data
-- **`test/routes/auth.test.ts`**: Auth route tests
-- **`test/routes/users.test.ts`**: User route tests
-- **`test/services/auth.service.test.ts`**: Auth service tests
-- **`test/integration/oauth-google.test.ts`**: Google OAuth E2E
-- **`test/integration/oauth-apple.test.ts`**: Apple OAuth E2E
-
-## Implementation Guide
-
-### Step 1: OAuth Credentials Setup
-
-**Google OAuth:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create OAuth 2.0 Client ID
-3. Add redirect URI: `http://localhost:3000/api/auth/oauth/google/callback`
-4. Copy Client ID and Secret to `.env`
-
-**Apple Sign-In:**
-1. Go to [Apple Developer Portal](https://developer.apple.com/account/resources/identifiers/list/serviceId)
-2. Create Service ID
-3. Generate private key (.p8)
-4. Save private key to `./keys/apple-private-key.p8`
-5. Copy Team ID, Key ID, Client ID to `.env`
-
-### Step 2: Implement OAuth Services
-
-Example implementation pattern:
-
-```typescript
-// src/modules/auth/oauth-google.service.ts
-import { OAuth2Client } from 'google-auth-library';
-
-const client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
-
-export async function verifyGoogleToken(token: string) {
-  const ticket = await client.verifyIdToken({
-    idToken: token,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
-  return ticket.getPayload();
-}
-```
-
-### Step 3: Implement JWT Service
-
-```typescript
-// src/modules/auth/jwt.service.ts
-export async function generateTokens(userId: number) {
-  const accessToken = await fastify.jwt.sign(
-    { userId },
-    { expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN }
-  );
-
-  const refreshToken = await fastify.jwt.sign(
-    { userId, type: 'refresh' },
-    { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN }
-  );
-
-  // Store refresh token in Redis
-  await redis.set(
-    `refresh_token:${userId}`,
-    refreshToken,
-    'EX',
-    7 * 24 * 60 * 60 // 7 days
-  );
-
-  return { accessToken, refreshToken };
-}
-```
-
-### Step 4: Protected Routes
-
-```typescript
-// Example protected route
-fastify.get('/api/users/me', {
-  preHandler: authenticate, // JWT middleware
-  handler: async (request, reply) => {
-    const user = await getUserById(request.user.userId);
-    return successResponse(user);
-  }
-});
+├── package.json         # Root workspace manager (pnpm workspaces)
+├── pnpm-workspace.yaml  # pnpm workspace configuration
+├── pnpm-lock.yaml       # Dependency lock file
+├── .env                 # Shared environment variables
+├── backend/             # Backend workspace
+│   ├── package.json     # Backend dependencies & scripts
+│   ├── src/             # Backend source code
+│   │   ├── config/      # Environment validation (Zod)
+│   │   ├── db/          # Drizzle schemas + migrations
+│   │   ├── modules/     # Feature modules (auth)
+│   │   ├── routes/      # API endpoints
+│   │   ├── middleware/  # RBAC, API key validation
+│   │   ├── plugins/     # Fastify plugins (JWT)
+│   │   └── utils/       # Logger, errors, response
+│   ├── test/            # Backend test suite (13 files)
+│   ├── tsconfig.json    # Backend TypeScript config
+│   ├── drizzle.config.ts # Drizzle ORM config
+│   ├── vitest.config.ts  # Vitest config
+│   └── eslint.config.js  # Backend ESLint config
+├── frontend/            # Frontend workspace (Next.js 16)
+│   ├── package.json     # Frontend dependencies & scripts
+│   ├── app/             # Next.js App Router pages
+│   └── src/             # Components, store, lib, types
+├── docker/              # Shared Docker configurations
+│   ├── database/        # PostgreSQL Dockerfile & configs
+│   ├── redis/           # Redis Dockerfile & configs
+│   ├── server/          # API Dockerfile (multi-stage)
+│   └── caddy/           # Caddy Dockerfile & Caddyfile
+├── scripts-docker/      # Shared Docker management scripts
+├── scripts/             # Shared utility scripts (dev-init, test-db)
+├── keys/                # OAuth private keys (gitignored)
+├── docker-compose.yml   # Service orchestration
+└── *.md                 # Documentation files
 ```
 
 ## API Endpoints
@@ -451,135 +165,201 @@ fastify.get('/api/users/me', {
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | API information |
 | GET | `/health` | Health check |
-| GET | `/api/auth/oauth/google` | Initiate Google OAuth |
-| GET | `/api/auth/oauth/google/callback` | Google OAuth callback |
-| GET | `/api/auth/oauth/apple` | Initiate Apple Sign-In |
-| POST | `/api/auth/oauth/apple/callback` | Apple Sign-In callback |
-| POST | `/api/auth/token/refresh` | Refresh access token |
+| GET | `/api/auth/google` | Initiate Google OAuth |
+| GET | `/api/auth/google/callback` | Google OAuth callback |
+| GET | `/api/auth/apple` | Initiate Apple OAuth |
+| POST | `/api/auth/apple/callback` | Apple OAuth callback |
+| POST | `/api/auth/link-provider` | Confirm account linking |
+| POST | `/api/auth/refresh` | Refresh access token |
+| GET | `/api/auth/verify` | Verify access token |
+| POST | `/api/auth/logout` | Logout user |
 
-### Protected Endpoints (require JWT)
+### Protected Endpoints (JWT Required)
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| GET | `/api/profile` | Get user profile | user+ |
+| PATCH | `/api/profile` | Update profile | user+ |
+| DELETE | `/api/profile` | Delete account | user+ |
+| GET | `/api/profile/providers` | List linked providers | user+ |
+| DELETE | `/api/profile/providers/:provider` | Unlink provider | user+ |
+
+### Admin Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| GET | `/api/admin/users` | List all users | admin+ |
+| GET | `/api/admin/users/stats` | User statistics | admin+ |
+| GET | `/api/admin/users/:id` | Get user by ID | admin+ |
+| PATCH | `/api/admin/users/:id/role` | Update user role | admin+ |
+| DELETE | `/api/admin/users/:id` | Delete user | admin+ |
+| GET | `/api/admin/api-keys` | List API keys | admin+ |
+| POST | `/api/admin/api-keys` | Generate API key | admin+ |
+| DELETE | `/api/admin/api-keys/:id` | Revoke API key | admin+ |
+| GET | `/api/admin/collections/:table` | Browse database | admin+ |
+| GET | `/api/admin/authorized-admins` | List authorized admins | superadmin |
+| POST | `/api/admin/authorized-admins` | Add authorized admin | superadmin |
+
+### Setup Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/users/me` | Get authenticated user profile |
-| PUT | `/api/users/me` | Update profile |
-| DELETE | `/api/users/me` | Delete account |
-| POST | `/api/auth/logout` | Logout user |
+| GET | `/api/setup/status` | Get setup status |
+| POST | `/api/setup/initialize` | Initialize system |
+| POST | `/api/setup/reset` | Reset setup (dev only) |
 
-## Security Best Practices
+## Admin Panel Features
 
-### Environment Variables
+- **Dashboard**: User statistics, API key stats, collection count, visual cards
+- **API Keys**: Generate, regenerate, revoke, copy-to-clipboard, one-time display
+- **Collections Browser**: Read-only database viewer with pagination, search, sort
+- **Authorized Admins**: Pre-authorize emails for auto-admin promotion (superadmin only)
+- **Setup Wizard**: Initial system configuration, generates API keys, creates superadmin
 
-- **NEVER commit `.env` files** with real credentials
-- Use strong random secrets:
-  ```bash
-  # Generate JWT secret
-  openssl rand -base64 32
-  ```
-- Store production secrets in secret manager (AWS Secrets Manager, etc.)
+**Access:**
+- Development: http://localhost:3000/admin
+- Production: https://yourdomain.com/admin
 
-### Docker Security
+## OAuth Setup
 
-- All containers run as non-root users
-- Resource limits defined
-- Read-only file systems where possible
-- Security headers via Helmet
-- Rate limiting enabled
+### Google OAuth
 
-### API Security
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create OAuth 2.0 Client ID
+3. Add redirect URI: `http://localhost:1337/api/auth/google/callback` (dev) or your domain (prod)
+4. Copy Client ID and Secret to `.env`:
+   ```
+   GOOGLE_CLIENT_ID=your_client_id
+   GOOGLE_CLIENT_SECRET=your_client_secret
+   GOOGLE_REDIRECT_URI=http://localhost:1337/api/auth/google/callback
+   ```
 
-- JWT tokens expire (15m access, 7d refresh)
-- Refresh token rotation
-- OAuth tokens stored in Redis with TTL
-- HTTPS only in production (Caddy handles)
-- CORS restricted to known origins in production
+### Apple Sign-In
+
+1. Go to [Apple Developer Portal](https://developer.apple.com/account/resources/identifiers/list/serviceId)
+2. Create Service ID
+3. Generate private key (.p8)
+4. Save private key to `./keys/AuthKey_XXXXXXXXXX.p8`
+5. Copy Team ID, Key ID, Client ID to `.env`:
+   ```
+   APPLE_CLIENT_ID=com.yourdomain.service
+   APPLE_TEAM_ID=ABCDEF1234
+   APPLE_KEY_ID=ABCDEF1234
+   APPLE_REDIRECT_URI=http://localhost:1337/api/auth/apple/callback
+   ```
+
+## Testing
+
+**Framework:** Vitest 3.2.4 with V8 coverage provider
+
+**Coverage:**
+- Lines: 100% ✅
+- Functions: 100% ✅
+- Statements: 100% ✅
+- Branches: 89%
+
+**Test Files:** 13 files covering services, routes, middleware, utils, plugins, config
+
+**Test Database:**
+- Separate database: `fastify_oauth_db_test`
+- Managed via `scripts/test-db/` scripts
+- Tables truncated between tests
+- Migrations applied automatically
+
+**Commands:**
+```bash
+pnpm test             # Run all tests
+pnpm test:coverage    # Coverage report
+pnpm test:db:setup    # Setup test DB (create + migrate)
+pnpm test:db:reset    # Drop and recreate test DB
+```
+
+See [backend/test/README.md](./backend/test/README.md) for comprehensive testing guide.
+
+## Security
+
+- **Global API Key**: Required for all routes (except whitelisted paths)
+- **JWT Tokens**: Access (15min) + Refresh (7 days) with rotation
+- **OAuth Security**: State parameter validation, server-side token exchange
+- **Password Hashing**: Bcrypt with cost factor 10 for API keys
+- **Rate Limiting**: 100 requests/minute per IP
+- **Security Headers**: Helmet for CORS, CSP, HSTS
+- **Docker Security**: Non-root users, resource limits, health checks
 
 ## Production Deployment
 
-### Pre-Deployment Checklist
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive deployment guide.
 
-- [ ] `NODE_ENV=production`
-- [ ] Strong `JWT_SECRET` (min 32 chars)
-- [ ] Strong `DATABASE_PASSWORD` (min 16 chars)
-- [ ] `REDIS_PASSWORD` enabled
-- [ ] Real domain in `CADDY_DOMAIN`
-- [ ] Production Let's Encrypt: `CADDY_ACME_CA=https://acme-v02.api.letsencrypt.org/directory`
-- [ ] Valid email in `CADDY_EMAIL`
+**Quick checklist:**
+- [ ] `NODE_ENV=production` in .env
+- [ ] Strong secrets (JWT_SECRET, DATABASE_PASSWORD, SESSION_SECRET)
+- [ ] Redis password enabled
+- [ ] Real domain in CADDY_DOMAIN
+- [ ] Production Let's Encrypt in CADDY_ACME_CA
 - [ ] OAuth credentials for production
 - [ ] `LOG_PRETTY_PRINT=false`
 - [ ] `CORS_ORIGIN` with specific domains
-- [ ] Health checks configured
-- [ ] Monitoring & alerting set up
-- [ ] Backup strategy implemented
+- [ ] Health checks, monitoring, backups configured
 
-### Production Build
+## Documentation
 
-```bash
-# Build TypeScript
-npm run build:prod
+Comprehensive documentation split by topic:
 
-# Build Docker images
-docker compose build --no-cache
-
-# Start in production mode
-NODE_ENV=production docker compose up -d
-```
+- **[CLAUDE.md](./CLAUDE.md)** - Project overview for AI assistants
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Project structure, tech stack, code style standards
+- **[API.md](./API.md)** - API endpoints, OAuth flows, authentication, RBAC
+- **[DOCKER.md](./DOCKER.md)** - Docker configuration, services, management scripts
+- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Development workflow, testing, troubleshooting
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Production deployment, environment variables, security
+- **[test/README.md](./test/README.md)** - Comprehensive testing guide
 
 ## Troubleshooting
 
-### Services won't start
-
+**Services won't start:**
 ```bash
 docker compose down -v && docker compose up -d
 ```
 
-### PostgreSQL connection errors
-
+**PostgreSQL connection errors:**
 ```bash
 docker compose exec postgres pg_isready -U postgres
 docker compose logs postgres
 ```
 
-### Redis connection errors
-
+**Redis connection errors:**
 ```bash
 docker compose exec redis redis-cli ping
 docker compose logs redis
 ```
 
-### API not responding
-
+**API not responding:**
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:1337/health
 docker compose logs api
 ```
 
-### Permission denied on scripts
-
+**Permission denied on scripts:**
 ```bash
 find scripts-docker -name "*.sh" -exec chmod +x {} \;
+find scripts -name "*.sh" -exec chmod +x {} \;
 ```
 
-## Resources
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for more troubleshooting tips.
 
-- [Fastify Documentation](https://fastify.dev/)
-- [Drizzle ORM Documentation](https://orm.drizzle.team/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Caddy Documentation](https://caddyserver.com/docs/)
-- [Google OAuth Documentation](https://developers.google.com/identity/protocols/oauth2)
-- [Apple Sign-In Documentation](https://developer.apple.com/sign-in-with-apple/)
+## Support Resources
 
-## Support
+**Official Documentation:**
+- [Fastify](https://fastify.dev/) | [Drizzle ORM](https://orm.drizzle.team/) | [Docker Compose](https://docs.docker.com/compose/)
+- [Next.js](https://nextjs.org/docs) | [Vitest](https://vitest.dev/) | [Caddy](https://caddyserver.com/docs/)
+- [Google OAuth](https://developers.google.com/identity/protocols/oauth2) | [Apple Sign-In](https://developer.apple.com/sign-in-with-apple/)
 
-For issues and questions:
-- Check the [CLAUDE.md](./CLAUDE.md) for project guidelines
-- Review [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md) for detailed instructions
-- Consult the official documentation links above
+**Community:**
+- [Fastify Discord](https://discord.gg/fastify)
+- Stack Overflow: [fastify] [docker] [oauth]
 
 ---
 
-**Version:** 1.0.0
-**Last Updated:** October 2025
+**Version:** 13.0 (Monorepo with pnpm Workspaces + Production-Ready OAuth + RBAC + 100% Test Coverage)
+**Last Updated:** November 2025
 **License:** MIT

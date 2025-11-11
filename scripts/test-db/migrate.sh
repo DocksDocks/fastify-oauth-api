@@ -4,7 +4,7 @@
 # Migrate Test Database
 # ==============================================================================
 # Applies all migrations to the test database
-# Usage: npm run test:db:migrate OR bash scripts/test-db/migrate.sh
+# Usage: pnpm test:db:migrate OR bash scripts/test-db/migrate.sh
 # ==============================================================================
 
 set -e
@@ -29,7 +29,7 @@ fi
 CONTAINER_NAME="${CONTAINER_POSTGRES_NAME:-fastify-oauth-postgres}"
 DB_NAME="${DATABASE_NAME:-fastify_oauth_db}"
 TEST_DB_NAME="${DB_NAME}_test"
-MIGRATIONS_DIR="$PROJECT_ROOT/src/db/migrations"
+MIGRATIONS_DIR="$PROJECT_ROOT/backend/src/db/migrations"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Migrating Test Database${NC}"
@@ -39,7 +39,7 @@ echo ""
 # Check if PostgreSQL container is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo -e "${RED}✗ PostgreSQL container '${CONTAINER_NAME}' is not running${NC}"
-    echo -e "${YELLOW}  Start it with: npm run docker:postgres${NC}"
+    echo -e "${YELLOW}  Start it with: pnpm docker:postgres${NC}"
     exit 1
 fi
 
@@ -53,7 +53,7 @@ DB_EXISTS=$(docker exec -i "$CONTAINER_NAME" psql -U postgres -d postgres -tAc "
 
 if [ -z "$DB_EXISTS" ]; then
     echo -e "${RED}✗ Test database '${TEST_DB_NAME}' does not exist${NC}"
-    echo -e "${YELLOW}  Create it with: npm run test:db:create${NC}"
+    echo -e "${YELLOW}  Create it with: pnpm test:db:create${NC}"
     exit 1
 fi
 
@@ -63,7 +63,7 @@ cd "$PROJECT_ROOT"
 
 # Temporarily override DATABASE_NAME for migration
 export DATABASE_NAME="${TEST_DB_NAME}"
-npm run db:migrate
+pnpm db:migrate
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Migrations applied successfully${NC}"

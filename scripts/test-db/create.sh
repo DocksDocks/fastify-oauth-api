@@ -4,7 +4,7 @@
 # Create Test Database
 # ==============================================================================
 # Creates the test database if it doesn't exist
-# Usage: npm run test:db:create OR bash scripts/test-db/create.sh
+# Usage: pnpm test:db:create OR bash scripts/test-db/create.sh
 # ==============================================================================
 
 set -e
@@ -39,7 +39,7 @@ echo ""
 # Check if PostgreSQL container is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo -e "${RED}✗ PostgreSQL container '${CONTAINER_NAME}' is not running${NC}"
-    echo -e "${YELLOW}  Start it with: npm run docker:postgres${NC}"
+    echo -e "${YELLOW}  Start it with: pnpm docker:postgres${NC}"
     exit 1
 fi
 

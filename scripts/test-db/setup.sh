@@ -4,7 +4,7 @@
 # Setup Test Database
 # ==============================================================================
 # Complete test database setup: create + migrate + verify
-# Usage: npm run test:db:setup OR bash scripts/test-db/setup.sh
+# Usage: pnpm test:db:setup OR bash scripts/test-db/setup.sh
 # ==============================================================================
 
 set -e
@@ -40,7 +40,7 @@ echo ""
 # Check if PostgreSQL container is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo -e "${RED}✗ PostgreSQL container '${CONTAINER_NAME}' is not running${NC}"
-    echo -e "${YELLOW}  Start it with: npm run docker:postgres${NC}"
+    echo -e "${YELLOW}  Start it with: pnpm docker:postgres${NC}"
     exit 1
 fi
 
@@ -98,4 +98,4 @@ echo -e "${CYAN}║   ✓ Setup Completed Successfully      ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${GREEN}Test database is ready!${NC}"
-echo -e "${YELLOW}Run tests with: ${CYAN}npm test${NC}"
+echo -e "${YELLOW}Run tests with: ${CYAN}pnpm test${NC}"
