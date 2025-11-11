@@ -47,11 +47,11 @@ describe('Auth Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.accessToken).toBeDefined();
-      expect(body.data.refreshToken).toBeDefined(); // Token rotation
-      expect(body.data.expiresIn).toBeGreaterThan(0);
+      expect(body.tokens.accessToken).toBeDefined();
+      expect(body.tokens.refreshToken).toBeDefined(); // Token rotation
+      expect(body.tokens.expiresIn).toBeGreaterThan(0);
       // Note: Access tokens may be identical if generated in same second with same payload
-      expect(body.data.refreshToken).not.toBe(refreshToken); // Rotated token (has jti so always unique)
+      expect(body.tokens.refreshToken).not.toBe(refreshToken); // Rotated token (has jti so always unique)
     });
 
     it('should fail with invalid refresh token', async () => {
@@ -116,7 +116,7 @@ describe('Auth Routes', () => {
 
       expect(response1.statusCode).toBe(200);
       const body1 = JSON.parse(response1.body);
-      const newRefreshToken = body1.data.refreshToken;
+      const newRefreshToken = body1.tokens.refreshToken;
 
       // Second refresh with new token should work
       const response2 = await app.inject({
@@ -127,8 +127,8 @@ describe('Auth Routes', () => {
 
       expect(response2.statusCode).toBe(200);
       const body2 = JSON.parse(response2.body);
-      expect(body2.data.accessToken).toBeDefined();
-      expect(body2.data.refreshToken).not.toBe(newRefreshToken);
+      expect(body2.tokens.accessToken).toBeDefined();
+      expect(body2.tokens.refreshToken).not.toBe(newRefreshToken);
     });
   });
 
@@ -145,9 +145,9 @@ describe('Auth Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.user.id).toBe(user.id);
-      expect(body.data.user.email).toBe(user.email);
-      expect(body.data.user.role).toBe(user.role);
+      expect(body.user.id).toBe(user.id);
+      expect(body.user.email).toBe(user.email);
+      expect(body.user.role).toBe(user.role);
     });
 
     it('should fail with invalid access token', async () => {
@@ -218,7 +218,7 @@ describe('Auth Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.message).toContain('Logged out successfully');
+      expect(body.message).toContain('Logged out successfully');
     });
 
     it('should logout with refresh token revocation', async () => {
@@ -309,12 +309,12 @@ describe('Auth Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.sessions).toBeInstanceOf(Array);
-      expect(body.data.sessions.length).toBeGreaterThan(0);
-      expect(body.data.sessions[0]).toHaveProperty('id');
-      expect(body.data.sessions[0]).toHaveProperty('familyId');
-      expect(body.data.sessions[0]).toHaveProperty('createdAt');
-      expect(body.data.sessions[0]).toHaveProperty('expiresAt');
+      expect(body.sessions).toBeInstanceOf(Array);
+      expect(body.sessions.length).toBeGreaterThan(0);
+      expect(body.sessions[0]).toHaveProperty('id');
+      expect(body.sessions[0]).toHaveProperty('familyId');
+      expect(body.sessions[0]).toHaveProperty('createdAt');
+      expect(body.sessions[0]).toHaveProperty('expiresAt');
     });
 
     it('should include session metadata', async () => {
@@ -327,7 +327,7 @@ describe('Auth Routes', () => {
       });
 
       const body = JSON.parse(response.body);
-      const session = body.data.sessions[0];
+      const session = body.sessions[0];
       expect(session).toHaveProperty('isUsed');
       expect(session.isUsed).toBe(false); // Current token not used yet
     });
@@ -358,10 +358,10 @@ describe('Auth Routes', () => {
       });
 
       const body = JSON.parse(response.body);
-      expect(body.data.sessions).toBeInstanceOf(Array);
+      expect(body.sessions).toBeInstanceOf(Array);
       // All sessions should belong to the current user
       // We can't directly check userId in response, but we can verify the count
-      expect(body.data.sessions.length).toBeGreaterThan(0);
+      expect(body.sessions.length).toBeGreaterThan(0);
     });
   });
 
@@ -377,7 +377,7 @@ describe('Auth Routes', () => {
       });
 
       const sessionsBody = JSON.parse(sessionsResponse.body);
-      const sessionId = sessionsBody.data.sessions[0].id;
+      const sessionId = sessionsBody.sessions[0].id;
 
       // Revoke the session
       const response = await app.inject({
@@ -391,7 +391,7 @@ describe('Auth Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.message).toContain('revoked');
+      expect(body.message).toContain('revoked');
     });
 
     it('should fail without authentication', async () => {
@@ -422,7 +422,7 @@ describe('Auth Routes', () => {
       });
 
       const otherSessionsBody = JSON.parse(otherSessionsResponse.body);
-      const otherSessionId = otherSessionsBody.data.sessions[0].id;
+      const otherSessionId = otherSessionsBody.sessions[0].id;
 
       // Try to revoke other user's session
       const response = await app.inject({
@@ -447,7 +447,7 @@ describe('Auth Routes', () => {
 
       const verifyBody = JSON.parse(verifyResponse.body);
       // Session should still exist (not revoked for other user)
-      expect(verifyBody.data.sessions.length).toBeGreaterThan(0);
+      expect(verifyBody.sessions.length).toBeGreaterThan(0);
     });
 
     it('should handle invalid session ID', async () => {
@@ -473,7 +473,7 @@ describe('Auth Routes', () => {
         headers: { authorization: `Bearer ${userToken}` },
       });
       const body1 = JSON.parse(sessions1.body);
-      const familyId1 = body1.data.sessions[0].familyId;
+      const familyId1 = body1.sessions[0].familyId;
 
       // Rotate token
       const refresh1 = await app.inject({
@@ -482,7 +482,7 @@ describe('Auth Routes', () => {
         payload: { refreshToken },
       });
       const refreshBody1 = JSON.parse(refresh1.body);
-      const newAccessToken = refreshBody1.data.accessToken;
+      const newAccessToken = refreshBody1.tokens.accessToken;
 
       // Check sessions again
       const sessions2 = await app.inject({
@@ -493,7 +493,7 @@ describe('Auth Routes', () => {
       const body2 = JSON.parse(sessions2.body);
 
       // Should have same family ID
-      const familyIds = body2.data.sessions.map((s: any) => s.familyId);
+      const familyIds = body2.sessions.map((s: any) => s.familyId);
       expect(familyIds).toContain(familyId1);
     });
 
@@ -505,7 +505,7 @@ describe('Auth Routes', () => {
         payload: { refreshToken },
       });
       const body1 = JSON.parse(refresh1.body);
-      const newRefreshToken = body1.data.refreshToken;
+      const newRefreshToken = body1.tokens.refreshToken;
 
       // Try to reuse old token (should trigger family revocation)
       const reuseResponse = await app.inject({

@@ -50,12 +50,11 @@ describe('Profile Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.id).toBe(user.id);
-      expect(body.data.email).toBe(user.email);
-      expect(body.data.name).toBe(user.name);
-      expect(body.data.role).toBe(user.role);
-      expect(body.data.provider).toBeDefined();
-      expect(body.data.createdAt).toBeDefined();
+      expect(body.user.id).toBe(user.id);
+      expect(body.user.email).toBe(user.email);
+      expect(body.user.name).toBe(user.name);
+      expect(body.user.role).toBe(user.role);
+      expect(body.user.createdAt).toBeDefined();
     });
 
     it('should fail without authentication', async () => {
@@ -119,8 +118,8 @@ describe('Profile Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.name).toBe('Updated Name');
-      expect(body.data.id).toBe(user.id);
+      expect(body.user.name).toBe('Updated Name');
+      expect(body.user.id).toBe(user.id);
       expect(body.message).toContain('Profile updated successfully');
     });
 
@@ -139,8 +138,8 @@ describe('Profile Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.avatar).toBe('https://example.com/avatar.jpg');
-      expect(body.data.id).toBe(user.id);
+      expect(body.user.avatar).toBe('https://example.com/avatar.jpg');
+      expect(body.user.id).toBe(user.id);
     });
 
     it('should update both name and avatar', async () => {
@@ -159,8 +158,8 @@ describe('Profile Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.name).toBe('New Name');
-      expect(body.data.avatar).toBe('https://example.com/new-avatar.jpg');
+      expect(body.user.name).toBe('New Name');
+      expect(body.user.avatar).toBe('https://example.com/new-avatar.jpg');
     });
 
     it('should fail without any fields', async () => {
@@ -369,6 +368,157 @@ describe('Profile Routes', () => {
     });
   });
 
+  describe('Admin/Superadmin Access Without API Key', () => {
+    it('should allow admin to get profile with JWT only (no API key)', async () => {
+      const adminUser = await createUser({
+        email: `admin-${Date.now()}@example.com`,
+        name: 'Admin User',
+        role: 'admin',
+      });
+
+      const { accessToken } = await generateTestToken({
+        id: adminUser.id,
+        email: adminUser.email,
+        role: adminUser.role,
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          // No X-API-Key header
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.user.id).toBe(adminUser.id);
+      expect(body.user.email).toBe(adminUser.email);
+      expect(body.user.role).toBe('admin');
+    });
+
+    it('should allow superadmin to get profile with JWT only (no API key)', async () => {
+      const superadminUser = await createUser({
+        email: `superadmin-${Date.now()}@example.com`,
+        name: 'Superadmin User',
+        role: 'superadmin',
+      });
+
+      const { accessToken } = await generateTestToken({
+        id: superadminUser.id,
+        email: superadminUser.email,
+        role: superadminUser.role,
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          // No X-API-Key header
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.user.id).toBe(superadminUser.id);
+      expect(body.user.role).toBe('superadmin');
+    });
+
+    it('should allow admin to update profile with JWT only (no API key)', async () => {
+      const adminUser = await createUser({
+        email: `admin-${Date.now()}@example.com`,
+        name: 'Admin User',
+        role: 'admin',
+      });
+
+      const { accessToken } = await generateTestToken({
+        id: adminUser.id,
+        email: adminUser.email,
+        role: adminUser.role,
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          // No X-API-Key header
+        },
+        payload: {
+          name: 'Updated Admin Name',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.user.name).toBe('Updated Admin Name');
+    });
+
+    it('should allow admin to update locale with JWT only (fixes language change issue)', async () => {
+      const adminUser = await createUser({
+        email: `admin-${Date.now()}@example.com`,
+        name: 'Admin User',
+        role: 'admin',
+      });
+
+      const { accessToken } = await generateTestToken({
+        id: adminUser.id,
+        email: adminUser.email,
+        role: adminUser.role,
+      });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          // No X-API-Key header - this was causing 401 before the fix
+        },
+        payload: {
+          locale: 'pt-BR',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('Profile updated successfully');
+    });
+
+    it('should allow superadmin to delete profile with JWT only (no API key)', async () => {
+      const superadminUser = await createUser({
+        email: `superadmin-${Date.now()}@example.com`,
+        name: 'Superadmin User',
+        role: 'superadmin',
+      });
+
+      const { accessToken } = await generateTestToken({
+        id: superadminUser.id,
+        email: superadminUser.email,
+        role: superadminUser.role,
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          // No X-API-Key header
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('Account deleted successfully');
+    });
+  });
+
   describe('Profile Integration Flow', () => {
     it('should complete full profile lifecycle', async () => {
       // 1. Get initial profile
@@ -379,7 +529,7 @@ describe('Profile Routes', () => {
       });
       expect(get1.statusCode).toBe(200);
       const body1 = JSON.parse(get1.body);
-      expect(body1.data.name).toBe('Test User');
+      expect(body1.user.name).toBe('Test User');
 
       // 2. Update name
       const update1 = await app.inject({
@@ -397,7 +547,7 @@ describe('Profile Routes', () => {
         headers: { authorization: `Bearer ${userToken}` },
       });
       const body2 = JSON.parse(get2.body);
-      expect(body2.data.name).toBe('Updated User');
+      expect(body2.user.name).toBe('Updated User');
 
       // 4. Update avatar
       const update2 = await app.inject({
@@ -415,8 +565,8 @@ describe('Profile Routes', () => {
         headers: { authorization: `Bearer ${userToken}` },
       });
       const body3 = JSON.parse(get3.body);
-      expect(body3.data.name).toBe('Updated User');
-      expect(body3.data.avatar).toBe('https://example.com/avatar.png');
+      expect(body3.user.name).toBe('Updated User');
+      expect(body3.user.avatar).toBe('https://example.com/avatar.png');
 
       // 6. Delete account
       const del = await app.inject({

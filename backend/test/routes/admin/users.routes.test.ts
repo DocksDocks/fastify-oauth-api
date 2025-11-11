@@ -80,13 +80,13 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.users).toBeInstanceOf(Array);
-      expect(body.data.users.length).toBeGreaterThan(0);
-      expect(body.data.pagination).toBeDefined();
-      expect(body.data.pagination).toHaveProperty('page');
-      expect(body.data.pagination).toHaveProperty('limit');
-      expect(body.data.pagination).toHaveProperty('total');
-      expect(body.data.pagination).toHaveProperty('totalPages');
+      expect(body.users).toBeInstanceOf(Array);
+      expect(body.users.length).toBeGreaterThan(0);
+      expect(body.pagination).toBeDefined();
+      expect(body.pagination).toHaveProperty('page');
+      expect(body.pagination).toHaveProperty('limit');
+      expect(body.pagination).toHaveProperty('total');
+      expect(body.pagination).toHaveProperty('totalPages');
     });
 
     it('should list users as superadmin', async () => {
@@ -101,7 +101,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.users).toBeInstanceOf(Array);
+      expect(body.users).toBeInstanceOf(Array);
     });
 
     it('should deny access to regular users', async () => {
@@ -127,9 +127,9 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.data.pagination.page).toBe(1);
-      expect(body.data.pagination.limit).toBe(2);
-      expect(body.data.users.length).toBeLessThanOrEqual(2);
+      expect(body.pagination.page).toBe(1);
+      expect(body.pagination.limit).toBe(2);
+      expect(body.users.length).toBeLessThanOrEqual(2);
     });
 
     it('should support search by email', async () => {
@@ -143,8 +143,8 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.data.users.length).toBeGreaterThan(0);
-      expect(body.data.users[0].email).toContain(regularUser.email);
+      expect(body.users.length).toBeGreaterThan(0);
+      expect(body.users[0].email).toContain(regularUser.email);
     });
 
     it('should support sorting by email asc', async () => {
@@ -158,7 +158,7 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.data.users).toBeInstanceOf(Array);
+      expect(body.users).toBeInstanceOf(Array);
     });
 
     it('should require authentication', async () => {
@@ -187,7 +187,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toBe('Failed to list users');
+      expect(body.error.message).toBe('Failed to list users');
 
       // Cleanup
       mockSelect.mockRestore();
@@ -207,9 +207,9 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.total).toBeGreaterThan(0);
-      expect(body.data.byRole).toBeInstanceOf(Object);
-      expect(body.data.byProvider).toBeInstanceOf(Object);
+      expect(body.stats.total).toBeGreaterThan(0);
+      expect(body.stats.byRole).toBeInstanceOf(Object);
+      expect(body.stats.byProvider).toBeInstanceOf(Object);
     });
 
     it('should deny access to regular users', async () => {
@@ -241,7 +241,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toBe('Failed to get user statistics');
+      expect(body.error.message).toBe('Failed to get user statistics');
 
       // Cleanup
       mockSelect.mockRestore();
@@ -261,9 +261,9 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.id).toBe(regularUser.id);
-      expect(body.data.email).toBe(regularUser.email);
-      expect(body.data.role).toBe(regularUser.role);
+      expect(body.user.id).toBe(regularUser.id);
+      expect(body.user.email).toBe(regularUser.email);
+      expect(body.user.role).toBe(regularUser.role);
     });
 
     it('should return 404 for non-existent user', async () => {
@@ -278,7 +278,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(404);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toContain('User not found');
+      expect(body.error.message).toContain('User not found');
     });
 
     it('should deny access to regular users', async () => {
@@ -310,7 +310,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toBe('Failed to get user');
+      expect(body.error.message).toBe('Failed to get user');
 
       // Cleanup
       mockSelect.mockRestore();
@@ -333,7 +333,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.role).toBe('admin');
+      expect(body.user.role).toBe('admin');
       expect(body.message).toContain('User role updated to admin');
     });
 
@@ -351,7 +351,7 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.data.role).toBe('superadmin');
+      expect(body.user.role).toBe('superadmin');
     });
 
     it('should fail to promote to superadmin as admin', async () => {
@@ -369,7 +369,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(403);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toContain('Only superadmins can promote users to superadmin');
+      expect(body.error.message).toContain('Only superadmins can promote users to superadmin');
     });
 
     it('should fail to change own role', async () => {
@@ -386,7 +386,7 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain('You cannot change your own role');
+      expect(body.error.message).toContain('You cannot change your own role');
     });
 
     it('should fail with invalid role', async () => {
@@ -443,7 +443,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(404);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toBe('User not found');
+      expect(body.error.message).toBe('User not found');
 
       // Cleanup
       mockUpdate.mockRestore();
@@ -469,7 +469,7 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toBe('Failed to update user role');
+      expect(body.error.message).toBe('Failed to update user role');
 
       // Cleanup
       mockUpdate.mockRestore();
@@ -503,7 +503,7 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(403);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain('Only superadmins can delete other superadmins');
+      expect(body.error.message).toContain('Only superadmins can delete other superadmins');
     });
 
     it('should delete superadmin as superadmin', async () => {
@@ -535,7 +535,7 @@ describe('Admin Users Routes', () => {
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain('You cannot delete your own account');
+      expect(body.error.message).toContain('You cannot delete your own account');
     });
 
     it('should return 404 for non-existent user', async () => {
@@ -579,10 +579,148 @@ describe('Admin Users Routes', () => {
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toBe('Failed to delete user');
+      expect(body.error.message).toBe('Failed to delete user');
 
       // Cleanup
       mockDelete.mockRestore();
+    });
+  });
+
+  describe('Admin/Superadmin Routes Without API Key', () => {
+    it('should allow admin to list users with JWT only (no API key)', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+          // No X-API-Key header
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.users).toBeInstanceOf(Array);
+    });
+
+    it('should allow superadmin to get user stats with JWT only (no API key)', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users/stats',
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+          // No X-API-Key header
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.stats.total).toBeGreaterThan(0);
+    });
+
+    it('should allow admin to get user by ID with JWT only (no API key)', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/admin/users/${regularUser.id}`,
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+          // No X-API-Key header
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.user.id).toBe(regularUser.id);
+    });
+
+    it('should allow admin to update user role with JWT only (no API key)', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/users/${regularUser.id}/role`,
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+          // No X-API-Key header
+        },
+        payload: {
+          role: 'admin',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.user.role).toBe('admin');
+    });
+
+    it('should allow superadmin to delete user with JWT only (no API key)', async () => {
+      // Create a user to delete
+      const userToDelete = await createUser({
+        email: `to-delete-${Date.now()}@example.com`,
+        name: 'User To Delete',
+        role: 'user',
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/users/${userToDelete.id}`,
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+          // No X-API-Key header
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('User deleted successfully');
+    });
+
+    it('should allow admin to complete full workflow with JWT only (no API key)', async () => {
+      // Create a test user for this workflow
+      const workflowUser = await createUser({
+        email: `workflow-${Date.now()}@example.com`,
+        name: 'Workflow User',
+        role: 'user',
+      });
+
+      // 1. List users
+      const list = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: { authorization: `Bearer ${adminToken}` },
+        // No X-API-Key header
+      });
+      expect(list.statusCode).toBe(200);
+
+      // 2. Get user
+      const get = await app.inject({
+        method: 'GET',
+        url: `/api/admin/users/${workflowUser.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        // No X-API-Key header
+      });
+      expect(get.statusCode).toBe(200);
+
+      // 3. Update role
+      const update = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/users/${workflowUser.id}/role`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { role: 'admin' },
+        // No X-API-Key header
+      });
+      expect(update.statusCode).toBe(200);
+
+      // 4. Delete user
+      const del = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/users/${workflowUser.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        // No X-API-Key header
+      });
+      expect(del.statusCode).toBe(200);
     });
   });
 
@@ -604,7 +742,7 @@ describe('Admin Users Routes', () => {
       });
       expect(get1.statusCode).toBe(200);
       const body1 = JSON.parse(get1.body);
-      expect(body1.data.role).toBe('user');
+      expect(body1.user.role).toBe('user');
 
       // 3. Promote to admin
       const update1 = await app.inject({
@@ -622,7 +760,7 @@ describe('Admin Users Routes', () => {
         headers: { authorization: `Bearer ${adminToken}` },
       });
       const body2 = JSON.parse(get2.body);
-      expect(body2.data.role).toBe('admin');
+      expect(body2.user.role).toBe('admin');
 
       // 5. Get stats
       const stats = await app.inject({

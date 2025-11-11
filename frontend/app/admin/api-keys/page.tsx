@@ -60,6 +60,7 @@ export default function ApiKeysPage() {
 
   useEffect(() => {
     fetchApiKeys();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchApiKeys = async () => {

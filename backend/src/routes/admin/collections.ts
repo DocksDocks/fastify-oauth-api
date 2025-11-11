@@ -811,10 +811,10 @@ async function getCollectionPreferences(
     return reply.send({
       success: true,
       preferences: {
-        tableName: preferences[0].tableName,
-        visibleColumns: preferences[0].visibleColumns as string[],
-        updatedBy: preferences[0].updatedBy,
-        updatedAt: preferences[0].updatedAt,
+        tableName: preferences[0]!.tableName,
+        visibleColumns: preferences[0]!.visibleColumns as string[],
+        updatedBy: preferences[0]!.updatedBy,
+        updatedAt: preferences[0]!.updatedAt,
         isDefault: false,
       },
     });
@@ -941,10 +941,10 @@ async function updateCollectionPreferences(
     return reply.send({
       success: true,
       preferences: {
-        tableName: updated[0].tableName,
-        visibleColumns: updated[0].visibleColumns as string[],
-        updatedBy: updated[0].updatedBy,
-        updatedAt: updated[0].updatedAt,
+        tableName: updated[0]!.tableName,
+        visibleColumns: updated[0]!.visibleColumns as string[],
+        updatedBy: updated[0]!.updatedBy,
+        updatedAt: updated[0]!.updatedAt,
       },
       message: 'Column preferences updated successfully',
     });

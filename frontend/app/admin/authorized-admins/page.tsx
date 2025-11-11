@@ -81,6 +81,7 @@ export default function AuthorizedAdminsPage() {
     hasFetched.current = true;
 
     fetchAuthorizedAdmins();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuperadmin]);
 
   const fetchAuthorizedAdmins = async () => {

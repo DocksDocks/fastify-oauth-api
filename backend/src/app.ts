@@ -116,12 +116,13 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
-    const statusCode = error.statusCode || 500;
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
 
     app.log.error({
       error: {
-        message: error.message,
-        stack: error.stack,
+        message: err.message,
+        stack: err.stack,
         statusCode,
       },
       request: {
@@ -137,7 +138,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
     }
 
     // Don't leak error details in production
-    const message = env.NODE_ENV === 'production' ? 'Internal server error' : error.message;
+    const message = env.NODE_ENV === 'production' ? 'Internal server error' : err.message;
 
     return reply.status(statusCode).send(errorResponse('INTERNAL_ERROR', message));
   });

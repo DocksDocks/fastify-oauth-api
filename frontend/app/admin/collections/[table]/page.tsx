@@ -109,7 +109,7 @@ export default function CollectionsPage() {
       try {
         const prefsResponse = await adminApi.getCollectionPreferences(tableName);
         setVisibleColumns(prefsResponse.data.preferences.visibleColumns);
-      } catch (prefsErr) {
+      } catch {
         // If preferences don't exist, use default (first 4 non-timestamp columns)
         const defaultColumns = response.data.collection.columns
           .filter((col: { type: string }) => col.type !== 'timestamp' && col.type !== 'date')
@@ -307,7 +307,7 @@ export default function CollectionsPage() {
     // Return columns in the order specified by visibleColumns
     return visibleColumns
       .map((columnName) => selectedCollection.columns.find((col) => col.name === columnName))
-      .filter(Boolean);
+      .filter((col): col is NonNullable<typeof col> => Boolean(col));
   };
 
   const handleSaveColumnPreferences = async (selectedColumns: string[]) => {

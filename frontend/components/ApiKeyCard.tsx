@@ -12,7 +12,7 @@ interface ApiKeyCardProps {
   keyName: string;
 }
 
-export function ApiKeyCard({ title, description, apiKey, icon: Icon, keyName }: ApiKeyCardProps) {
+export function ApiKeyCard({ title, description, apiKey, icon: Icon }: ApiKeyCardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {

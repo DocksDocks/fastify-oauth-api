@@ -10,22 +10,29 @@ import type { JWTPayload } from '@/modules/auth/auth.types';
 /**
  * User factory - creates test users with provider account using transactions
  */
-export async function createUser(overrides: Partial<typeof users.$inferInsert> = {}) {
-  const provider = 'google';
-  const providerId = `${provider}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+export async function createUser(
+  overrides: Partial<typeof users.$inferInsert> & {
+    provider?: 'google' | 'apple';
+    providerId?: string;
+  } = {}
+) {
+  const provider = overrides.provider || 'google';
+  const providerId = overrides.providerId || `${provider}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const email = overrides.email || `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
 
   // Use transaction to create user + provider account + set primary provider
   const user = await testDb.transaction(async (tx) => {
     // Step 1: Create user without primaryProviderAccountId
+    // Extract provider/providerId/email to avoid passing them incorrectly to users table
+    const { provider: _provider, providerId: _providerId, email: _email, ...userOverrides } = overrides;
+
     const [newUser] = await tx
       .insert(users)
       .values({
         email,
-        name: overrides.name || 'Test User',
-        avatar: overrides.avatar || null,
-        role: overrides.role || 'user',
-        ...overrides,
+        name: userOverrides.name !== undefined ? userOverrides.name : 'Test User',
+        avatar: userOverrides.avatar !== undefined ? userOverrides.avatar : null,
+        role: userOverrides.role || 'user',
       })
       .returning();
 

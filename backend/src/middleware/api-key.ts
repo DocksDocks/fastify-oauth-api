@@ -10,6 +10,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { validateApiKey as validateFromCache } from '@/services/api-key-cache.service';
+import { decodeRequestToken, hasAnyRole } from '@/utils/jwt';
 
 /**
  * Routes that don't require API key validation
@@ -45,7 +46,10 @@ function isWhitelisted(path: string): boolean {
  * API Key validation middleware
  *
  * Validates the X-API-Key header against cached keys in Redis
- * Skips validation for whitelisted paths and test environment
+ * Skips validation for:
+ * - Whitelisted paths (e.g., /health, /api/auth/*, /api/admin/*)
+ * - Test environment
+ * - Admin and superadmin users (identified by JWT token)
  */
 export async function validateApiKey(
   request: FastifyRequest,
@@ -60,6 +64,23 @@ export async function validateApiKey(
   // Extract pathname without query string for matching
   const pathname = request.url.split('?')[0]!; // Non-null assertion: split always returns at least one element
   if (isWhitelisted(pathname)) {
+    return;
+  }
+
+  // Skip API key validation for admin and superadmin users
+  // Decode JWT without verification (just to check role for routing decision)
+  // Full JWT verification happens later in fastify.authenticate hook
+  const decoded = decodeRequestToken(request.server, request);
+  if (hasAnyRole(decoded, ['admin', 'superadmin'])) {
+    request.log.debug(
+      {
+        role: decoded?.role,
+        userId: decoded?.id,
+        method: request.method,
+        url: request.url,
+      },
+      'API key validation skipped for admin/superadmin user',
+    );
     return;
   }
 
