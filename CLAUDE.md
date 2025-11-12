@@ -1,6 +1,6 @@
 # Fastify v5 OAuth API - Project Overview
 
-Production-ready OAuth 2.0 API with Fastify v5, PostgreSQL, Redis, and Next.js admin panel. Features multi-provider authentication (Google + Apple), JWT tokens, role-based access control, and comprehensive testing (100% coverage).
+Production-ready OAuth 2.0 API with Fastify v5, PostgreSQL, Redis, and Next.js admin panel. Features multi-provider authentication (Google + Apple), JWT tokens, role-based access control, and comprehensive testing (93.4% coverage, 644 tests).
 
 ## Quick Start
 
@@ -57,7 +57,7 @@ pnpm dev
 - **Admin Panel**: Dashboard with stats, API key management, database browser, collections config, setup wizard
 - **Database**: Drizzle ORM, auto-migrations, provider accounts, refresh tokens, user/collection preferences
 - **Infrastructure**: Docker orchestration, PostgreSQL + Redis with persistence, Caddy reverse proxy, health checks
-- **Testing**: Vitest with V8 coverage (100% lines/functions/statements, 89% branches), 13 test files, test database management
+- **Testing**: Vitest with V8 coverage (93.4% lines/statements, 100% functions, 84.72% branches), 27 test files, 644 tests, test database management
 - **Code Quality**: TypeScript strict mode, ESLint + Prettier, Husky git hooks, path aliases, structured logging (Pino)
 
 ### ⏳ Pending
@@ -266,10 +266,12 @@ import { users } from '@/db/schema/users';
 **Framework:** Vitest 3.2.4 with V8 coverage provider
 
 **Coverage:**
-- Lines: 100% ✅
+- Lines: 93.4% ✅
 - Functions: 100% ✅
-- Statements: 100% ✅
-- Branches: 89%
+- Statements: 93.4% ✅
+- Branches: 84.72%
+
+**Test Suite:** 644 tests across 27 test files
 
 **Test Database:**
 - Separate database: `fastify_oauth_db_test`
@@ -330,6 +332,6 @@ Comprehensive documentation split by topic:
 
 ---
 
-**Version:** 13.0 (Monorepo with pnpm Workspaces + Restructured Documentation + RBAC + 100% Test Coverage)
+**Version:** 14.0 (Monorepo with pnpm Workspaces + Restructured Documentation + RBAC + 93.4% Test Coverage + 644 Tests)
 **Last Updated:** November 2025
 **Maintainer:** Infrastructure Team

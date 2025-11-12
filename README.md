@@ -1,6 +1,6 @@
 # Fastify v5 OAuth API
 
-Production-ready Fastify v5 OAuth API with PostgreSQL, Redis, Next.js admin panel, and comprehensive testing (100% coverage). Features multi-provider authentication (Google + Apple), JWT tokens, role-based access control, and Docker orchestration following 2025 best practices.
+Production-ready Fastify v5 OAuth API with PostgreSQL, Redis, Next.js admin panel, and comprehensive testing (93.4% coverage, 644 tests). Features multi-provider authentication (Google + Apple), JWT tokens, role-based access control, and Docker orchestration following 2025 best practices.
 
 ## Features
 
@@ -9,7 +9,7 @@ Production-ready Fastify v5 OAuth API with PostgreSQL, Redis, Next.js admin pane
 - **Role-Based Access Control**: 3-tier hierarchy (user → admin → superadmin)
 - **Admin Panel**: Next.js 16 dashboard with API key management and database browser
 - **Global API Keys**: Secure API access with bcrypt-hashed keys
-- **Comprehensive Testing**: Vitest with 100% coverage (lines/functions/statements)
+- **Comprehensive Testing**: Vitest with 93.4% coverage (644 tests, 27 test files, 100% functions)
 - **Docker Infrastructure**: PostgreSQL, Redis, Caddy reverse proxy with auto-HTTPS
 - **Code Quality**: TypeScript strict mode, ESLint, Prettier, Husky git hooks
 
@@ -140,7 +140,7 @@ fastify-oauth-api/
 │   │   ├── middleware/  # RBAC, API key validation
 │   │   ├── plugins/     # Fastify plugins (JWT)
 │   │   └── utils/       # Logger, errors, response
-│   ├── test/            # Backend test suite (13 files)
+│   ├── test/            # Backend test suite (27 files, 644 tests)
 │   ├── tsconfig.json    # Backend TypeScript config
 │   ├── drizzle.config.ts # Drizzle ORM config
 │   ├── vitest.config.ts  # Vitest config
@@ -256,12 +256,12 @@ fastify-oauth-api/
 **Framework:** Vitest 3.2.4 with V8 coverage provider
 
 **Coverage:**
-- Lines: 100% ✅
+- Lines: 93.4% ✅
 - Functions: 100% ✅
-- Statements: 100% ✅
-- Branches: 89%
+- Statements: 93.4% ✅
+- Branches: 84.72%
 
-**Test Files:** 13 files covering services, routes, middleware, utils, plugins, config
+**Test Suite:** 644 tests across 27 test files covering services, routes, middleware, utils, plugins, config, RBAC, OAuth flows
 
 **Test Database:**
 - Separate database: `fastify_oauth_db_test`
@@ -362,6 +362,6 @@ See [DEVELOPMENT.md](./DEVELOPMENT.md) for more troubleshooting tips.
 
 ---
 
-**Version:** 13.0 (Monorepo with pnpm Workspaces + Production-Ready OAuth + RBAC + 100% Test Coverage)
+**Version:** 14.0 (Monorepo with pnpm Workspaces + Production-Ready OAuth + RBAC + 93.4% Test Coverage + 644 Tests)
 **Last Updated:** November 2025
 **License:** MIT

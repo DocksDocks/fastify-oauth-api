@@ -4,10 +4,10 @@
 
 ## Summary
 
-- **Total Tests**: 550 ✅
-- **Test Files**: 24
+- **Total Tests**: 644 ✅
+- **Test Files**: 27
 - **All Tests**: ✅ Passing
-- **Coverage**: 90.29% (lines), 95.04% (functions), 83.01% (branches), 90.29% (statements)
+- **Coverage**: 93.4% (lines/statements), 100% (functions), 84.72% (branches)
 - **Test Framework**: Vitest 3.2.4 with V8 coverage provider
 - **Test Environment**: Node.js with PostgreSQL test database (auto-created)
 - **Docker Build**: Tests run automatically during Docker build with coverage validation
@@ -79,7 +79,7 @@ pnpm test -- --ui
 
 ## Coverage Journey
 
-Achievement timeline from initial implementation to 90%+ coverage:
+Achievement timeline from initial implementation to 93.4% coverage:
 
 | Stage | Coverage | Tests | Key Achievement |
 |-------|----------|-------|-----------------|
@@ -89,13 +89,16 @@ Achievement timeline from initial implementation to 90%+ coverage:
 | Phase 3 | 86.59% | 525 | **Admin routes tests** |
 | Phase 4 | 88.96% | 531 | **Provider accounts tests** |
 | Phase 5 | 89.07% | 532 | **User preferences tests** |
-| **Final** | **90.29%** | **550** | **Env-file service tests** ✅ |
+| Phase 6 | 90.29% | 550 | **Env-file service tests** |
+| Phase 7 | 91.09% | 585 | **Avatar, JWT utils, profile providers** |
+| Phase 8 | 92.83% | 637 | **Redis, app.ts, setup error handling** |
+| **Final** | **93.4%** | **644** | **Collections error handling + RBAC** ✅ |
 
 **Coverage Breakdown:**
-- Lines: 90.29% ✅
-- Statements: 90.29% ✅
-- Functions: 95.04% ✅
-- Branches: 83.01%
+- Lines: 93.4% ✅
+- Statements: 93.4% ✅
+- Functions: 100% ✅
+- Branches: 84.72%
 
 ## Test Categories
 
@@ -309,11 +312,11 @@ Located in `test/helper/app-helper.ts`:
 - Configuration files
 - Test files
 
-### Coverage Thresholds
-- **Lines**: 90% ✅ (achieved: 90.29%)
-- **Functions**: 90% ✅ (achieved: 95.04%)
-- **Branches**: 80% ✅ (achieved: 83.01%)
-- **Statements**: 90% ✅ (achieved: 90.29%)
+### Coverage Achieved
+- **Lines**: 90% threshold ✅ (achieved: 93.4%)
+- **Functions**: 90% threshold ✅ (achieved: 100%)
+- **Branches**: 80% threshold ✅ (achieved: 84.72%)
+- **Statements**: 90% threshold ✅ (achieved: 93.4%)
 
 **Note**: Thresholds are enforced during:
 1. Local development (`pnpm test:coverage`)
@@ -451,23 +454,20 @@ The PostgreSQL test database (`fastify_oauth_db_test`) is automatically created 
 1. **OAuth Provider Testing**: OAuth callbacks (Google, Apple) are excluded from coverage as they require mocking external APIs
 2. **Real Database Required**: Tests use a real PostgreSQL database, not mocks (auto-created in Docker)
 3. **Serial Execution**: Tests run serially to avoid database conflicts
-4. **Redis Testing**: Redis connection event handlers (54% coverage) are difficult to test without triggering real connection events
 
 ## Low Coverage Areas
 
 These files have lower coverage but are either infrastructure code or difficult to test:
 
-- **redis.ts** (54.05%): Connection event handlers, tested indirectly through other tests
-- **avatar.ts** (9.09%): Avatar generation utility, minimal usage
-- **app.ts** (84.79%): Application bootstrap code, difficult to test in isolation
-- **setup.ts** (77.21%): Route file with complex validation logic
-- **collections.ts** (78.79%): Dynamic CRUD with many edge cases
+- **app.ts** (84.79%): Application bootstrap code with production-only conditional logic
+- **collections.ts** (93.65%): Dynamic CRUD with complex edge cases
+- **setup.ts** (routes): Complex validation logic with many edge cases
 
 ## Achievements
 
-✅ **90.29% statement coverage** (550 tests)
-✅ **95.04% function coverage** (every major function tested)
-✅ **83.01% branch coverage** (excellent for complex conditional logic)
+✅ **93.4% statement coverage** (644 tests across 27 files)
+✅ **100% function coverage** (every major function tested)
+✅ **84.72% branch coverage** (excellent for complex conditional logic)
 ✅ **100% RBAC security coverage** (all authorization paths tested)
 ✅ **100% OAuth flow coverage** (Google + Apple authentication)
 ✅ **Automated test database** (no manual setup)
@@ -478,9 +478,10 @@ These files have lower coverage but are either infrastructure code or difficult 
 
 - **Update factories** when adding new fields to schemas
 - **Add tests** for new features before merging
-- **Keep coverage above thresholds** (90% minimum for lines/statements)
+- **Keep coverage above thresholds** (90% minimum for lines/statements, currently at 93.4%)
 - **Clean up obsolete tests** when refactoring
 - **Use unique timestamps** in test data to prevent conflicts
+- **Use RBAC helpers** from `test/helper/rbac-helpers.ts` for role-based testing
 
 ## Contact
 
@@ -492,6 +493,6 @@ For questions about the test suite, consult:
 ---
 
 **Last Updated**: November 2025
-**Test Suite Version**: 3.0
-**Total Tests**: 550 ✅
-**Coverage**: 90.29% (statements, lines) | 95.04% (functions) | 83.01% (branches)
+**Test Suite Version**: 4.0
+**Total Tests**: 644 ✅ (27 test files)
+**Coverage**: 93.4% (statements, lines) | 100% (functions) | 84.72% (branches)
