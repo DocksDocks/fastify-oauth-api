@@ -67,7 +67,7 @@ pnpm dev
 
 **Development:**
 ```bash
-pnpm dev              # Start API + admin panel
+pnpm dev              # Start API + admin panel (auto-runs migrations)
 pnpm dev:api          # Start API only (backend)
 pnpm dev:frontend     # Start admin panel only
 pnpm dev:init         # Complete dev setup
@@ -85,7 +85,8 @@ pnpm docker:redis     # Start Redis
 **Database:**
 ```bash
 pnpm db:generate      # Generate migrations
-pnpm db:migrate       # Run migrations
+pnpm db:migrate       # Run migrations (drizzle-kit)
+pnpm db:migrate:auto  # Run migrations programmatically (auto-runs with pnpm dev)
 pnpm db:studio        # Open Drizzle Studio GUI
 ```
 

@@ -112,7 +112,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log('─────────────────────────────────────────────────────────────\n');
 
       console.log('💡 Test with curl:');
-      console.log(`curl -H "Authorization: Bearer ${result.accessToken}" http://localhost:3000/api/profile\n`);
+      console.log(`curl -H "Authorization: Bearer ${result.accessToken}" http://localhost:1337/api/profile\n`);
 
       process.exit(0);
     })

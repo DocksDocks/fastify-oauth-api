@@ -76,6 +76,7 @@ Production-ready Fastify v5 OAuth API with PostgreSQL, Redis, Next.js admin pane
    ```bash
    pnpm dev
    ```
+   - Automatically runs database migrations before starting
    - API: http://localhost:1337
    - Admin Panel: http://localhost:3000/admin
    - Health check: http://localhost:1337/health
@@ -102,7 +103,8 @@ pnpm docker:redis     # Start Redis
 **Database:**
 ```bash
 pnpm db:generate      # Generate migrations
-pnpm db:migrate       # Run migrations
+pnpm db:migrate       # Run migrations (drizzle-kit)
+pnpm db:migrate:auto  # Run migrations programmatically (auto-runs with pnpm dev)
 pnpm db:studio        # Open Drizzle Studio GUI
 ```
 

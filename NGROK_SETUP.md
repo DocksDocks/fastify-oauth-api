@@ -163,8 +163,9 @@ APPLE_TEAM_ID=ABC123DEFG
 APPLE_KEY_ID=XYZ987ABC1
 APPLE_PRIVATE_KEY_PATH=./keys/apple-private-key.p8
 
-# Super Admin (set to your Google email for auto-promotion)
-SUPER_ADMIN_EMAIL=youremail@gmail.com
+# Super Admin (DEPRECATED - use setup wizard instead)
+# First admin is created via setup wizard at /admin/setup
+# SUPER_ADMIN_EMAIL=youremail@gmail.com  # ❌ No longer used
 ```
 
 **💡 Pro Tip:** You only need to update `API_URL`! The redirect URIs automatically use `${API_URL}` variable interpolation, so changing one variable updates all OAuth configurations.
@@ -174,7 +175,7 @@ SUPER_ADMIN_EMAIL=youremail@gmail.com
 Ensure root `.env` has your API key:
 
 ```bash
-VITE_ADMIN_PANEL_API_KEY=your_admin_panel_api_key_here
+NEXT_PUBLIC_ADMIN_PANEL_API_KEY=your_admin_panel_api_key_here
 ```
 
 If you don't have an API key, generate one:
@@ -230,8 +231,8 @@ pnpm dev
 2. Redirects to Google login
 3. Sign in with your Google account
 4. **ngrok warning appears again**: Click **"Visit Site"**
-5. Should redirect to admin dashboard
-6. If your email matches `SUPER_ADMIN_EMAIL`, you'll be superadmin
+5. Should redirect to admin dashboard (or setup wizard on first run)
+6. If your email is in the `authorized_admins` table, you'll be promoted to admin/superadmin
 
 ### Step 3: Test Apple OAuth
 
@@ -261,7 +262,7 @@ pnpm dev
 **Fix**:
 ```bash
 # Verify API key is set in root .env
-cat .env | grep VITE_ADMIN_PANEL_API_KEY
+cat .env | grep NEXT_PUBLIC_ADMIN_PANEL_API_KEY
 
 # If empty, run seed and copy the key
 pnpm db:seed:superadmin
@@ -418,8 +419,9 @@ APPLE_CLIENT_ID=com.yourcompany.yourapp.signin
 APPLE_TEAM_ID=YOUR_TEAM_ID
 APPLE_KEY_ID=YOUR_KEY_ID
 
-# Super admin email (set once, don't change)
-SUPER_ADMIN_EMAIL=youremail@gmail.com
+# Super admin (DEPRECATED - use setup wizard instead)
+# Visit /admin/setup on first run to create superadmin
+# SUPER_ADMIN_EMAIL=youremail@gmail.com  # ❌ No longer used
 ```
 
 ---

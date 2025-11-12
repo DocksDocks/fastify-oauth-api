@@ -65,6 +65,7 @@
     "db:generate": "pnpm --filter=@fastify-oauth-api/backend db:generate",
     "db:push": "pnpm --filter=@fastify-oauth-api/backend db:push",
     "db:migrate": "pnpm --filter=@fastify-oauth-api/backend db:migrate",
+    "db:migrate:auto": "pnpm --filter=@fastify-oauth-api/backend db:migrate:auto",
     "db:studio": "pnpm --filter=@fastify-oauth-api/backend db:studio",
     "dev:token": "pnpm --filter=@fastify-oauth-api/backend dev:token",
     "lint": "pnpm --filter=@fastify-oauth-api/backend lint",

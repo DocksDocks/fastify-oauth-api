@@ -62,7 +62,7 @@
 
     # Health check endpoint (pass through)
     handle /health {
-        reverse_proxy {$API_HOST:api}:{$API_PORT:3000} {
+        reverse_proxy {$API_HOST:api}:{$API_PORT:1337} {
             health_uri /health
             health_interval 10s
             health_timeout 5s
@@ -71,7 +71,7 @@
 
     # API endpoints
     handle /api/* {
-        reverse_proxy {$API_HOST:api}:{$API_PORT:3000} {
+        reverse_proxy {$API_HOST:api}:{$API_PORT:1337} {
             # Load balancing (for future use)
             lb_policy round_robin
 
@@ -99,7 +99,7 @@
 
     # Documentation endpoint
     handle /documentation* {
-        reverse_proxy {$API_HOST:api}:{$API_PORT:3000} {
+        reverse_proxy {$API_HOST:api}:{$API_PORT:1337} {
             health_uri /health
             health_interval 10s
             health_timeout 5s
@@ -108,7 +108,7 @@
 
     # Root endpoint
     handle / {
-        reverse_proxy {$API_HOST:api}:{$API_PORT:3000} {
+        reverse_proxy {$API_HOST:api}:{$API_PORT:1337} {
             health_uri /health
             health_interval 10s
             health_timeout 5s
@@ -117,7 +117,7 @@
 
     # Catch-all for other paths
     handle {
-        reverse_proxy {$API_HOST:api}:{$API_PORT:3000} {
+        reverse_proxy {$API_HOST:api}:{$API_PORT:1337} {
             health_uri /health
             health_interval 10s
             health_timeout 5s

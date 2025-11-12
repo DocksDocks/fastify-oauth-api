@@ -174,17 +174,27 @@ fastify.get('/api/admin/stats', {
 
 ### Admin Setup
 
-**Auto-Promotion (Recommended):**
-Users are automatically promoted to admin role during OAuth login if their email matches:
-- `ADMIN_EMAIL` - Primary admin email in `.env`
-- `ADMIN_EMAILS_ADDITIONAL` - Comma-separated list of additional admin emails
-- Implemented in `backend/src/modules/auth/auth.service.ts` → `handleOAuthCallback()`
-- Works for new signups and existing users (upgrades on next login)
+**Initial Superadmin Creation:**
+1. First deployment: Access `/admin/setup` to complete setup wizard
+2. Enter your email during setup to become the first superadmin
+3. Setup status is tracked in the `setup_status` database table
 
-**Authorized Admins Management:**
+**Auto-Promotion System:**
+Users are automatically promoted to admin role during OAuth login if their email is in the `authorized_admins` table:
+- Checked during OAuth callback in `backend/src/modules/auth/auth.service.ts` → `handleOAuthCallback()`
+- Works for new signups and existing users (upgrades on next login)
+- Role promotion: user → admin (or superadmin if specified)
+
+**Authorized Admins Management (Superadmin only):**
 Superadmins can pre-authorize emails for automatic admin promotion via:
-- Admin panel: `/admin/authorized-admins`
-- API: `POST /api/admin/authorized-admins` with email
+- Admin panel: `/admin/authorized-admins` (recommended)
+- API endpoint: `POST /api/admin/authorized-admins`
+- Database table: `authorized_admins`
+
+**Deprecated Environment Variables:**
+- ~~`ADMIN_EMAIL`~~ - No longer used (use setup wizard instead)
+- ~~`ADMIN_EMAILS_ADDITIONAL`~~ - No longer used (use authorized_admins table)
+- ~~`SUPER_ADMIN_EMAIL`~~ - No longer used (first user in setup becomes superadmin)
 
 ## Global API Key Authentication
 

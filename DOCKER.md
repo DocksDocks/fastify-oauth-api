@@ -388,7 +388,7 @@ docker compose logs redis
 
 ### API Not Responding
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:1337/health
 docker compose logs api
 ```
 

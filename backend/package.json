@@ -7,6 +7,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "predev": "dotenvx run -- tsx src/db/migrate.ts",
     "dev": "dotenvx run -- tsx watch --ignore 'src/setup/**' src/server.ts",
     "build": "tsc",
     "build:prod": "tsup",
@@ -15,6 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:auto": "dotenvx run -- tsx src/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "test:db:create": "bash ../scripts/test-db/create.sh",
     "test:db:drop": "bash ../scripts/test-db/drop.sh",

@@ -467,8 +467,9 @@ export async function confirmAccountLinking(linkingToken: string): Promise<User>
 
 /**
  * Handle Admin OAuth callback: Validate and auto-create admin users
- * Creates new users if email matches ADMIN_EMAIL, ADMIN_EMAILS_ADDITIONAL, or SUPER_ADMIN_EMAIL
+ * Creates new users if email is in the authorized_admins database table
  * Rejects users who are not authorized admins
+ * Role assignment: Checks isSuperAdmin flag in authorized_admins table
  */
 export async function handleAdminOAuthCallback(profile: OAuthProfile): Promise<User> {
   const { email, provider, name, avatar, providerId } = profile;
