@@ -36,6 +36,7 @@ export default defineConfig({
         'src/db/seeds/**', // Exclude seed scripts
         'src/db/schema/**', // Exclude database schema definitions
         'src/db/client.ts', // Exclude database connection setup
+        'src/db/migrate.ts', // Exclude migration CLI script (runs pre-dev, not runtime)
         'src/server.ts', // Exclude server entry point
         'src/utils/logger.ts', // Exclude logger setup
         'src/utils/dev-token-generator.ts', // Exclude dev token generator utility

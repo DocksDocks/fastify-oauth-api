@@ -422,6 +422,83 @@ describe('Setup Routes', () => {
     });
   });
 
+  describe('Error Handling', () => {
+    it('should handle database error during status check', async () => {
+      // Import the module to spy on
+      const setupService = await import('@/services/setup.service');
+
+      // Mock checkSetupStatus to throw error
+      const mockCheck = vi.spyOn(setupService, 'checkSetupStatus').mockRejectedValueOnce(
+        new Error('Database connection failed')
+      );
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/setup/status',
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to check setup status');
+
+      // Cleanup
+      mockCheck.mockRestore();
+    });
+
+    it('should handle database error during initialization', async () => {
+      // Import the module to spy on
+      const setupService = await import('@/services/setup.service');
+
+      // Mock initializeSetup to throw error
+      const mockInit = vi.spyOn(setupService, 'initializeSetup').mockRejectedValueOnce(
+        new Error('Database connection failed')
+      );
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/setup/initialize',
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to initialize setup');
+
+      // Cleanup
+      mockInit.mockRestore();
+    });
+
+    it('should handle database error during reset', async () => {
+      // Import the module to spy on
+      const setupService = await import('@/services/setup.service');
+
+      // Mock resetSetup to throw error
+      const mockReset = vi.spyOn(setupService, 'resetSetup').mockRejectedValueOnce(
+        new Error('Database connection failed')
+      );
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/setup/reset',
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to reset setup');
+
+      // Cleanup
+      mockReset.mockRestore();
+    });
+  });
+
   describe('Integration Flow', () => {
     it('should complete full setup lifecycle', async () => {
       // 1. Check status - should not be complete

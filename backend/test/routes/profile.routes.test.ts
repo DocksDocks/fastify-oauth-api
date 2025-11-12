@@ -5,6 +5,7 @@ import { generateTestToken } from '../helper/factories';
 import type { FastifyInstance } from 'fastify';
 import type { User } from '@/db/schema/users';
 import { db } from '@/db/client';
+import { providerAccounts } from '@/db/schema';
 import '../helper/setup';
 
 describe('Profile Routes', () => {
@@ -583,6 +584,317 @@ describe('Profile Routes', () => {
         headers: { authorization: `Bearer ${userToken}` },
       });
       expect(get4.statusCode).toBe(404);
+    });
+  });
+
+  describe('GET /api/profile/providers', () => {
+    it('should return all linked providers', async () => {
+      // User already has a google provider from createUser()
+      // Add an Apple provider account
+      await db.insert(providerAccounts).values({
+        userId: user.id,
+        provider: 'apple',
+        providerId: `apple_${Date.now()}`,
+        email: user.email,
+        name: user.name,
+        avatar: null,
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile/providers',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.providers).toHaveLength(2);
+      expect(body.providers).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ provider: 'google' }),
+          expect.objectContaining({ provider: 'apple' }),
+        ])
+      );
+    });
+
+    it('should return existing provider when user has one linked', async () => {
+      // User already has a google provider from createUser()
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile/providers',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.providers).toHaveLength(1);
+      expect(body.providers[0].provider).toBe('google');
+    });
+
+    it('should fail without authentication', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile/providers',
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('should handle database error during providers fetch', async () => {
+      // Mock database select to throw an error
+      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+        throw new Error('Database connection error');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile/providers',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toBe('Failed to fetch linked providers');
+
+      // Cleanup
+      mockSelect.mockRestore();
+    });
+  });
+
+  describe('DELETE /api/profile/providers/:provider', () => {
+    it('should unlink Google provider', async () => {
+      // User already has a google provider from createUser()
+      // Add an Apple provider account
+      await db.insert(providerAccounts).values({
+        userId: user.id,
+        provider: 'apple',
+        providerId: `apple_${Date.now()}`,
+        email: user.email,
+        name: user.name,
+        avatar: null,
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile/providers/google',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.message).toBe('google provider unlinked successfully');
+      expect(body.remainingProviders).toHaveLength(1);
+      expect(body.remainingProviders[0].provider).toBe('apple');
+    });
+
+    it('should unlink Apple provider', async () => {
+      // User already has a google provider from createUser()
+      // Add an Apple provider account
+      await db.insert(providerAccounts).values({
+        userId: user.id,
+        provider: 'apple',
+        providerId: `apple_${Date.now()}`,
+        email: user.email,
+        name: user.name,
+        avatar: null,
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile/providers/apple',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.message).toBe('apple provider unlinked successfully');
+      expect(body.remainingProviders).toHaveLength(1);
+      expect(body.remainingProviders[0].provider).toBe('google');
+    });
+
+    it('should reject invalid provider name', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile/providers/facebook',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      // Schema validation returns validation error
+      expect(body).toHaveProperty('error');
+    });
+
+    it('should fail without authentication', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile/providers/google',
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('should prevent unlinking last provider', async () => {
+      // User already has one google provider from createUser()
+      // Attempt to unlink it (should fail because it's the last one)
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile/providers/google',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('last provider');
+    });
+
+    it('should handle database error during unlink', async () => {
+      // User already has a google provider from createUser()
+      // Add an Apple provider so we can unlink Google without it being the last one
+      await db.insert(providerAccounts).values({
+        userId: user.id,
+        provider: 'apple',
+        providerId: `apple_${Date.now()}`,
+        email: user.email,
+        name: user.name,
+        avatar: null,
+      });
+
+      // Mock database delete to throw an error
+      const mockDelete = vi.spyOn(db, 'delete').mockImplementationOnce(() => {
+        throw new Error('Database connection error');
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/profile/providers/google',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('Database connection error');
+
+      // Cleanup
+      mockDelete.mockRestore();
+    });
+  });
+
+  describe('PATCH /api/profile - Locked Fields', () => {
+    it('should reject attempt to update email (locked field)', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          email: 'newemail@example.com',
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('locked');
+    });
+
+    it('should reject attempt to update role (locked field)', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          role: 'admin',
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('locked');
+    });
+
+    it('should reject attempt to update id (locked field)', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          id: 999,
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('locked');
+    });
+
+    it('should reject attempt to update createdAt (locked field)', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          createdAt: new Date().toISOString(),
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('locked');
+    });
+
+    it('should allow updating non-locked fields (name, avatar)', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/profile',
+        headers: {
+          authorization: `Bearer ${userToken}`,
+        },
+        payload: {
+          name: 'Updated Name',
+          avatar: 'https://example.com/avatar.jpg',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.user.name).toBe('Updated Name');
+      expect(body.user.avatar).toBe('https://example.com/avatar.jpg');
     });
   });
 });

@@ -926,6 +926,109 @@ describe('Collections Routes', () => {
     });
   });
 
+  describe('Error Handling', () => {
+    it('should handle database error when listing collections', async () => {
+      // Import collections config module to spy on
+      const collectionsConfig = await import('@/config/collections');
+
+      // Mock getAvailableCollections to throw error
+      const mockGet = vi.spyOn(collectionsConfig, 'getAvailableCollections').mockImplementationOnce(() => {
+        throw new Error('Database connection failed');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/collections',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
+
+      // Cleanup
+      mockGet.mockRestore();
+    });
+
+    it('should handle database error when getting collection metadata', async () => {
+      // Import collections config module to spy on
+      const collectionsConfig = await import('@/config/collections');
+
+      // Mock getCollectionByTable to throw error
+      const mockGet = vi.spyOn(collectionsConfig, 'getCollectionByTable').mockImplementationOnce(() => {
+        throw new Error('Database connection failed');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/collections/users/meta',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
+
+      // Cleanup
+      mockGet.mockRestore();
+    });
+
+    it('should handle database error when querying collection data', async () => {
+      // Mock database select to throw error
+      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+        throw new Error('Database connection failed');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/collections/users/data',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
+
+      // Cleanup
+      mockSelect.mockRestore();
+    });
+
+    it('should handle database error when getting single record', async () => {
+      // Mock database select to throw error
+      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+        throw new Error('Database connection failed');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/collections/users/data/1',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
+
+      // Cleanup
+      mockSelect.mockRestore();
+    });
+
+    // Note: Error handling for update/delete/preferences operations is covered by
+    // existing tests that verify error responses when records don't exist or validation fails
+  });
+
   describe('Integration Flow', () => {
     it('should complete full collection management lifecycle', async () => {
       // 1. List collections
