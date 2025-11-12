@@ -74,6 +74,14 @@ export async function initializeSetup(userId: number): Promise<{
   webApiKey: string;
 }> {
   try {
+    // Block setup in production if already complete
+    if (process.env.NODE_ENV === 'production') {
+      const currentStatus = await checkSetupStatus();
+      if (currentStatus.setupComplete) {
+        throw new Error('Setup cannot be re-run in production environment');
+      }
+    }
+
     // Generate API keys (mobile apps + website)
     const iosApiKey = generateApiKey();
     const androidApiKey = generateApiKey();
@@ -81,8 +89,22 @@ export async function initializeSetup(userId: number): Promise<{
 
     logger.info({ userId }, 'Initializing first-time setup');
 
-    // Use transaction to ensure atomicity
+    // Use transaction to ensure atomicity and prevent race conditions
     await db.transaction(async (tx) => {
+      // SECURITY FIX: Check setup status INSIDE transaction with row-level lock
+      // This prevents TOCTOU race condition where multiple requests could
+      // both check status as incomplete and then both try to initialize
+      const [status] = await tx
+        .select()
+        .from(setupStatus)
+        .where(eq(setupStatus.id, 1))
+        .for('update') // Row-level lock prevents concurrent access
+        .limit(1);
+
+      if (status && status.isSetupComplete) {
+        throw new Error('Setup is already complete');
+      }
+
       // 1. Add user to authorized_admins (user already created as superadmin)
       const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
       await tx.insert(authorizedAdmins).values({
@@ -137,6 +159,12 @@ export async function initializeSetup(userId: number): Promise<{
  */
 export async function resetSetup(): Promise<void> {
   try {
+    // SECURITY FIX: Block reset in production environment
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('Attempted to reset setup in production environment - BLOCKED');
+      throw new Error('Setup reset is not allowed in production environment');
+    }
+
     logger.warn('Resetting setup - clearing all data and running migrations');
 
     // Use transaction to ensure atomicity

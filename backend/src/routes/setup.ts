@@ -16,12 +16,24 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
   /**
    * GET /api/setup/status
    * Check if setup is complete
-   * No authentication required
+   * No authentication required (needed for initial setup wizard)
+   * SECURITY NOTE: Returns minimal information to reduce disclosure risk
    */
   fastify.get('/api/setup/status', async (_request, reply) => {
     try {
       const status = await checkSetupStatus();
 
+      // In production, only return setupComplete flag to minimize information disclosure
+      if (process.env.NODE_ENV === 'production') {
+        return reply.send({
+          success: true,
+          data: {
+            setupComplete: status.setupComplete,
+          },
+        });
+      }
+
+      // In development, return full status for debugging
       return reply.send({
         success: true,
         data: status,
@@ -39,6 +51,7 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
    * POST /api/setup/initialize
    * Initialize setup after first OAuth login
    * Requires JWT authentication (but NO API key)
+   * SECURITY FIX: TOCTOU check moved to service layer with row-level locking
    */
   fastify.post(
     '/api/setup/initialize',
@@ -51,16 +64,7 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
 
         logger.info({ userId }, 'Initializing setup for user');
 
-        // Check if setup is already complete
-        const { setupComplete } = await checkSetupStatus();
-        if (setupComplete) {
-          return reply.status(400).send({
-            success: false,
-            error: 'Setup is already complete',
-          });
-        }
-
-        // Initialize setup
+        // Initialize setup (setup completion check now done inside transaction)
         const apiKeys = await initializeSetup(userId);
 
         return reply.send({
@@ -76,6 +80,15 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
         });
       } catch (error) {
         logger.error(error, 'Failed to initialize setup');
+
+        // Handle setup already complete error
+        if (error instanceof Error && error.message.includes('already complete')) {
+          return reply.status(400).send({
+            success: false,
+            error: error.message,
+          });
+        }
+
         return reply.status(500).send({
           success: false,
           error: 'Failed to initialize setup',
@@ -88,6 +101,7 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
    * POST /api/setup/reset
    * Reset setup for development (superadmin only)
    * Clears all data and resets setup status
+   * SECURITY FIX: Blocked in production environment
    */
   fastify.post(
     '/api/setup/reset',
@@ -96,6 +110,15 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
     },
     async (request, reply) => {
       try {
+        // SECURITY FIX: Double-check environment (also checked in service layer)
+        if (process.env.NODE_ENV === 'production') {
+          logger.error({ userId: request.user.id }, 'Attempted to reset setup in production - BLOCKED');
+          return reply.status(403).send({
+            success: false,
+            error: 'Setup reset is not allowed in production environment',
+          });
+        }
+
         logger.warn({ userId: request.user.id }, 'Resetting setup');
 
         await resetSetup();
@@ -106,6 +129,15 @@ export default async function setupRoutes(fastify: FastifyInstance): Promise<voi
         });
       } catch (error) {
         logger.error(error, 'Failed to reset setup');
+
+        // Handle production environment error
+        if (error instanceof Error && error.message.includes('production environment')) {
+          return reply.status(403).send({
+            success: false,
+            error: error.message,
+          });
+        }
+
         return reply.status(500).send({
           success: false,
           error: 'Failed to reset setup',

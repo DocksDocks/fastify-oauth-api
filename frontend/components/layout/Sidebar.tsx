@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Key, Database, ChevronDown, LogOut, ShieldCheck, Sun, Moon, Monitor, Languages, Check, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Database, ChevronDown, LogOut, Sun, Moon, Monitor, Languages, Check, Trash2, Settings, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState, useEffect } from 'react';
@@ -40,12 +40,11 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
   const { setTheme, theme } = useTheme();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
+  const [isAdminSettingsOpen, setIsAdminSettingsOpen] = useState(false);
   const [isChangingLocale, setIsChangingLocale] = useState(false);
 
   const navigation = [
     { name: t('menu.dashboard'), href: '/admin', icon: LayoutDashboard },
-    { name: t('menu.apiKeys'), href: '/admin/api-keys', icon: Key },
-    { name: t('menu.authorizedAdmins'), href: '/admin/authorized-admins', icon: ShieldCheck },
   ];
 
   const fetchCollections = async () => {
@@ -69,8 +68,12 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
   useEffect(() => {
     // Auto-expand Collections dropdown if on a collection page
     if (pathname?.startsWith('/admin/collections/')) {
-
       setIsCollectionsOpen(true);
+    }
+
+    // Auto-expand Admin Settings if on API Keys or Authorized Admins page
+    if (pathname === '/admin/api-keys' || pathname === '/admin/authorized-admins') {
+      setIsAdminSettingsOpen(true);
     }
   }, [pathname]);
 
@@ -134,7 +137,7 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
     >
       {/* Logo */}
       <div className="flex h-16 items-center px-6 border-b border-sidebar-border">
-        <h1 className="text-xl font-bold">Admin Panel</h1>
+        <h1 className="text-xl font-bold">{t('title')}</h1>
       </div>
 
       {/* Navigation */}
@@ -159,6 +162,58 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
           );
         })}
 
+        {/* Admin Settings Collapsible */}
+        <Collapsible open={isAdminSettingsOpen} onOpenChange={setIsAdminSettingsOpen}>
+          <CollapsibleTrigger asChild>
+            <button
+              className={cn(
+                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
+                (pathname === '/admin/api-keys' || pathname === '/admin/authorized-admins')
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                  : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+              )}
+            >
+              <Settings className="h-5 w-5 shrink-0" />
+              <span className="flex-1 text-left">{t('menu.adminSettings')}</span>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 transition-transform shrink-0',
+                  isAdminSettingsOpen && 'rotate-180'
+                )}
+              />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-1 pl-8 pt-1">
+            <Link
+              href="/admin/api-keys"
+              onClick={handleLinkClick}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer',
+                pathname === '/admin/api-keys'
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                  : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+              )}
+            >
+              {t('menu.apiKeys')}
+            </Link>
+            <Link
+              href="/admin/authorized-admins"
+              onClick={handleLinkClick}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer',
+                pathname === '/admin/authorized-admins'
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                  : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+              )}
+            >
+              <span className="flex-1">{t('menu.authorizedAdmins')}</span>
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
+                SA
+              </Badge>
+            </Link>
+          </CollapsibleContent>
+        </Collapsible>
+
         {/* Collections Collapsible */}
         <Collapsible open={isCollectionsOpen} onOpenChange={setIsCollectionsOpen}>
           <CollapsibleTrigger asChild>
@@ -171,7 +226,7 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
               )}
             >
               <Database className="h-5 w-5 shrink-0" />
-              <span className="flex-1 text-left">Collections</span>
+              <span className="flex-1 text-left">{t('menu.collections')}</span>
               <ChevronDown
                 className={cn(
                   'h-4 w-4 transition-transform shrink-0',
@@ -202,11 +257,34 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
               })
             ) : (
               <div className="px-3 py-1.5 text-sm text-sidebar-foreground/40">
-                No collections
+                {t('menu.noCollections')}
               </div>
             )}
           </CollapsibleContent>
         </Collapsible>
+
+        {/* Collection Builder - Superadmin Only & Development Only */}
+        {user?.role === 'superadmin' && process.env.NODE_ENV === 'development' && (
+          <>
+            <div className="my-2 border-t border-sidebar-border" />
+            <Link
+            href="/admin/collection-builder"
+            onClick={handleLinkClick}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer border border-sidebar-border/50',
+              pathname?.startsWith('/admin/collection-builder')
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm border-sidebar-primary'
+                : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:border-sidebar-border'
+            )}
+          >
+            <Wrench className="h-5 w-5 shrink-0" />
+            <span className="flex-1">{t('menu.collectionBuilder')}</span>
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
+              DEV
+            </Badge>
+          </Link>
+          </>
+        )}
 
         {/* Dev Reset - Only in Development */}
         {process.env.NODE_ENV === 'development' && (
@@ -223,7 +301,7 @@ export function Sidebar({ isMobileMenuOpen = false, onCloseMobile }: SidebarProp
               )}
             >
               <Trash2 className="h-5 w-5 shrink-0" />
-              Dev Reset
+              {t('menu.devReset')}
             </Link>
           </>
         )}

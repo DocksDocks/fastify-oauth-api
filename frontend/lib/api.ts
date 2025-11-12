@@ -13,6 +13,7 @@
  */
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import type { CollectionDefinition } from '@/types';
 
 // API base URL
 // Use NEXT_PUBLIC_API_URL from env if available, otherwise fallback to smart detection
@@ -228,6 +229,13 @@ export const adminApi = {
   getAuthorizedAdmins: () => api.get('/admin/authorized-admins'),
   addAuthorizedAdmin: (email: string) => api.post('/admin/authorized-admins', { email }),
   removeAuthorizedAdmin: (id: number) => api.delete(`/admin/authorized-admins/${id}`),
+
+  // Collection Builder (superadmin only)
+  getCollectionDefinitions: () => api.get('/admin/collection-builder/definitions'),
+  getCollectionDefinition: (id: number) => api.get(`/admin/collection-builder/definitions/${id}`),
+  createCollectionDefinition: (data: Partial<CollectionDefinition>) => api.post('/admin/collection-builder/definitions', data),
+  updateCollectionDefinition: (id: number, data: Partial<CollectionDefinition>) => api.patch(`/admin/collection-builder/definitions/${id}`, data),
+  deleteCollectionDefinition: (id: number) => api.delete(`/admin/collection-builder/definitions/${id}`),
 };
 
 export default api;

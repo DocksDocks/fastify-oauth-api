@@ -5,64 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1762373695298,
-      "tag": "0000_gifted_phalanx",
+      "when": 1762984237053,
+      "tag": "0000_motionless_magus",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1762443643025,
-      "tag": "0001_superb_nightcrawler",
+      "when": 1762984378927,
+      "tag": "0001_create_test_products_table",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1762463813145,
-      "tag": "0002_blushing_jazinda",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1762782275846,
-      "tag": "0003_talented_puck",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1762792942546,
-      "tag": "0004_eager_wild_pack",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1762793613774,
-      "tag": "0005_cute_blockbuster",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1762814957000,
-      "tag": "0006_convert_primary_provider_to_fk",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1762818720000,
-      "tag": "0007_add_setup_status",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1762818820000,
-      "tag": "0008_add_collection_preferences",
+      "when": 1762984470249,
+      "tag": "0002_create_test_products_table",
       "breakpoints": true
     }
   ]

@@ -18,7 +18,7 @@ describe('Collections Routes', () => {
   let userToken: string;
   let superadminUserId: number;
   let adminUserId: number;
-  let regularUserId: number;
+  let _regularUserId: number;
   let testUserToUpdate: number;
 
   beforeAll(async () => {
@@ -50,7 +50,7 @@ describe('Collections Routes', () => {
       name: 'Regular User',
       role: 'user',
     });
-    regularUserId = user.id;
+    _regularUserId = user.id;
 
     // Create additional test user for update/delete tests
     const testUser = await createUser({
@@ -931,8 +931,8 @@ describe('Collections Routes', () => {
       // Import collections config module to spy on
       const collectionsConfig = await import('@/config/collections');
 
-      // Mock getAvailableCollections to throw error
-      const mockGet = vi.spyOn(collectionsConfig, 'getAvailableCollections').mockImplementationOnce(() => {
+      // Mock getAvailableCollectionsAsync to throw error
+      const mockGet = vi.spyOn(collectionsConfig, 'getAvailableCollectionsAsync').mockImplementationOnce(async () => {
         throw new Error('Database connection failed');
       });
 
@@ -957,8 +957,8 @@ describe('Collections Routes', () => {
       // Import collections config module to spy on
       const collectionsConfig = await import('@/config/collections');
 
-      // Mock getCollectionByTable to throw error
-      const mockGet = vi.spyOn(collectionsConfig, 'getCollectionByTable').mockImplementationOnce(() => {
+      // Mock getCollectionByTableAsync to throw error
+      const mockGet = vi.spyOn(collectionsConfig, 'getCollectionByTableAsync').mockImplementationOnce(async () => {
         throw new Error('Database connection failed');
       });
 
@@ -980,8 +980,11 @@ describe('Collections Routes', () => {
     });
 
     it('should handle database error when querying collection data', async () => {
-      // Mock database select to throw error
-      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+      // Import collections config module to spy on
+      const collectionsConfig = await import('@/config/collections');
+
+      // Mock getCollectionByTableAsync to throw error during collection lookup
+      const mockGet = vi.spyOn(collectionsConfig, 'getCollectionByTableAsync').mockImplementationOnce(async () => {
         throw new Error('Database connection failed');
       });
 
@@ -999,12 +1002,15 @@ describe('Collections Routes', () => {
       expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
 
       // Cleanup
-      mockSelect.mockRestore();
+      mockGet.mockRestore();
     });
 
     it('should handle database error when getting single record', async () => {
-      // Mock database select to throw error
-      const mockSelect = vi.spyOn(db, 'select').mockImplementationOnce(() => {
+      // Import collections config module to spy on
+      const collectionsConfig = await import('@/config/collections');
+
+      // Mock getCollectionByTableAsync to throw error during collection lookup
+      const mockGet = vi.spyOn(collectionsConfig, 'getCollectionByTableAsync').mockImplementationOnce(async () => {
         throw new Error('Database connection failed');
       });
 
@@ -1022,7 +1028,7 @@ describe('Collections Routes', () => {
       expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
 
       // Cleanup
-      mockSelect.mockRestore();
+      mockGet.mockRestore();
     });
 
     // Note: Error handling for update/delete/preferences operations is covered by

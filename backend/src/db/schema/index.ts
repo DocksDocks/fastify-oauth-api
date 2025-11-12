@@ -7,3 +7,5 @@ export * from './seed-status';
 export * from './authorized-admins';
 export * from './setup-status';
 export * from './collection-preferences';
+export * from './collection-definitions';
+export * from './custom_collections';

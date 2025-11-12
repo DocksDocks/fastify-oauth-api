@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { updateEnvFile, removeEnvVariable } from '@/utils/env-file.service';
 import * as fs from 'fs';
 import * as path from 'path';

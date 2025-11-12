@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Redis as RedisType } from 'ioredis';
 
 /**
  * Test suite for Redis client utilities
@@ -11,7 +10,7 @@ import type { Redis as RedisType } from 'ioredis';
 describe('Redis Client', () => {
   let mockRedis: any;
   let mockLogger: any;
-  let eventHandlers: Map<string, Function>;
+  let eventHandlers: Map<string, (...args: any[]) => void>;
 
   beforeEach(async () => {
     // Reset event handlers map
@@ -26,7 +25,7 @@ describe('Redis Client', () => {
 
     // Mock Redis client
     mockRedis = {
-      on: vi.fn((event: string, handler: Function) => {
+      on: vi.fn((event: string, handler: (...args: any[]) => void) => {
         eventHandlers.set(event, handler);
         return mockRedis;
       }),

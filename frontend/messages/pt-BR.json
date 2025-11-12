@@ -3,9 +3,13 @@
     "title": "Painel Administrativo",
     "menu": {
       "dashboard": "Dashboard",
+      "adminSettings": "Configurações de Administração",
       "apiKeys": "Chaves de API",
       "collections": "Coleções",
-      "authorizedAdmins": "Administradores Autorizados"
+      "authorizedAdmins": "Administradores Autorizados",
+      "collectionBuilder": "Construtor de Coleções",
+      "devReset": "Resetar Dev",
+      "noCollections": "Nenhuma coleção"
     },
     "user": {
       "profile": "Perfil",
@@ -222,6 +226,107 @@
       "failedToLoad": "Falha ao carregar estatísticas do dashboard"
     }
   },
+  "collectionBuilder": {
+    "title": "Construtor de Coleções",
+    "subtitle": "Criar e gerenciar coleções de banco de dados personalizadas",
+    "emptyState": {
+      "title": "Ainda não há coleções personalizadas",
+      "description": "Crie sua primeira coleção para começar"
+    },
+    "actions": {
+      "createCollection": "Criar Coleção",
+      "createNew": "Criar Nova Coleção"
+    },
+    "table": {
+      "name": "Nome",
+      "apiName": "Nome da API",
+      "fields": "Campos",
+      "created": "Criado",
+      "status": "Status",
+      "actions": "Ações",
+      "fieldsCount": "{count} campos"
+    },
+    "status": {
+      "system": "Sistema",
+      "custom": "Personalizado"
+    },
+    "dialogs": {
+      "delete": {
+        "title": "Excluir Coleção",
+        "description": "Tem certeza de que deseja excluir este esquema de coleção? Esta ação não pode ser desfeita. Os dados existentes serão preservados, mas inacessíveis.",
+        "deleting": "Excluindo..."
+      }
+    },
+    "messages": {
+      "accessRestricted": "Acesso Restrito",
+      "superadminOnly": "O Construtor de Coleções está disponível apenas para usuários superadministradores.",
+      "loadingCollections": "Carregando coleções...",
+      "loadingCollection": "Carregando coleção...",
+      "errorLoading": "Erro ao Carregar Coleções",
+      "collectionNotFound": "Coleção Não Encontrada",
+      "collectionNotFoundDescription": "A coleção que você está procurando não existe.",
+      "backToCollections": "Voltar para Coleções"
+    },
+    "breadcrumbs": {
+      "admin": "Admin",
+      "collectionBuilder": "Construtor de Coleções",
+      "newCollection": "Nova Coleção",
+      "edit": "Editar: {name}"
+    },
+    "placeholder": {
+      "title": "Designer Visual em Breve",
+      "description": "A interface do construtor de coleções de arrastar e soltar está sendo desenvolvida. Isso permitirá que você projete visualmente esquemas de banco de dados.",
+      "currentFields": "Campos Atuais: {count}",
+      "apiName": "Nome da API: {name}",
+      "statusLabel": "Status: {status}"
+    }
+  },
+  "devReset": {
+    "title": "Resetar Desenvolvimento",
+    "subtitle": "Resetar o banco de dados para começar do zero com o assistente de configuração",
+    "warning": {
+      "title": "Aviso: Ação Destrutiva",
+      "description": "Isso excluirá permanentemente todos os dados do banco de dados, incluindo:",
+      "items": {
+        "users": "Todos os usuários e dados de autenticação",
+        "providers": "Todas as contas de provedor",
+        "apiKeys": "Todas as chaves de API",
+        "admins": "Todos os administradores autorizados",
+        "setup": "Status de configuração"
+      }
+    },
+    "card": {
+      "title": "Resetar Banco de Dados",
+      "description": "Esta ação limpará todos os dados e resetará o assistente de configuração. Você precisará passar pelo processo de configuração inicial novamente."
+    },
+    "actions": {
+      "resetDatabase": "Resetar Banco de Dados",
+      "resetting": "Resetando...",
+      "confirm": "Sim, Resetar Tudo",
+      "cancel": "Cancelar"
+    },
+    "alerts": {
+      "resetting": {
+        "title": "Resetando...",
+        "description": "O banco de dados está sendo resetado. Você será desconectado e redirecionado para a página de login."
+      },
+      "devOnly": {
+        "title": "Apenas Desenvolvimento",
+        "description": "Esta página está disponível apenas quando NODE_ENV=development. Não estará acessível em produção."
+      },
+      "accessDenied": {
+        "title": "Acesso Negado",
+        "description": "Esta página está disponível apenas no modo de desenvolvimento."
+      },
+      "error": "Erro"
+    },
+    "messages": {
+      "confirmAction": "Você tem certeza absoluta? Esta ação não pode ser desfeita.",
+      "noToken": "Nenhum token de acesso encontrado. Por favor, faça login primeiro.",
+      "resetFailed": "Falha ao resetar",
+      "failedToReset": "Falha ao resetar banco de dados"
+    }
+  },
   "common": {
     "actions": {
       "save": "Salvar",
@@ -235,7 +340,8 @@
       "next": "Próximo",
       "search": "Pesquisar",
       "loading": "Carregando...",
-      "retry": "Tentar novamente"
+      "retry": "Tentar novamente",
+      "tryAgain": "Tentar Novamente"
     },
     "status": {
       "active": "Ativo",

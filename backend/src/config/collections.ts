@@ -2,12 +2,18 @@
  * Collections Configuration - Auto-Generated from Drizzle Schemas
  *
  * Automatically generates collection configurations from database schema files.
+ * Also loads custom collections created via the Collection Builder.
  * No manual maintenance needed - always in sync with the database.
  */
 
 import { getTableColumns } from 'drizzle-orm';
 import type { PgTable, PgColumn } from 'drizzle-orm/pg-core';
 import * as schema from '@/db/schema';
+import {
+  getAllCollectionDefinitions,
+  type CollectionField,
+  type FieldType,
+} from '@/builder/services/collection-builder.service';
 
 export interface CollectionColumn {
   name: string; // JavaScript property name (for frontend row access)
@@ -33,6 +39,7 @@ export interface Collection {
   defaultSort?: { column: string; order: 'asc' | 'desc' };
   defaultLimit?: number;
   requiredRole?: 'admin' | 'superadmin'; // Minimum role required to access this collection
+  isCustom?: boolean; // True if this is a custom collection created via Collection Builder
 }
 
 /**
@@ -45,7 +52,15 @@ interface CollectionColumnWithPriority extends CollectionColumn {
 /**
  * Tables to exclude from collections (internal system tables)
  */
-const EXCLUDED_TABLES = new Set(['seed_status', 'setup_status', 'refresh_tokens', 'api_keys', 'collection_preferences']);
+const EXCLUDED_TABLES = new Set([
+  'seed_status',
+  'setup_status',
+  'refresh_tokens',
+  'api_keys',
+  'collection_preferences',
+  'collection_definitions',
+  'collection_migrations',
+]);
 
 /**
  * Foreign key relationships configuration
@@ -93,6 +108,21 @@ function toTitleCase(str: string): string {
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
+}
+
+/**
+ * Convert snake_case to camelCase
+ */
+function toCamelCase(str: string): string {
+  return str
+    .split('_')
+    .map((word, index) => {
+      if (index === 0) {
+        return word.toLowerCase();
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join('');
 }
 
 /**
@@ -352,6 +382,136 @@ function getSchemaTableMap(): Record<string, PgTable> {
  */
 const SUPERADMIN_ONLY_TABLES = new Set(['authorized_admins']);
 
+// ============================================================================
+// Custom Collection Loading (from Collection Builder)
+// ============================================================================
+
+/**
+ * Map Collection Builder field types to collection column types
+ */
+function mapFieldTypeToColumnType(
+  fieldType: FieldType,
+): 'text' | 'number' | 'date' | 'timestamp' | 'boolean' | 'enum' | 'json' {
+  const typeMap: Record<FieldType, CollectionColumn['type']> = {
+    text: 'text',
+    longtext: 'text',
+    richtext: 'text',
+    number: 'number',
+    date: 'date',
+    datetime: 'timestamp',
+    boolean: 'boolean',
+    enum: 'enum',
+    json: 'json',
+    relation: 'number', // Foreign key IDs are numbers
+    media: 'text', // File URLs are text
+  };
+
+  return typeMap[fieldType];
+}
+
+/**
+ * Convert CollectionField to CollectionColumn
+ */
+function fieldToCollectionColumn(field: CollectionField): CollectionColumn {
+  const columnType = mapFieldTypeToColumnType(field.type);
+
+  const column: CollectionColumn = {
+    name: toCamelCase(field.name), // Convert snake_case to camelCase for JS property
+    dbColumnName: field.name, // Keep original snake_case for SQL
+    label: toTitleCase(field.name), // Auto-generate label from field name
+    type: columnType,
+    sortable: true,
+    searchable: field.type === 'text' || field.type === 'longtext', // Only text fields searchable
+    readonly: false,
+  };
+
+  // Add enum values if this is an enum field
+  if (field.type === 'enum' && field.enumValues && field.enumValues.length > 0) {
+    column.enumValues = field.enumValues;
+  }
+
+  // Add foreign key info if this is a relation field
+  if (field.type === 'relation' && field.relationConfig) {
+    column.foreignKey = {
+      table: field.relationConfig.targetCollection,
+      displayField: 'id', // Default to id - can be enhanced later
+    };
+  }
+
+  return column;
+}
+
+/**
+ * Load custom collections from database (created via Collection Builder)
+ */
+async function loadCustomCollections(): Promise<Collection[]> {
+  try {
+    const definitions = await getAllCollectionDefinitions();
+
+    return definitions.map((def) => {
+      // Convert fields to columns
+      const fields = def.fields as unknown as CollectionField[];
+      const columns: CollectionColumn[] = fields.map((field) => fieldToCollectionColumn(field));
+
+      // Add standard system columns (id, created_at, updated_at)
+      const systemColumns: CollectionColumn[] = [
+        {
+          name: 'id',
+          dbColumnName: 'id',
+          label: 'ID',
+          type: 'number',
+          sortable: true,
+          searchable: false,
+          readonly: true,
+        },
+        {
+          name: 'createdAt',
+          dbColumnName: 'created_at',
+          label: 'Created',
+          type: 'timestamp',
+          sortable: true,
+          searchable: false,
+          readonly: true,
+        },
+        {
+          name: 'updatedAt',
+          dbColumnName: 'updated_at',
+          label: 'Updated',
+          type: 'timestamp',
+          sortable: true,
+          searchable: false,
+          readonly: true,
+        },
+      ];
+
+      // Combine system columns + custom fields
+      const allColumns = [...systemColumns, ...columns];
+
+      // Create collection config
+      const collection: Collection = {
+        name: def.displayName,
+        table: def.name, // Use internal name as table name
+        description: def.description ?? undefined,
+        columns: allColumns,
+        defaultSort: {
+          column: 'createdAt', // Default to created_at for custom collections
+          order: 'desc',
+        },
+        defaultLimit: 20,
+        requiredRole: 'superadmin', // Custom collections require superadmin access by default
+        isCustom: true, // Mark as custom collection
+      };
+
+      return collection;
+    });
+  } catch (error) {
+    // If database is not ready or there's an error, return empty array
+    // This allows the app to start even if collection_definitions table doesn't exist yet
+    console.error('Failed to load custom collections:', error);
+    return [];
+  }
+}
+
 /**
  * Generate all collections from schema
  */
@@ -403,4 +563,47 @@ export function getAvailableCollections(): { name: string; table: string; descri
  */
 export function getTableMap(): Record<string, PgTable> {
   return getSchemaTableMap();
+}
+
+// ============================================================================
+// Async Collection Loading (System + Custom)
+// ============================================================================
+
+/**
+ * Get all collections (system + custom) - Async version
+ * This merges auto-generated collections from schema with custom collections
+ * created via the Collection Builder.
+ *
+ * Use this function when you need the complete list of all collections.
+ */
+export async function getAllCollections(): Promise<Collection[]> {
+  const systemCollections = collections; // Already generated sync collections
+  const customCollections = await loadCustomCollections();
+
+  // Merge both lists and sort alphabetically
+  const allCollections = [...systemCollections, ...customCollections];
+  return allCollections.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Get collection by table name (async version that includes custom collections)
+ */
+export async function getCollectionByTableAsync(table: string): Promise<Collection | undefined> {
+  const allCollections = await getAllCollections();
+  return allCollections.find((c) => c.table === table);
+}
+
+/**
+ * Get list of all available collection names (async version that includes custom collections)
+ */
+export async function getAvailableCollectionsAsync(): Promise<
+  { name: string; table: string; description?: string; requiredRole?: 'admin' | 'superadmin' }[]
+> {
+  const allCollections = await getAllCollections();
+  return allCollections.map((c) => ({
+    name: c.name,
+    table: c.table,
+    description: c.description,
+    requiredRole: c.requiredRole,
+  }));
 }

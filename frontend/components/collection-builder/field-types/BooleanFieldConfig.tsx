@@ -1,0 +1,133 @@
+import { CollectionField } from '@/types';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface FieldConfigProps {
+  field: CollectionField;
+  onChange: (field: CollectionField) => void;
+  onRemove: () => void;
+  showHeader?: boolean;
+}
+
+export function BooleanFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
+  const updateField = (updates: Partial<CollectionField>) => {
+    onChange({ ...field, ...updates });
+  };
+
+  const content = (
+    <div className="space-y-4">
+        {/* Field Label */}
+        <div className="space-y-2">
+          <Label htmlFor={`${field.name}-label`}>
+            Display Label <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id={`${field.name}-label`}
+            value={field.label}
+            onChange={(e) => updateField({ label: e.target.value })}
+            placeholder="Is Active"
+          />
+        </div>
+
+        {/* Description */}
+        <div className="space-y-2">
+          <Label htmlFor={`${field.name}-description`}>Description</Label>
+          <Input
+            id={`${field.name}-description`}
+            value={field.description || ''}
+            onChange={(e) => updateField({ description: e.target.value })}
+            placeholder="Optional description"
+          />
+        </div>
+
+        <Separator />
+
+        {/* Checkboxes */}
+        <div className="space-y-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={`${field.name}-required`}
+              checked={field.required || false}
+              onCheckedChange={(checked) =>
+                updateField({ required: checked as boolean })
+              }
+            />
+            <Label
+              htmlFor={`${field.name}-required`}
+              className="text-sm font-normal cursor-pointer"
+            >
+              Required field
+            </Label>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Default Value */}
+        <div className="space-y-2">
+          <Label htmlFor={`${field.name}-default`}>Default Value</Label>
+          <Select
+            value={
+              field.defaultValue === undefined
+                ? 'none'
+                : field.defaultValue
+                ? 'true'
+                : 'false'
+            }
+            onValueChange={(value) =>
+              updateField({
+                defaultValue:
+                  value === 'none' ? undefined : value === 'true',
+              })
+            }
+          >
+            <SelectTrigger id={`${field.name}-default`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No default</SelectItem>
+              <SelectItem value="true">True</SelectItem>
+              <SelectItem value="false">False</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+    </div>
+  );
+
+  if (!showHeader) {
+    return content;
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">{field.label || 'Boolean Field'}</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            className="h-8 w-8 p-0"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {content}
+      </CardContent>
+    </Card>
+  );
+}

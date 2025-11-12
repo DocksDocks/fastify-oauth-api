@@ -229,7 +229,7 @@ describe('Setup Service', () => {
       try {
         await resetSetup();
         // If it didn't throw, that's actually fine for this test
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
 

@@ -32,6 +32,7 @@ const __dirname = path.dirname(__filename);
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const isProduction = env.NODE_ENV === 'production';
+  const isDevelopment = env.NODE_ENV === 'development';
   const prettyPrint = env.LOG_PRETTY_PRINT === 'true';
 
   const app = Fastify({
@@ -161,6 +162,13 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   await app.register(adminCollectionsRoutes, { prefix: '/api/admin/collections' });
   await app.register(authorizedAdminsRoutes, { prefix: '/api/admin/authorized-admins' });
 
+  // Collection Builder (development and test only)
+  if (isDevelopment || env.NODE_ENV === 'test') {
+    const { collectionBuilderRoutes } = await import('@/builder/routes/collection-builder');
+    await app.register(collectionBuilderRoutes, { prefix: '/api/admin/collection-builder' });
+    app.log.info(`Collection Builder routes registered (${env.NODE_ENV} mode)`);
+  }
+
   // Serve admin panel static files (production only)
   if (isProduction) {
     const adminDistPath = path.join(__dirname, '../dist/admin');
@@ -189,6 +197,19 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   // Root route
   app.get('/', async () => {
+    const adminEndpoints: Record<string, string> = {
+      users: '/api/admin/users',
+      apiKeys: '/api/admin/api-keys',
+      collections: '/api/admin/collections',
+      authorizedAdmins: '/api/admin/authorized-admins',
+      panel: isProduction ? '/admin' : 'http://localhost:5173',
+    };
+
+    // Only show collection builder in development and test
+    if (isDevelopment || env.NODE_ENV === 'test') {
+      adminEndpoints.collectionBuilder = '/api/admin/collection-builder';
+    }
+
     return {
       name: 'Fastify OAuth API + Admin Panel',
       version: '2.0.0',
@@ -205,13 +226,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           logout: '/api/auth/logout',
         },
         profile: '/api/profile',
-        admin: {
-          users: '/api/admin/users',
-          apiKeys: '/api/admin/api-keys',
-          collections: '/api/admin/collections',
-          authorizedAdmins: '/api/admin/authorized-admins',
-          panel: isProduction ? '/admin' : 'http://localhost:5173',
-        },
+        admin: adminEndpoints,
       },
     };
   });

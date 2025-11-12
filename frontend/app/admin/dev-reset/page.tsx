@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import axios from 'axios';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
 export default function DevResetPage() {
+  const t = useTranslations('devReset');
   const router = useRouter();
   const { clearAuth } = useAuthStore();
   const [isResetting, setIsResetting] = useState(false);
@@ -24,8 +26,8 @@ export default function DevResetPage() {
       <div className="flex min-h-screen items-center justify-center p-4">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>This page is only available in development mode.</AlertDescription>
+          <AlertTitle>{t('alerts.accessDenied.title')}</AlertTitle>
+          <AlertDescription>{t('alerts.accessDenied.description')}</AlertDescription>
         </Alert>
       </div>
     );
@@ -39,7 +41,7 @@ export default function DevResetPage() {
       const accessToken = localStorage.getItem('access_token');
 
       if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
+        throw new Error(t('messages.noToken'));
       }
 
       // Call reset endpoint
@@ -63,11 +65,11 @@ export default function DevResetPage() {
           router.push('/admin/login');
         }, 2000);
       } else {
-        throw new Error(response.data.error || 'Reset failed');
+        throw new Error(response.data.error || t('messages.resetFailed'));
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } }; message?: string };
-      setError(error.response?.data?.error || error.message || 'Failed to reset database');
+      setError(error.response?.data?.error || error.message || t('messages.failedToReset'));
       setIsResetting(false);
     }
   };
@@ -76,23 +78,23 @@ export default function DevResetPage() {
     <div className="container mx-auto py-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Development Reset</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Reset the database to start fresh with the setup wizard
+            {t('subtitle')}
           </p>
         </div>
 
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Warning: Destructive Action</AlertTitle>
+          <AlertTitle>{t('warning.title')}</AlertTitle>
           <AlertDescription>
-            This will permanently delete all data from the database including:
+            {t('warning.description')}
             <ul className="mt-2 list-inside list-disc space-y-1">
-              <li>All users and authentication data</li>
-              <li>All provider accounts</li>
-              <li>All API keys</li>
-              <li>All authorized admins</li>
-              <li>Setup status</li>
+              <li>{t('warning.items.users')}</li>
+              <li>{t('warning.items.providers')}</li>
+              <li>{t('warning.items.apiKeys')}</li>
+              <li>{t('warning.items.admins')}</li>
+              <li>{t('warning.items.setup')}</li>
             </ul>
           </AlertDescription>
         </Alert>
@@ -101,18 +103,17 @@ export default function DevResetPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
-              Reset Database
+              {t('card.title')}
             </CardTitle>
             <CardDescription>
-              This action will clear all data and reset the setup wizard. You will need to go
-              through the initial setup process again.
+              {t('card.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
+                <AlertTitle>{t('alerts.error')}</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -120,9 +121,9 @@ export default function DevResetPage() {
             {isResetting && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Resetting...</AlertTitle>
+                <AlertTitle>{t('alerts.resetting.title')}</AlertTitle>
                 <AlertDescription>
-                  Database is being reset. You will be logged out and redirected to the login page.
+                  {t('alerts.resetting.description')}
                 </AlertDescription>
               </Alert>
             )}
@@ -135,12 +136,12 @@ export default function DevResetPage() {
                 className="w-full"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Reset Database
+                {t('actions.resetDatabase')}
               </Button>
             ) : (
               <div className="space-y-3">
                 <p className="text-sm font-medium">
-                  Are you absolutely sure? This action cannot be undone.
+                  {t('messages.confirmAction')}
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -149,7 +150,7 @@ export default function DevResetPage() {
                     disabled={isResetting}
                     className="flex-1"
                   >
-                    {isResetting ? 'Resetting...' : 'Yes, Reset Everything'}
+                    {isResetting ? t('actions.resetting') : t('actions.confirm')}
                   </Button>
                   <Button
                     variant="outline"
@@ -157,7 +158,7 @@ export default function DevResetPage() {
                     disabled={isResetting}
                     className="flex-1"
                   >
-                    Cancel
+                    {t('actions.cancel')}
                   </Button>
                 </div>
               </div>
@@ -167,10 +168,9 @@ export default function DevResetPage() {
 
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Development Only</AlertTitle>
+          <AlertTitle>{t('alerts.devOnly.title')}</AlertTitle>
           <AlertDescription>
-            This page is only available when NODE_ENV=development. It will not be accessible in
-            production.
+            {t('alerts.devOnly.description')}
           </AlertDescription>
         </Alert>
       </div>

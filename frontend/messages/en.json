@@ -3,9 +3,13 @@
     "title": "Admin Panel",
     "menu": {
       "dashboard": "Dashboard",
+      "adminSettings": "Admin Settings",
       "apiKeys": "API Keys",
       "collections": "Collections",
-      "authorizedAdmins": "Authorized Admins"
+      "authorizedAdmins": "Authorized Admins",
+      "collectionBuilder": "Collection Builder",
+      "devReset": "Dev Reset",
+      "noCollections": "No collections"
     },
     "user": {
       "profile": "Profile",
@@ -222,6 +226,107 @@
       "failedToLoad": "Failed to load dashboard stats"
     }
   },
+  "collectionBuilder": {
+    "title": "Collection Builder",
+    "subtitle": "Create and manage custom database collections",
+    "emptyState": {
+      "title": "No custom collections yet",
+      "description": "Create your first collection to get started"
+    },
+    "actions": {
+      "createCollection": "Create Collection",
+      "createNew": "Create New Collection"
+    },
+    "table": {
+      "name": "Name",
+      "apiName": "API Name",
+      "fields": "Fields",
+      "created": "Created",
+      "status": "Status",
+      "actions": "Actions",
+      "fieldsCount": "{count} fields"
+    },
+    "status": {
+      "system": "System",
+      "custom": "Custom"
+    },
+    "dialogs": {
+      "delete": {
+        "title": "Delete Collection",
+        "description": "Are you sure you want to delete this collection schema? This action cannot be undone. Existing data will be preserved but inaccessible.",
+        "deleting": "Deleting..."
+      }
+    },
+    "messages": {
+      "accessRestricted": "Access Restricted",
+      "superadminOnly": "Collection Builder is only available to superadmin users.",
+      "loadingCollections": "Loading collections...",
+      "loadingCollection": "Loading collection...",
+      "errorLoading": "Error Loading Collections",
+      "collectionNotFound": "Collection Not Found",
+      "collectionNotFoundDescription": "The collection you are looking for does not exist.",
+      "backToCollections": "Back to Collections"
+    },
+    "breadcrumbs": {
+      "admin": "Admin",
+      "collectionBuilder": "Collection Builder",
+      "newCollection": "New Collection",
+      "edit": "Edit: {name}"
+    },
+    "placeholder": {
+      "title": "Visual Designer Coming Soon",
+      "description": "The drag-and-drop collection builder interface is being developed. This will allow you to visually design database schemas.",
+      "currentFields": "Current Fields: {count}",
+      "apiName": "API Name: {name}",
+      "statusLabel": "Status: {status}"
+    }
+  },
+  "devReset": {
+    "title": "Development Reset",
+    "subtitle": "Reset the database to start fresh with the setup wizard",
+    "warning": {
+      "title": "Warning: Destructive Action",
+      "description": "This will permanently delete all data from the database including:",
+      "items": {
+        "users": "All users and authentication data",
+        "providers": "All provider accounts",
+        "apiKeys": "All API keys",
+        "admins": "All authorized admins",
+        "setup": "Setup status"
+      }
+    },
+    "card": {
+      "title": "Reset Database",
+      "description": "This action will clear all data and reset the setup wizard. You will need to go through the initial setup process again."
+    },
+    "actions": {
+      "resetDatabase": "Reset Database",
+      "resetting": "Resetting...",
+      "confirm": "Yes, Reset Everything",
+      "cancel": "Cancel"
+    },
+    "alerts": {
+      "resetting": {
+        "title": "Resetting...",
+        "description": "Database is being reset. You will be logged out and redirected to the login page."
+      },
+      "devOnly": {
+        "title": "Development Only",
+        "description": "This page is only available when NODE_ENV=development. It will not be accessible in production."
+      },
+      "accessDenied": {
+        "title": "Access Denied",
+        "description": "This page is only available in development mode."
+      },
+      "error": "Error"
+    },
+    "messages": {
+      "confirmAction": "Are you absolutely sure? This action cannot be undone.",
+      "noToken": "No access token found. Please login first.",
+      "resetFailed": "Reset failed",
+      "failedToReset": "Failed to reset database"
+    }
+  },
   "common": {
     "actions": {
       "save": "Save",
@@ -235,7 +340,8 @@
       "next": "Next",
       "search": "Search",
       "loading": "Loading...",
-      "retry": "Retry"
+      "retry": "Retry",
+      "tryAgain": "Try Again"
     },
     "status": {
       "active": "Active",

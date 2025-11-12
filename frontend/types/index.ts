@@ -100,3 +100,96 @@ export interface AuthorizedAdmin {
   createdByEmail: string | null;
   createdByName: string | null;
 }
+
+// ============================================================================
+// Collection Builder Types
+// ============================================================================
+
+export interface CollectionDefinition {
+  id: number;
+  name: string; // Internal name (lowercase, underscored)
+  apiName: string; // API endpoint name (e.g., "blog_posts")
+  displayName: string; // Human-readable name (e.g., "Blog Posts")
+  description?: string;
+  icon?: string; // Lucide icon name
+  fields: CollectionField[];
+  indexes?: CollectionIndex[];
+  relationships?: CollectionRelationship[];
+  isSystem: boolean; // System collections can't be deleted
+  createdBy: number; // User ID
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+}
+
+export type FieldType =
+  | 'text' // varchar(255)
+  | 'longtext' // text
+  | 'richtext' // text (HTML)
+  | 'number' // integer or numeric
+  | 'date' // date
+  | 'datetime' // timestamp
+  | 'boolean' // boolean
+  | 'enum' // enum type
+  | 'json' // jsonb
+  | 'relation' // foreign key
+  | 'media'; // text (file URL)
+
+export interface CollectionField {
+  name: string; // Field name (camelCase in code, snake_case in DB)
+  type: FieldType;
+  label: string; // Display label
+  description?: string;
+  required?: boolean;
+  unique?: boolean;
+  defaultValue?: unknown;
+  validation?: FieldValidation;
+
+  // For number type
+  numberType?: 'integer' | 'decimal';
+  decimalPlaces?: number;
+
+  // For enum type
+  enumValues?: string[];
+
+  // For relation type
+  relationConfig?: RelationConfig;
+}
+
+export interface FieldValidation {
+  min?: number; // Min length (text) or min value (number)
+  max?: number; // Max length (text) or max value (number)
+  regex?: string; // Validation regex
+  errorMessage?: string; // Custom error message
+}
+
+export interface RelationConfig {
+  targetCollection: string; // Table name of related collection
+  relationType: 'one-to-one' | 'one-to-many' | 'many-to-many';
+  cascadeDelete?: boolean; // Delete related records on parent delete
+  foreignKeyName?: string; // Custom FK column name
+}
+
+export interface CollectionIndex {
+  name: string; // Index name
+  fields: string[]; // Fields to index
+  unique: boolean; // Unique constraint?
+}
+
+export interface CollectionRelationship {
+  fieldName: string; // Field that holds the relation
+  targetCollection: string; // Related collection name
+  type: 'one-to-one' | 'one-to-many' | 'many-to-many';
+}
+
+// Migration preview/application
+export interface MigrationPreview {
+  sql: string; // Generated SQL
+  affectedTables: string[];
+  warnings: string[]; // Potential issues
+}
+
+export interface MigrationResult {
+  success: boolean;
+  message: string;
+  error?: string;
+}

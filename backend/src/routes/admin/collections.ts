@@ -11,8 +11,8 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { requireAdmin } from '@/middleware/authorize';
 import {
-  getCollectionByTable,
-  getAvailableCollections,
+  getCollectionByTableAsync,
+  getAvailableCollectionsAsync,
   getTableMap,
   type Collection,
 } from '@/config/collections';
@@ -35,7 +35,7 @@ function hasRequiredRole(userRole: string, requiredRole?: 'admin' | 'superadmin'
 async function listCollections(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     const userRole = request.user?.role || 'user';
-    const availableCollections = getAvailableCollections();
+    const availableCollections = await getAvailableCollectionsAsync();
 
     // Filter collections based on user role
     const accessibleCollections = availableCollections.filter((collection) =>
@@ -73,7 +73,7 @@ async function getCollectionMeta(
     const { table } = request.params;
     const userRole = request.user?.role || 'user';
 
-    const collection = getCollectionByTable(table);
+    const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
       return reply.status(404).send({
@@ -261,7 +261,7 @@ async function getCollectionData(
       sortOrder,
     } = request.query;
 
-    const collection = getCollectionByTable(table);
+    const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
       return reply.status(404).send({
@@ -383,7 +383,7 @@ async function getCollectionRecord(
     const { table, id } = request.params;
     const userRole = request.user?.role || 'user';
 
-    const collection = getCollectionByTable(table);
+    const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
       return reply.status(404).send({
@@ -470,7 +470,7 @@ async function updateCollectionRecord(
     const userRole = request.user?.role || 'user';
     const updates = request.body;
 
-    const collection = getCollectionByTable(table);
+    const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
       return reply.status(404).send({
@@ -654,7 +654,7 @@ async function deleteCollectionRecord(
     const { table, id } = request.params;
     const userRole = request.user?.role || 'user';
 
-    const collection = getCollectionByTable(table);
+    const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
       return reply.status(404).send({
@@ -761,7 +761,7 @@ async function getCollectionPreferences(
     const { table } = request.params;
     const userRole = request.user?.role || 'user';
 
-    const collection = getCollectionByTable(table);
+    const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
       return reply.status(404).send({
@@ -857,7 +857,7 @@ async function updateCollectionPreferences(
       });
     }
 
-    const collection = getCollectionByTable(table);
+    const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
       return reply.status(404).send({
