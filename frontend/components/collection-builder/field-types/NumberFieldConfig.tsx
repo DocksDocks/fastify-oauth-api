@@ -1,7 +1,8 @@
 import { CollectionField } from '@/types';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,8 @@ interface FieldConfigProps {
 }
 
 export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
+  const t = useTranslations('collectionBuilder.fieldConfig');
+
   const updateField = (updates: Partial<CollectionField>) => {
     onChange({ ...field, ...updates });
   };
@@ -38,24 +41,24 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
         {/* Field Label */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-label`}>
-            Display Label <span className="text-destructive">*</span>
+            {t('displayLabel')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Input
             id={`${field.name}-label`}
             value={field.label}
             onChange={(e) => updateField({ label: e.target.value })}
-            placeholder="Price"
+            placeholder={t('placeholder.label')}
           />
         </div>
 
         {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-description`}>Description</Label>
+          <Label htmlFor={`${field.name}-description`}>{t('description')}</Label>
           <Input
             id={`${field.name}-description`}
             value={field.description || ''}
             onChange={(e) => updateField({ description: e.target.value })}
-            placeholder="Optional description"
+            placeholder={t('placeholder.description')}
           />
         </div>
 
@@ -63,7 +66,7 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
 
         {/* Number Type */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-numbertype`}>Number Type</Label>
+          <Label htmlFor={`${field.name}-numbertype`}>{t('numberType')}</Label>
           <Select
             value={field.numberType || 'integer'}
             onValueChange={(value) =>
@@ -83,7 +86,7 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
         {/* Decimal Places (only for decimal type) */}
         {field.numberType === 'decimal' && (
           <div className="space-y-2">
-            <Label htmlFor={`${field.name}-decimals`}>Decimal Places</Label>
+            <Label htmlFor={`${field.name}-decimals`}>{t('decimalPlaces')}</Label>
             <Input
               id={`${field.name}-decimals`}
               type="number"
@@ -93,7 +96,7 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
               onChange={(e) =>
                 updateField({ decimalPlaces: parseInt(e.target.value) || 2 })
               }
-              placeholder="2"
+              placeholder={t('placeholder.decimalPlaces')}
             />
             <p className="text-xs text-muted-foreground">
               Number of digits after decimal point (default: 2)
@@ -103,38 +106,38 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
 
         <Separator />
 
-        {/* Checkboxes */}
+        {/* Switches */}
         <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor={`${field.name}-required`}
+              className="text-sm font-medium cursor-pointer"
+            >
+              {t('requiredField')}
+            </Label>
+            <Switch
               id={`${field.name}-required`}
               checked={field.required || false}
               onCheckedChange={(checked) =>
-                updateField({ required: checked as boolean })
+                updateField({ required: checked })
               }
             />
-            <Label
-              htmlFor={`${field.name}-required`}
-              className="text-sm font-normal cursor-pointer"
-            >
-              Required field
-            </Label>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor={`${field.name}-unique`}
+              className="text-sm font-medium cursor-pointer"
+            >
+              {t('uniqueConstraint')}
+            </Label>
+            <Switch
               id={`${field.name}-unique`}
               checked={field.unique || false}
               onCheckedChange={(checked) =>
-                updateField({ unique: checked as boolean })
+                updateField({ unique: checked })
               }
             />
-            <Label
-              htmlFor={`${field.name}-unique`}
-              className="text-sm font-normal cursor-pointer"
-            >
-              Unique constraint
-            </Label>
           </div>
         </div>
 
@@ -142,7 +145,7 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
 
         {/* Default Value */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-default`}>Default Value</Label>
+          <Label htmlFor={`${field.name}-default`}>{t('defaultValue')}</Label>
           <Input
             id={`${field.name}-default`}
             type="number"
@@ -157,14 +160,14 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
                   : undefined,
               })
             }
-            placeholder="Optional default value"
+            placeholder={t('placeholder.defaultValue')}
           />
         </div>
 
         {/* Validation: Min/Max Value */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor={`${field.name}-min`}>Min Value</Label>
+            <Label htmlFor={`${field.name}-min`}>{t('minValue')}</Label>
             <Input
               id={`${field.name}-min`}
               type="number"
@@ -179,11 +182,11 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
                     : undefined,
                 })
               }
-              placeholder="No minimum"
+              placeholder={t('placeholder.minValue')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`${field.name}-max`}>Max Value</Label>
+            <Label htmlFor={`${field.name}-max`}>{t('maxValue')}</Label>
             <Input
               id={`${field.name}-max`}
               type="number"
@@ -198,7 +201,7 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
                     : undefined,
                 })
               }
-              placeholder="No maximum"
+              placeholder={t('placeholder.maxValue')}
             />
           </div>
         </div>

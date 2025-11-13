@@ -29,9 +29,6 @@ export async function checkSetupStatus(): Promise<{
   hasApiKeys: boolean;
 }> {
   try {
-    // Check setup_status table
-    const [status] = await db.select().from(setupStatus).limit(1);
-
     // Check if users exist
     const userCount = await db.select({ count: sql<number>`count(*)` }).from(users);
     const hasUsers = Number(userCount[0]?.count) > 0;
@@ -40,8 +37,10 @@ export async function checkSetupStatus(): Promise<{
     const apiKeyCount = await db.select({ count: sql<number>`count(*)` }).from(apiKeys);
     const hasApiKeys = Number(apiKeyCount[0]?.count) > 0;
 
+    // Setup is complete when BOTH users and API keys exist (real system state)
+    // This is more reliable than checking setup_status table which can get out of sync
     return {
-      setupComplete: status?.isSetupComplete ?? false,
+      setupComplete: hasUsers && hasApiKeys,
       hasUsers,
       hasApiKeys,
     };
@@ -91,26 +90,25 @@ export async function initializeSetup(userId: number): Promise<{
 
     // Use transaction to ensure atomicity and prevent race conditions
     await db.transaction(async (tx) => {
-      // SECURITY FIX: Check setup status INSIDE transaction with row-level lock
-      // This prevents TOCTOU race condition where multiple requests could
-      // both check status as incomplete and then both try to initialize
-      const [status] = await tx
-        .select()
-        .from(setupStatus)
-        .where(eq(setupStatus.id, 1))
-        .for('update') // Row-level lock prevents concurrent access
-        .limit(1);
+      // Check if users and API keys already exist (idempotent setup check)
+      const userCount = await tx.select({ count: sql<number>`count(*)` }).from(users);
+      const hasUsers = Number(userCount[0]?.count) > 0;
 
-      if (status && status.isSetupComplete) {
+      const apiKeyCount = await tx.select({ count: sql<number>`count(*)` }).from(apiKeys);
+      const hasApiKeys = Number(apiKeyCount[0]?.count) > 0;
+
+      // If setup is already complete (users + API keys exist), prevent re-initialization
+      if (hasUsers && hasApiKeys) {
         throw new Error('Setup is already complete');
       }
 
       // 1. Add user to authorized_admins (user already created as superadmin)
+      // Use onConflictDoNothing to make this idempotent (skip if email already exists)
       const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
       await tx.insert(authorizedAdmins).values({
         email: user!.email,
         createdBy: userId, // Created by the first superadmin user
-      });
+      }).onConflictDoNothing();
 
       // 2. Create API keys (mobile apps + website)
       await tx.insert(apiKeys).values([
@@ -131,14 +129,22 @@ export async function initializeSetup(userId: number): Promise<{
         },
       ]);
 
-      // 4. Mark setup as complete
+      // 4. Mark setup as complete in setup_status table (for audit purposes)
+      // Use INSERT with onConflictDoUpdate to handle missing row gracefully
       await tx
-        .update(setupStatus)
-        .set({
+        .insert(setupStatus)
+        .values({
+          id: 1,
           isSetupComplete: true,
           completedAt: new Date(),
         })
-        .where(eq(setupStatus.id, 1)); // Assuming id=1 for setup status
+        .onConflictDoUpdate({
+          target: setupStatus.id,
+          set: {
+            isSetupComplete: true,
+            completedAt: new Date(),
+          },
+        });
     });
 
     logger.info({ userId }, 'Setup completed successfully');

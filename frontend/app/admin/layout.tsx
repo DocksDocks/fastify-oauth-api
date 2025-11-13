@@ -2,6 +2,7 @@
 
 import { useState, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Menu, X } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const t = useTranslations('navigation');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated } = useAuthStore();
@@ -42,7 +44,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Menu className="h-6 w-6" />
             )}
           </Button>
-          <h1 className="text-lg font-bold text-sidebar-foreground">Admin Panel</h1>
+          <h1 className="text-lg font-bold text-sidebar-foreground">{t('title')}</h1>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
       )}

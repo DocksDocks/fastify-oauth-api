@@ -56,7 +56,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue(mockKeys),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Mock Redis scanStream for getting existing keys
       const mockStream = {
@@ -68,7 +68,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Mock Redis operations
@@ -102,7 +102,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([]),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Mock Redis scanStream - no existing keys
       const mockStream = {
@@ -114,7 +114,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Execute
@@ -134,7 +134,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([{ id: 1, name: 'ios', keyHash: 'hash1' }]),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Mock Redis scanStream with error
       const mockStream = {
@@ -144,7 +144,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Execute and verify error is thrown
@@ -158,7 +158,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockRejectedValue(new Error('Database connection failed')),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Execute and verify error is thrown
       await expect(refreshApiKeyCache()).rejects.toThrow('Database connection failed');
@@ -180,7 +180,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Mock Redis get - return cached key data
@@ -213,7 +213,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Mock Redis get
@@ -246,7 +246,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Mock Redis get - return different data for each key
@@ -289,7 +289,7 @@ describe('API Key Cache Service', () => {
             }
             return mockStream;
           }),
-        } as any as Readable;
+        } as unknown as Readable;
         return mockStream;
       });
 
@@ -299,7 +299,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([{ id: 1, name: 'ios', keyHash: hashedKey }]),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Mock Redis operations for refresh
       vi.mocked(redis.setex).mockResolvedValue('OK' as never);
@@ -333,7 +333,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Mock database for refresh - empty
@@ -342,7 +342,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([]),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Execute
       const result = await validateApiKey(validKey);
@@ -364,7 +364,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Mock Redis get - return null (key expired or deleted)
@@ -391,7 +391,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Mock Redis get
@@ -420,7 +420,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
 
       // Execute
@@ -439,7 +439,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([{ id: 1, name: 'ios', keyHash: 'hash1' }]),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Mock Redis operations
       const mockStream = {
@@ -451,7 +451,7 @@ describe('API Key Cache Service', () => {
           }
           return mockStream;
         }),
-      } as any as Readable;
+      } as unknown as Readable;
       vi.mocked(redis.scanStream).mockReturnValue(mockStream);
       vi.mocked(redis.setex).mockResolvedValue('OK' as never);
 
@@ -469,7 +469,7 @@ describe('API Key Cache Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockRejectedValue(new Error('Database error')),
       };
-      vi.mocked(db.select).mockReturnValue(mockDbSelect as any);
+      vi.mocked(db.select).mockReturnValue(mockDbSelect as unknown as ReturnType<typeof db.select>);
 
       // Execute - should not throw
       await expect(initializeApiKeyCache()).resolves.toBeUndefined();

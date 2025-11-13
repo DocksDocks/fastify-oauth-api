@@ -33,6 +33,7 @@ const fieldSchema = z.object({
     'relation',
     'media',
   ]),
+  label: z.string().min(1, 'Field label is required'),
   description: z.string().optional(),
   required: z.boolean().optional(),
   unique: z.boolean().optional(),

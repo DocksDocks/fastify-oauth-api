@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { CollectionField } from '@/types';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +46,7 @@ const DISALLOWED_RELATIONS = new Set([
 ]);
 
 export function RelationFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
+  const t = useTranslations('collectionBuilder.fieldConfig');
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,24 +98,24 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
         {/* Field Label */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-label`}>
-            Display Label <span className="text-destructive">*</span>
+            {t('displayLabel')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Input
             id={`${field.name}-label`}
             value={field.label}
             onChange={(e) => updateField({ label: e.target.value })}
-            placeholder="User"
+            placeholder={t('placeholder.label')}
           />
         </div>
 
         {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-description`}>Description</Label>
+          <Label htmlFor={`${field.name}-description`}>{t('description')}</Label>
           <Input
             id={`${field.name}-description`}
             value={field.description || ''}
             onChange={(e) => updateField({ description: e.target.value })}
-            placeholder="Optional description"
+            placeholder={t('placeholder.description')}
           />
         </div>
 
@@ -122,7 +124,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
         {/* Target Collection */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-target`}>
-            Target Collection <span className="text-destructive">*</span>
+            {t('targetCollection')} <span className="text-destructive">{t('required')}</span>
           </Label>
 
           {isLoading ? (
@@ -171,7 +173,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
         {/* Relation Type */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-relationtype`}>
-            Relation Type <span className="text-destructive">*</span>
+            {t('relationType')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Select
             value={field.relationConfig?.relationType || 'one-to-many'}
@@ -197,7 +199,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
 
         {/* Foreign Key Name (optional) */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-fkname`}>Foreign Key Name</Label>
+          <Label htmlFor={`${field.name}-fkname`}>{t('foreignKeyName')}</Label>
           <Input
             id={`${field.name}-fkname`}
             value={field.relationConfig?.foreignKeyName || ''}
@@ -214,20 +216,20 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
 
         {/* Cascade Delete */}
         <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor={`${field.name}-cascade`}
+              className="text-sm font-medium cursor-pointer"
+            >
+              {t('cascadeDelete')}
+            </Label>
+            <Switch
               id={`${field.name}-cascade`}
               checked={field.relationConfig?.cascadeDelete || false}
               onCheckedChange={(checked) =>
-                updateRelationConfig({ cascadeDelete: checked as boolean })
+                updateRelationConfig({ cascadeDelete: checked })
               }
             />
-            <Label
-              htmlFor={`${field.name}-cascade`}
-              className="text-sm font-normal cursor-pointer"
-            >
-              Cascade delete
-            </Label>
           </div>
           <p className="text-xs text-muted-foreground">
             Delete related records when the parent record is deleted
@@ -236,22 +238,22 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
 
         <Separator />
 
-        {/* Checkboxes */}
+        {/* Switches */}
         <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor={`${field.name}-required`}
+              className="text-sm font-medium cursor-pointer"
+            >
+              {t('requiredField')}
+            </Label>
+            <Switch
               id={`${field.name}-required`}
               checked={field.required || false}
               onCheckedChange={(checked) =>
-                updateField({ required: checked as boolean })
+                updateField({ required: checked })
               }
             />
-            <Label
-              htmlFor={`${field.name}-required`}
-              className="text-sm font-normal cursor-pointer"
-            >
-              Required field
-            </Label>
           </div>
         </div>
 

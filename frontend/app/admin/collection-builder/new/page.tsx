@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { IconSelector } from '@/components/collection-builder/IconSelector';
 import { AddFieldModal } from '@/components/collection-builder/AddFieldModal';
+import { IndexesManager, type CollectionIndex } from '@/components/collection-builder/IndexesManager';
 import { CollectionField, FieldType, CollectionDefinition } from '@/types';
 import { adminApi, getErrorMessage } from '@/lib/api';
 import { collectionSchema, type CollectionFormData } from '@/lib/schemas/collection';
@@ -50,21 +51,7 @@ function toSnakeCase(str: string): string {
 }
 
 export default function NewCollectionPage() {
-  // Only allow access in development mode
-  if (process.env.NODE_ENV !== 'development') {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="max-w-md text-center">
-          <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Development Only Feature</h1>
-          <p className="text-muted-foreground">
-            The Collection Builder is only available in development mode. This feature is not accessible in production environments.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // All hooks must be called before any conditional returns
   const t = useTranslations('collectionBuilder');
   const router = useRouter();
 
@@ -106,6 +93,21 @@ export default function NewCollectionPage() {
   const [fieldToRemove, setFieldToRemove] = useState<number | null>(null);
   const [modalKey, setModalKey] = useState(0);
 
+  // Only allow access in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="max-w-md text-center">
+          <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-bold mb-2">{t('devMode.title')}</h1>
+          <p className="text-muted-foreground">
+            {t('devMode.description')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Handle display name change and auto-generate name/apiName
   const handleDisplayNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -140,13 +142,23 @@ export default function NewCollectionPage() {
 
   const handleNextStep = () => {
     if (currentStep < 4 && canGoToNextStep()) {
-      setCurrentStep(currentStep + 1);
+      // Skip step 3 (indexes) if there's only 1 field or less
+      if (currentStep === 2 && fields.length <= 1) {
+        setCurrentStep(4);
+      } else {
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
 
   const handlePreviousStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      // Skip step 3 (indexes) when going back if there's only 1 field or less
+      if (currentStep === 4 && fields.length <= 1) {
+        setCurrentStep(2);
+      } else {
+        setCurrentStep(currentStep - 1);
+      }
     }
   };
 
@@ -192,20 +204,7 @@ export default function NewCollectionPage() {
 
   // Get field type label
   const getFieldTypeLabel = (type: FieldType): string => {
-    const typeLabels: Record<FieldType, string> = {
-      text: 'Text',
-      longtext: 'Long Text',
-      richtext: 'Rich Text',
-      number: 'Number',
-      date: 'Date',
-      datetime: 'Date & Time',
-      boolean: 'Boolean',
-      enum: 'Enum',
-      json: 'JSON',
-      relation: 'Relation',
-      media: 'Media',
-    };
-    return typeLabels[type] || type;
+    return t(`fieldTypes.${type}`) || type;
   };
 
   // Add new index
@@ -213,7 +212,7 @@ export default function NewCollectionPage() {
     const collectionName = getValues('name');
     const newIndex = {
       name: `idx_${collectionName || 'collection'}_${indexes.length + 1}`,
-      fields: [],
+      fields: ['', ''], // Initialize with 2 empty field slots
       unique: false,
     };
     setValue('indexes', [...indexes, newIndex]);
@@ -252,14 +251,15 @@ export default function NewCollectionPage() {
       };
 
       const response = await adminApi.createCollectionDefinition(collectionInput);
-      const result = response.data;
+      const { data: result } = response.data;
 
-      setSuccessMessage('Collection created successfully! Server is restarting to apply migrations...');
+      setSuccessMessage(t('success.created'));
 
-      // Redirect after a short delay to show success message
+      // Redirect after delay to allow server restart and migration application
+      // Server restarts immediately after creation, typically takes 3-5 seconds
       setTimeout(() => {
         router.push(`/admin/collection-builder/${result.id}`);
-      }, 1500);
+      }, 5000);
     } catch (error) {
       console.error('Failed to create collection:', error);
       setErrorMessage(getErrorMessage(error));
@@ -294,7 +294,7 @@ export default function NewCollectionPage() {
               <div>
                 <h1 className="text-3xl font-bold">{t('actions.createNew')}</h1>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Step {currentStep} of 4
+                  {t('steps.stepIndicator', { current: currentStep, total: 4 })}
                 </p>
               </div>
             </div>
@@ -344,7 +344,7 @@ export default function NewCollectionPage() {
           {(errors.fields || errors.indexes) && (
             <Alert variant="destructive">
               <AlertDescription>
-                <div className="font-semibold mb-2">Please fix validation errors</div>
+                <div className="font-semibold mb-2">{t('validation.fixErrors')}</div>
                 {errors.fields && <p className="text-sm">{errors.fields.message}</p>}
                 {errors.indexes && <p className="text-sm">{errors.indexes.message}</p>}
               </AlertDescription>
@@ -355,26 +355,26 @@ export default function NewCollectionPage() {
           {currentStep === 1 && (
             <Card>
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-                <CardDescription>Define your collection name and metadata</CardDescription>
+                <CardTitle>{t('steps.basicInfo.title')}</CardTitle>
+                <CardDescription>{t('steps.basicInfo.description')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="display-name">
-                    Display Name <span className="text-destructive">*</span>
+                    {t('form.displayName.label')} <span className="text-destructive">{t('form.displayName.required')}</span>
                   </Label>
                   <Input
                     id="display-name"
                     value={displayName}
                     onChange={handleDisplayNameChange}
-                    placeholder="Blog Posts"
+                    placeholder={t('form.displayName.placeholder')}
                     className="text-lg"
                   />
                   {errors.displayName && (
                     <p className="text-xs text-destructive">{errors.displayName.message}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Human-readable name (e.g., Blog Posts, User Profiles)
+                    {t('form.displayName.help')}
                   </p>
                 </div>
 
@@ -382,21 +382,21 @@ export default function NewCollectionPage() {
 
                 <div className="space-y-4 bg-muted/50 p-4 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary">Auto-generated</Badge>
-                    <span className="text-sm text-muted-foreground">The following are generated automatically:</span>
+                    <Badge variant="secondary">{t('form.autoGenerated.badge')}</Badge>
+                    <span className="text-sm text-muted-foreground">{t('form.autoGenerated.description')}</span>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">Collection Name (Database Table)</Label>
+                    <Label className="text-muted-foreground">{t('form.collectionName.label')}</Label>
                     <div className="font-mono text-sm bg-background border rounded p-2">
-                      {getValues('name') || 'blog_posts'}
+                      {getValues('name') || t('form.collectionName.placeholder')}
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">API Name (Endpoint)</Label>
+                    <Label className="text-muted-foreground">{t('form.apiName.label')}</Label>
                     <div className="font-mono text-sm bg-background border rounded p-2">
-                      /api/collections/{getValues('apiName') || 'blog_posts'}
+                      {t('form.apiName.prefix')}{getValues('apiName') || t('form.collectionName.placeholder')}
                     </div>
                   </div>
                 </div>
@@ -404,11 +404,11 @@ export default function NewCollectionPage() {
                 <Separator />
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Label htmlFor="description">{t('form.description.label')}</Label>
                   <Input
                     id="description"
                     {...register('description')}
-                    placeholder="Describe what this collection is for"
+                    placeholder={t('form.description.placeholder')}
                   />
                   {errors.description && (
                     <p className="text-xs text-destructive">{errors.description.message}</p>
@@ -430,12 +430,12 @@ export default function NewCollectionPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Fields</CardTitle>
-                    <CardDescription>Define the fields for your collection</CardDescription>
+                    <CardTitle>{t('steps.fields.title')}</CardTitle>
+                    <CardDescription>{t('steps.fields.description')}</CardDescription>
                   </div>
                   <Button onClick={openAddFieldModal} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Field
+                    {t('actions.addField')}
                   </Button>
                 </div>
               </CardHeader>
@@ -443,19 +443,19 @@ export default function NewCollectionPage() {
                 {fields.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
                     <Database className="h-12 w-12 text-muted-foreground mb-3" />
-                    <p className="text-muted-foreground">No fields added yet</p>
-                    <p className="text-sm text-muted-foreground mt-1">Click &quot;Add Field&quot; to get started</p>
+                    <p className="text-muted-foreground">{t('fieldsTable.emptyState.title')}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('fieldsTable.emptyState.description')}</p>
                   </div>
                 ) : (
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Field Name</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Label</TableHead>
-                          <TableHead>Required</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead>{t('fieldsTable.headers.fieldName')}</TableHead>
+                          <TableHead>{t('fieldsTable.headers.type')}</TableHead>
+                          <TableHead>{t('fieldsTable.headers.label')}</TableHead>
+                          <TableHead>{t('fieldsTable.headers.required')}</TableHead>
+                          <TableHead className="text-right">{t('fieldsTable.headers.actions')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -467,7 +467,7 @@ export default function NewCollectionPage() {
                             </TableCell>
                             <TableCell>{field.label}</TableCell>
                             <TableCell>
-                              {field.required && <Badge variant="secondary">Required</Badge>}
+                              {field.required && <Badge variant="secondary">{t('fieldsTable.badges.required')}</Badge>}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
@@ -503,81 +503,24 @@ export default function NewCollectionPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Indexes (Optional)</CardTitle>
-                    <CardDescription>Add database indexes for better query performance</CardDescription>
+                    <CardTitle>{t('steps.indexes.title')}</CardTitle>
+                    <CardDescription>{t('steps.indexes.description')}</CardDescription>
                   </div>
                   <Button onClick={addIndex} size="sm" variant="outline">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Index
+                    {t('actions.addIndex')}
                   </Button>
                 </div>
               </CardHeader>
         <CardContent className="space-y-4">
-          {indexes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              No indexes added. Indexes can improve query performance.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {indexes.map((index, idx) => (
-                <Card key={idx}>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-4">
-                        <div className="space-y-2">
-                          <Label>Index Name</Label>
-                          <Input
-                            value={index.name}
-                            onChange={(e) => updateIndex(idx, { name: e.target.value })}
-                            placeholder="idx_collection_field"
-                            className="font-mono"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Fields to Index</Label>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Select fields from the list above (comma-separated)
-                          </p>
-                          <Input
-                            value={index.fields.join(', ')}
-                            onChange={(e) =>
-                              updateIndex(idx, {
-                                fields: e.target.value.split(',').map((f) => f.trim()),
-                              })
-                            }
-                            placeholder="field_1, field_2"
-                            className="font-mono"
-                          />
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id={`unique-${idx}`}
-                            checked={index.unique}
-                            onChange={(e) => updateIndex(idx, { unique: e.target.checked })}
-                            className="rounded border-input"
-                          />
-                          <Label htmlFor={`unique-${idx}`} className="font-normal cursor-pointer">
-                            Unique constraint
-                          </Label>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeIndex(idx)}
-                        className="ml-4"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              </div>
-            )}
+                <IndexesManager
+                  indexes={indexes as CollectionIndex[]}
+                  fields={fields}
+                  onAddIndex={addIndex}
+                  onUpdateIndex={updateIndex}
+                  onRemoveIndex={removeIndex}
+                  showAddButton={false}
+                />
           </CardContent>
         </Card>
           )}
@@ -586,26 +529,26 @@ export default function NewCollectionPage() {
           {currentStep === 4 && (
             <Card>
               <CardHeader>
-                <CardTitle>Review & Create</CardTitle>
-                <CardDescription>Review your collection before creating</CardDescription>
+                <CardTitle>{t('steps.review.title')}</CardTitle>
+                <CardDescription>{t('steps.review.description')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground">Display Name</Label>
-                    <div className="font-medium">{displayName || '(not set)'}</div>
+                    <Label className="text-muted-foreground">{t('review.displayName')}</Label>
+                    <div className="font-medium">{displayName || t('review.notSet')}</div>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground">Icon</Label>
+                    <Label className="text-muted-foreground">{t('review.icon')}</Label>
                     <div className="font-medium">{icon}</div>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground">Collection Name</Label>
-                    <div className="font-mono text-sm">{getValues('name') || '(not set)'}</div>
+                    <Label className="text-muted-foreground">{t('review.collectionName')}</Label>
+                    <div className="font-mono text-sm">{getValues('name') || t('review.notSet')}</div>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground">API Endpoint</Label>
-                    <div className="font-mono text-sm">/api/collections/{getValues('apiName') || '(not set)'}</div>
+                    <Label className="text-muted-foreground">{t('review.apiEndpoint')}</Label>
+                    <div className="font-mono text-sm">{t('form.apiName.prefix')}{getValues('apiName') || t('review.notSet')}</div>
                   </div>
                 </div>
 
@@ -613,7 +556,7 @@ export default function NewCollectionPage() {
                   <>
                     <Separator />
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground">Description</Label>
+                      <Label className="text-muted-foreground">{t('review.description')}</Label>
                       <div className="text-sm">{getValues('description')}</div>
                     </div>
                   </>
@@ -623,11 +566,11 @@ export default function NewCollectionPage() {
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label>Fields</Label>
-                    <Badge>{fields.length} field{fields.length !== 1 ? 's' : ''}</Badge>
+                    <Label>{t('review.fields.title')}</Label>
+                    <Badge>{fields.length === 1 ? t('review.fields.count', { count: fields.length }) : t('review.fields.count_plural', { count: fields.length })}</Badge>
                   </div>
                   {fields.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No fields added</p>
+                    <p className="text-sm text-muted-foreground">{t('review.fields.noFields')}</p>
                   ) : (
                     <div className="space-y-2">
                       {fields.map((field, idx) => (
@@ -640,12 +583,12 @@ export default function NewCollectionPage() {
                           <span>{field.label}</span>
                           {field.required && (
                             <Badge variant="secondary" className="text-xs ml-auto">
-                              Required
+                              {t('fieldsTable.badges.required')}
                             </Badge>
                           )}
                           {field.unique && (
                             <Badge variant="secondary" className="text-xs">
-                              Unique
+                              {t('fieldsTable.badges.unique')}
                             </Badge>
                           )}
                         </div>
@@ -659,17 +602,17 @@ export default function NewCollectionPage() {
                     <Separator />
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label>Indexes</Label>
-                        <Badge>{indexes.length} index{indexes.length !== 1 ? 'es' : ''}</Badge>
+                        <Label>{t('review.indexes.title')}</Label>
+                        <Badge>{indexes.length === 1 ? t('review.indexes.count', { count: indexes.length }) : t('review.indexes.count_plural', { count: indexes.length })}</Badge>
                       </div>
                       <div className="space-y-2">
                         {indexes.map((index, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-sm p-2 rounded-md bg-muted/50">
                             <Badge variant="outline" className="text-xs">
-                              {index.unique ? 'Unique' : 'Index'}
+                              {index.unique ? t('review.indexes.unique') : t('review.indexes.index')}
                             </Badge>
                             <span className="font-mono text-xs">{index.name}</span>
-                            <span className="text-muted-foreground text-xs">on</span>
+                            <span className="text-muted-foreground text-xs">{t('review.indexes.on')}</span>
                             <span className="font-mono text-xs">{index.fields.join(', ')}</span>
                           </div>
                         ))}
@@ -687,14 +630,14 @@ export default function NewCollectionPage() {
               {currentStep > 1 && (
                 <Button variant="outline" onClick={handlePreviousStep}>
                   <ChevronLeft className="h-4 w-4 mr-2" />
-                  Previous
+                  {t('actions.previous')}
                 </Button>
               )}
             </div>
 
             <div className="flex items-center gap-3">
               <Button variant="ghost" asChild>
-                <Link href="/admin/collection-builder">Cancel</Link>
+                <Link href="/admin/collection-builder">{t('actions.cancel')}</Link>
               </Button>
 
               {currentStep < 4 ? (
@@ -702,7 +645,7 @@ export default function NewCollectionPage() {
                   onClick={handleNextStep}
                   disabled={!canGoToNextStep()}
                 >
-                  Next
+                  {t('actions.next')}
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
@@ -711,7 +654,7 @@ export default function NewCollectionPage() {
                   disabled={isSubmitting}
                   size="lg"
                 >
-                  {isSubmitting ? 'Creating...' : 'Create Collection'}
+                  {isSubmitting ? t('actions.creating') : t('actions.createCollectionButton')}
                 </Button>
               )}
             </div>
@@ -733,14 +676,14 @@ export default function NewCollectionPage() {
       <AlertDialog open={fieldToRemove !== null} onOpenChange={(open) => !open && setFieldToRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Field</AlertDialogTitle>
+            <AlertDialogTitle>{t('removeField.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove the field &quot;{fieldToRemove !== null ? fields[fieldToRemove]?.label || fields[fieldToRemove]?.name : ''}&quot;? This action cannot be undone.
+              {t('removeField.description', { fieldName: fieldToRemove !== null ? fields[fieldToRemove]?.label || fields[fieldToRemove]?.name : '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRemoveField}>Remove</AlertDialogAction>
+            <AlertDialogCancel>{t('removeField.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemoveField}>{t('removeField.confirm')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

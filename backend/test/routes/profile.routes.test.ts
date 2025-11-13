@@ -245,7 +245,7 @@ describe('Profile Routes', () => {
           set: vi.fn().mockReturnThis(),
           where: vi.fn().mockReturnThis(),
           returning: vi.fn().mockResolvedValue([]), // Empty array = no user found
-        } as any;
+        } as unknown as ReturnType<typeof db.update>;
       });
 
       const response = await app.inject({

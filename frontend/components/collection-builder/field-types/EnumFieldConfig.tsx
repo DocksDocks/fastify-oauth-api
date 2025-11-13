@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { CollectionField } from '@/types';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ interface FieldConfigProps {
 }
 
 export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
+  const t = useTranslations('collectionBuilder.fieldConfig');
   const [newEnumValue, setNewEnumValue] = useState('');
 
   const updateField = (updates: Partial<CollectionField>) => {
@@ -53,24 +55,24 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
         {/* Field Label */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-label`}>
-            Display Label <span className="text-destructive">*</span>
+            {t('displayLabel')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Input
             id={`${field.name}-label`}
             value={field.label}
             onChange={(e) => updateField({ label: e.target.value })}
-            placeholder="Status"
+            placeholder={t('placeholder.label')}
           />
         </div>
 
         {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-description`}>Description</Label>
+          <Label htmlFor={`${field.name}-description`}>{t('description')}</Label>
           <Input
             id={`${field.name}-description`}
             value={field.description || ''}
             onChange={(e) => updateField({ description: e.target.value })}
-            placeholder="Optional description"
+            placeholder={t('placeholder.description')}
           />
         </div>
 
@@ -79,7 +81,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
         {/* Enum Values */}
         <div className="space-y-3">
           <Label>
-            Enum Values <span className="text-destructive">*</span>
+            {t('enumValues')} <span className="text-destructive">{t('required')}</span>
           </Label>
 
           {/* Current Values */}
@@ -107,7 +109,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
               value={newEnumValue}
               onChange={(e) => setNewEnumValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Add value (e.g., pending, active, completed)"
+              placeholder={t('placeholder.enumValue')}
             />
             <Button
               type="button"
@@ -126,22 +128,22 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
 
         <Separator />
 
-        {/* Checkboxes */}
+        {/* Switches */}
         <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor={`${field.name}-required`}
+              className="text-sm font-medium cursor-pointer"
+            >
+              {t('requiredField')}
+            </Label>
+            <Switch
               id={`${field.name}-required`}
               checked={field.required || false}
               onCheckedChange={(checked) =>
-                updateField({ required: checked as boolean })
+                updateField({ required: checked })
               }
             />
-            <Label
-              htmlFor={`${field.name}-required`}
-              className="text-sm font-normal cursor-pointer"
-            >
-              Required field
-            </Label>
           </div>
         </div>
 
@@ -149,7 +151,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
 
         {/* Default Value */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-default`}>Default Value</Label>
+          <Label htmlFor={`${field.name}-default`}>{t('defaultValue')}</Label>
           {field.enumValues && field.enumValues.length > 0 ? (
             <select
               id={`${field.name}-default`}

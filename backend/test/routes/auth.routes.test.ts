@@ -493,7 +493,7 @@ describe('Auth Routes', () => {
       const body2 = JSON.parse(sessions2.body);
 
       // Should have same family ID
-      const familyIds = body2.sessions.map((s: any) => s.familyId);
+      const familyIds = body2.sessions.map((s: { familyId: string }) => s.familyId);
       expect(familyIds).toContain(familyId1);
     });
 

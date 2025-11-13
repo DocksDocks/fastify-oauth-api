@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ export function EditRecordModal({
   userRole,
   tableName,
 }: EditRecordModalProps) {
+  const t = useTranslations('components.editRecord');
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -110,7 +112,7 @@ export function EditRecordModal({
 
       switch (column.type) {
         case 'boolean':
-          displayValue = value ? 'Yes' : 'No';
+          displayValue = value ? t('yes') : t('no');
           break;
         case 'date':
         case 'timestamp':
@@ -120,9 +122,9 @@ export function EditRecordModal({
               ? column.type === 'timestamp'
                 ? `${format(date, 'PPP')} (${format(date, 'p')})`
                 : format(date, 'PPP')
-              : 'Not set';
+              : t('notSet');
           } catch {
-            displayValue = String(value ?? 'Not set');
+            displayValue = String(value ?? t('notSet'));
           }
           break;
         case 'json':
@@ -138,12 +140,12 @@ export function EditRecordModal({
             {column.label}
             <span className="text-text-tertiary text-xs flex items-center gap-1">
               <Lock className="h-3 w-3" />
-              (readonly)
+              {t('readonly')}
             </span>
           </Label>
           <div className="w-full rounded-md border border-border bg-input-readonly px-3 py-2 text-sm text-text-secondary flex items-center gap-2">
             <span className="flex-1">
-              {displayValue || <span className="text-text-muted italic">Empty</span>}
+              {displayValue || <span className="text-text-muted italic">{t('empty')}</span>}
             </span>
             <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
           </div>
@@ -171,7 +173,7 @@ export function EditRecordModal({
               onValueChange={(newValue) => handleFieldChange(column.name, newValue)}
             >
               <SelectTrigger id={column.name}>
-                <SelectValue placeholder="Select a value" />
+                <SelectValue placeholder={t('selectValue')} />
               </SelectTrigger>
               <SelectContent>
                 {availableEnumValues.map((enumValue) => (
@@ -306,7 +308,7 @@ export function EditRecordModal({
                       format(currentDate, 'PPP')
                     )
                   ) : (
-                    `Pick a ${column.type === 'timestamp' ? 'date & time' : 'date'}`
+                    column.type === 'timestamp' ? t('pickDateTime') : t('pickDate')
                   )}
                 </Button>
               </PopoverTrigger>
@@ -319,7 +321,7 @@ export function EditRecordModal({
                 />
                 {column.type === 'timestamp' && (
                   <div className="p-3 border-t border-border">
-                    <Label className="text-xs text-muted-foreground mb-2 block">Time</Label>
+                    <Label className="text-xs text-muted-foreground mb-2 block">{t('time')}</Label>
                     <div className="flex gap-2 items-center justify-center">
                       <Input
                         type="number"
@@ -382,9 +384,9 @@ export function EditRecordModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Edit Record</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
             <DialogDescription>
-              Make changes to the record. Protected fields (ID, timestamps) are hidden.
+              {t('description')}
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-auto flex-1 space-y-4 py-4">
@@ -394,9 +396,9 @@ export function EditRecordModal({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
-            <Button onClick={handleSaveClick}>Save Changes</Button>
+            <Button onClick={handleSaveClick}>{t('save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -405,21 +407,21 @@ export function EditRecordModal({
       <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Changes</AlertDialogTitle>
+            <AlertDialogTitle>{t('confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to save these changes? This action will update the record in the database.
+              {t('confirmDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSaving}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmSave} disabled={isSaving}>
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {t('saving')}
                 </>
               ) : (
-                'Save Changes'
+                t('save')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

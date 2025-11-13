@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -41,6 +42,8 @@ interface AddFieldModalProps {
 }
 
 export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFieldNames = [] }: AddFieldModalProps) {
+  const t = useTranslations('collectionBuilder.addFieldModal');
+
   const [field, setField] = useState<CollectionField>(
     editField || {
       name: '',
@@ -83,13 +86,13 @@ export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFi
   const handleAdd = () => {
     // Validate required fields
     if (!field.name || !field.label) {
-      alert('Field name and label are required');
+      alert(t('validation.nameAndLabelRequired'));
       return;
     }
 
     // Check for duplicate field names (only for new fields, not edits)
     if (!editField && existingFieldNames.includes(field.name)) {
-      alert(`Field name "${field.name}" already exists. Please use a unique name.`);
+      alert(t('validation.duplicateName', { name: field.name }));
       return;
     }
 
@@ -134,9 +137,9 @@ export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFi
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editField ? 'Edit Field' : 'Add New Field'}</DialogTitle>
+          <DialogTitle>{editField ? t('title.edit') : t('title.add')}</DialogTitle>
           <DialogDescription>
-            {editField ? 'Update the field configuration below.' : 'Configure your new field below.'}
+            {editField ? t('description.edit') : t('description.add')}
           </DialogDescription>
         </DialogHeader>
 
@@ -155,10 +158,10 @@ export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFi
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {t('actions.cancel')}
           </Button>
           <Button onClick={handleAdd}>
-            {editField ? 'Update Field' : 'Add Field'}
+            {editField ? t('actions.update') : t('actions.add')}
           </Button>
         </DialogFooter>
       </DialogContent>

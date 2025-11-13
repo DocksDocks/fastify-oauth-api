@@ -103,10 +103,11 @@ describe('Setup Routes', () => {
     });
 
     it('should return setup status when complete', async () => {
-      // Mark setup as complete
-      await db.update(setupStatus).set({
-        isSetupComplete: true,
-        completedAt: new Date(),
+      // Create API key to complete setup (setup is complete when users + API keys exist)
+      await db.insert(apiKeys).values({
+        name: 'test_api_key',
+        keyHash: 'hash123',
+        createdBy: superadminUserId,
       });
 
       const response = await app.inject({
@@ -210,10 +211,11 @@ describe('Setup Routes', () => {
     });
 
     it('should reject if setup already complete', async () => {
-      // Mark setup as complete
-      await db.update(setupStatus).set({
-        isSetupComplete: true,
-        completedAt: new Date(),
+      // Create API key to complete setup (setup is complete when users + API keys exist)
+      await db.insert(apiKeys).values({
+        name: 'test_api_key',
+        keyHash: 'hash123',
+        createdBy: superadminUserId,
       });
 
       const response = await app.inject({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,7 @@ export function LinkProviderConfirmation({
   onConfirm,
   onCancel,
 }: LinkProviderConfirmationProps) {
+  const t = useTranslations('linkProvider');
   const [isLinking, setIsLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +57,7 @@ export function LinkProviderConfirmation({
       onOpenChange(false);
     } catch (err) {
       const error = err as Error;
-      setError(error.message || 'Failed to link accounts');
+      setError(error.message || t('errors.failedToLink'));
     } finally {
       setIsLinking(false);
     }
@@ -76,10 +78,10 @@ export function LinkProviderConfirmation({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-text-primary">
             <AlertCircle className="size-5 text-orange-500" />
-            Link {providerName} Account?
+            {t('title', { provider: providerName })}
           </DialogTitle>
           <DialogDescription className="text-text-secondary">
-            We found an existing account with this email address
+            {t('subtitle')}
           </DialogDescription>
         </DialogHeader>
 
@@ -88,19 +90,19 @@ export function LinkProviderConfirmation({
           <div className="rounded-md border border-border bg-muted/20 p-4 space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="size-4 text-green-500" />
-              <span className="text-sm font-medium text-text-primary">Existing Account</span>
+              <span className="text-sm font-medium text-text-primary">{t('existingAccount.title')}</span>
             </div>
             <div className="text-sm space-y-1">
               <div className="text-text-secondary">
-                <span className="text-text-tertiary">Email:</span> {existingUser.email}
+                <span className="text-text-tertiary">{t('existingAccount.email')}</span> {existingUser.email}
               </div>
               {existingUser.name && (
                 <div className="text-text-secondary">
-                  <span className="text-text-tertiary">Name:</span> {existingUser.name}
+                  <span className="text-text-tertiary">{t('existingAccount.name')}</span> {existingUser.name}
                 </div>
               )}
               <div className="text-text-secondary">
-                <span className="text-text-tertiary">Linked providers:</span>{' '}
+                <span className="text-text-tertiary">{t('existingAccount.linkedProviders')}</span>{' '}
                 {existingUser.providers
                   .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
                   .join(', ')}
@@ -112,18 +114,18 @@ export function LinkProviderConfirmation({
           <div className="rounded-md border border-border bg-primary/5 p-4 space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="size-4 text-blue-500" />
-              <span className="text-sm font-medium text-text-primary">New Provider</span>
+              <span className="text-sm font-medium text-text-primary">{t('newProvider.title')}</span>
             </div>
             <div className="text-sm space-y-1">
               <div className="text-text-secondary">
-                <span className="text-text-tertiary">Provider:</span> {providerName}
+                <span className="text-text-tertiary">{t('newProvider.provider')}</span> {providerName}
               </div>
               <div className="text-text-secondary">
-                <span className="text-text-tertiary">Email:</span> {newProvider.email}
+                <span className="text-text-tertiary">{t('newProvider.email')}</span> {newProvider.email}
               </div>
               {newProvider.name && (
                 <div className="text-text-secondary">
-                  <span className="text-text-tertiary">Name:</span> {newProvider.name}
+                  <span className="text-text-tertiary">{t('newProvider.name')}</span> {newProvider.name}
                 </div>
               )}
             </div>
@@ -132,8 +134,7 @@ export function LinkProviderConfirmation({
           {/* Info Alert */}
           <Alert>
             <AlertDescription className="text-sm text-text-secondary">
-              Linking this {providerName} account will allow you to sign in using either provider. Your
-              existing data will be preserved.
+              {t('infoAlert', { provider: providerName })}
             </AlertDescription>
           </Alert>
 
@@ -148,16 +149,16 @@ export function LinkProviderConfirmation({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={handleCancel} disabled={isLinking}>
-            Cancel
+            {t('actions.cancel')}
           </Button>
           <Button onClick={handleConfirm} disabled={isLinking}>
             {isLinking ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Linking...
+                {t('actions.linking')}
               </>
             ) : (
-              'Link Accounts'
+              t('actions.linkAccounts')
             )}
           </Button>
         </DialogFooter>

@@ -814,6 +814,76 @@ ${schemaCode}
 }
 
 /**
+ * Update the custom collections index.ts to export the new schema
+ */
+export async function updateCustomCollectionsIndex(collectionName: string): Promise<void> {
+  if (env.NODE_ENV === 'test') {
+    return;
+  }
+
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const indexPath = path.join(__dirname, '../../db/schema/custom_collections/index.ts');
+  const kebabName = collectionName.toLowerCase().replace(/_/g, '-');
+
+  // Read existing index file
+  let indexContent = '';
+  try {
+    indexContent = fs.readFileSync(indexPath, 'utf-8');
+  } catch {
+    // If index file doesn't exist, create it with a header
+    indexContent = `/**
+ * Custom Collections - Auto-generated exports
+ * This file is automatically updated when new collections are created.
+ */\n\n`;
+  }
+
+  // Check if export already exists
+  const exportStatement = `export * from './${kebabName}';`;
+  if (indexContent.includes(exportStatement)) {
+    return; // Already exported
+  }
+
+  // Find the last export statement or add after header
+  const lines = indexContent.split('\n');
+  let insertIndex = -1;
+
+  // Find the last export line
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i]?.trim().startsWith('export ')) {
+      insertIndex = i + 1;
+      break;
+    }
+  }
+
+  // If no exports found, insert after header comments
+  if (insertIndex === -1) {
+    for (let i = 0; i < lines.length; i++) {
+      if (
+        !lines[i]?.trim().startsWith('*') &&
+        !lines[i]?.trim().startsWith('//') &&
+        !lines[i]?.trim().startsWith('/*') &&
+        lines[i]?.trim() !== ''
+      ) {
+        insertIndex = i;
+        break;
+      }
+    }
+  }
+
+  // If still not found, append at end
+  if (insertIndex === -1) {
+    insertIndex = lines.length;
+  }
+
+  // Insert the new export
+  lines.splice(insertIndex, 0, exportStatement);
+
+  // Write back
+  fs.writeFileSync(indexPath, lines.join('\n'), 'utf-8');
+}
+
+/**
  * Generate basic Vitest tests for a new collection
  */
 export function generateBasicTests(definition: CollectionDefinitionInput): string {
@@ -822,7 +892,9 @@ export function generateBasicTests(definition: CollectionDefinitionInput): strin
   const kebabName = tableName.replace(/_/g, '-');
 
   // Build sample data for creating a record
-  const sampleData: Record<string, unknown> = {};
+  // Helper type for code markers
+  type CodeMarker = { __code: string };
+  const sampleData: Record<string, unknown | CodeMarker> = {};
   definition.fields.forEach((field) => {
     if (field.type === 'text' || field.type === 'longtext' || field.type === 'richtext') {
       sampleData[field.name] = `Sample ${field.name}`;
@@ -831,22 +903,25 @@ export function generateBasicTests(definition: CollectionDefinitionInput): strin
     } else if (field.type === 'boolean') {
       sampleData[field.name] = true;
     } else if (field.type === 'date' || field.type === 'datetime') {
-      sampleData[field.name] = 'new Date()';
+      sampleData[field.name] = { __code: 'new Date()' }; // Mark as code to be rendered directly
     } else if (field.type === 'json') {
-      sampleData[field.name] = "{ key: 'value' }";
+      sampleData[field.name] = { __code: "{ key: 'value' }" }; // Mark as code
     } else if (field.type === 'enum' && field.enumValues && field.enumValues.length > 0) {
-      sampleData[field.name] = `'${field.enumValues[0]}'`;
+      sampleData[field.name] = field.enumValues[0]; // Use actual value, not quoted
     } else {
-      sampleData[field.name] = `'sample_value'`;
+      sampleData[field.name] = 'sample_value';
     }
   });
 
   // Convert sample data to test code
   const sampleDataLines = Object.entries(sampleData)
     .map(([key, value]) => {
-      // Check if value is already code (starts with 'new' or is an object literal)
-      const isCode = typeof value === 'string' && (value.startsWith('new ') || value.startsWith('{'));
-      return `      ${key}: ${isCode ? value : JSON.stringify(value)},`;
+      // Check if value is a code marker object
+      if (typeof value === 'object' && value !== null && '__code' in value) {
+        return `      ${key}: ${(value as CodeMarker).__code},`;
+      }
+      // Otherwise, stringify the value
+      return `      ${key}: ${JSON.stringify(value)},`;
     })
     .join('\n');
 
@@ -893,7 +968,7 @@ export function generateBasicTests(definition: CollectionDefinitionInput): strin
   lines.push(`      .returning();`);
   lines.push('');
   lines.push(`    expect(newRecord).toBeDefined();`);
-  lines.push(`    expect(newRecord.id).toBeGreaterThan(0);`);
+  lines.push(`    expect(newRecord!.id).toBeGreaterThan(0);`);
   lines.push(`  });`);
   lines.push('');
   lines.push(`  it('should read ${tableName} records', async () => {`);
@@ -905,11 +980,13 @@ export function generateBasicTests(definition: CollectionDefinitionInput): strin
   lines.push(`      })`);
   lines.push(`      .returning();`);
   lines.push('');
+  lines.push(`    expect(created).toBeDefined();`);
+  lines.push('');
   lines.push(`    // Read all records`);
   lines.push(`    const records = await db.select().from(${schemaName}).execute();`);
   lines.push('');
   lines.push(`    expect(records).toHaveLength(1);`);
-  lines.push(`    expect(records[0].id).toBe(created.id);`);
+  lines.push(`    expect(records[0]!.id).toBe(created!.id);`);
   lines.push(`  });`);
   lines.push('');
   lines.push(`  it('should update a ${tableName} record', async () => {`);
@@ -921,15 +998,27 @@ export function generateBasicTests(definition: CollectionDefinitionInput): strin
   lines.push(`      })`);
   lines.push(`      .returning();`);
   lines.push('');
+  lines.push(`    expect(created).toBeDefined();`);
+  lines.push('');
   lines.push(`    // Update the record`);
   lines.push(`    const [updated] = await db`);
   lines.push(`      .update(${schemaName})`);
-  lines.push(`      .set({ ${definition.fields[0]!.name}: ${sampleData[definition.fields[0]!.name] === 'new Date()' ? 'new Date()' : `'Updated value'`} })`);
-  lines.push(`      .where(eq(${schemaName}.id, created.id))`);
+  // Generate the update value - handle code markers for dates/json, use null-safe access
+  const firstField = definition.fields[0];
+  const updateFieldName = firstField?.name || 'id';
+  let updateValue = "'Updated value'";
+  if (firstField) {
+    const fieldData = sampleData[firstField.name];
+    if (typeof fieldData === 'object' && fieldData !== null && '__code' in fieldData) {
+      updateValue = (fieldData as CodeMarker).__code;
+    }
+  }
+  lines.push(`      .set({ ${updateFieldName}: ${updateValue} })`);
+  lines.push(`      .where(eq(${schemaName}.id, created!.id))`);
   lines.push(`      .returning();`);
   lines.push('');
   lines.push(`    expect(updated).toBeDefined();`);
-  lines.push(`    expect(updated.id).toBe(created.id);`);
+  lines.push(`    expect(updated!.id).toBe(created!.id);`);
   lines.push(`  });`);
   lines.push('');
   lines.push(`  it('should delete a ${tableName} record', async () => {`);
@@ -941,8 +1030,10 @@ export function generateBasicTests(definition: CollectionDefinitionInput): strin
   lines.push(`      })`);
   lines.push(`      .returning();`);
   lines.push('');
+  lines.push(`    expect(created).toBeDefined();`);
+  lines.push('');
   lines.push(`    // Delete the record`);
-  lines.push(`    await db.delete(${schemaName}).where(eq(${schemaName}.id, created.id)).execute();`);
+  lines.push(`    await db.delete(${schemaName}).where(eq(${schemaName}.id, created!.id)).execute();`);
   lines.push('');
   lines.push(`    // Verify deletion`);
   lines.push(`    const records = await db.select().from(${schemaName}).execute();`);
@@ -988,7 +1079,7 @@ export async function writeTestFile(collectionName: string, testCode: string): P
   // Get the test directory
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const testDir = path.join(__dirname, '../../../test/collections');
+  const testDir = path.join(__dirname, '../../../test/custom_collections');
 
   // Create directory if it doesn't exist
   if (!fs.existsSync(testDir)) {

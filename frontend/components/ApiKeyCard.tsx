@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Copy, Check, LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ interface ApiKeyCardProps {
 }
 
 export function ApiKeyCard({ title, description, apiKey, icon: Icon }: ApiKeyCardProps) {
+  const t = useTranslations('components.apiKeyCard');
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -22,7 +24,7 @@ export function ApiKeyCard({ title, description, apiKey, icon: Icon }: ApiKeyCar
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
-      alert('Failed to copy to clipboard');
+      alert(t('failedToCopy'));
     }
   };
 
@@ -42,12 +44,12 @@ export function ApiKeyCard({ title, description, apiKey, icon: Icon }: ApiKeyCar
             {copied ? (
               <>
                 <Check className="mr-2 h-4 w-4" />
-                Copied
+                {t('copied')}
               </>
             ) : (
               <>
                 <Copy className="mr-2 h-4 w-4" />
-                Copy
+                {t('copy')}
               </>
             )}
           </Button>

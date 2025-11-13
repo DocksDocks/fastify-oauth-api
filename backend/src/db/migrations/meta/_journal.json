@@ -12,15 +12,8 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1762984378927,
-      "tag": "0001_create_test_products_table",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1762984470249,
-      "tag": "0002_create_test_products_table",
+      "when": 1763060358467,
+      "tag": "0001_create_blog_posts_table",
       "breakpoints": true
     }
   ]

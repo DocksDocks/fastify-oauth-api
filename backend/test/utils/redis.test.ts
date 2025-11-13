@@ -7,10 +7,23 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
  * Note: We need to mock Redis before importing the module
  */
 
+// Mock types
+interface MockRedis {
+  on: ReturnType<typeof vi.fn>;
+  quit: ReturnType<typeof vi.fn>;
+  emit: ReturnType<typeof vi.fn>;
+}
+
+interface MockLogger {
+  info: ReturnType<typeof vi.fn>;
+  warn: ReturnType<typeof vi.fn>;
+  error: ReturnType<typeof vi.fn>;
+}
+
 describe('Redis Client', () => {
-  let mockRedis: any;
-  let mockLogger: any;
-  let eventHandlers: Map<string, (...args: any[]) => void>;
+  let mockRedis: MockRedis;
+  let mockLogger: MockLogger;
+  let eventHandlers: Map<string, (...args: unknown[]) => void>;
 
   beforeEach(async () => {
     // Reset event handlers map
@@ -25,12 +38,12 @@ describe('Redis Client', () => {
 
     // Mock Redis client
     mockRedis = {
-      on: vi.fn((event: string, handler: (...args: any[]) => void) => {
+      on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
         eventHandlers.set(event, handler);
         return mockRedis;
       }),
       quit: vi.fn().mockResolvedValue('OK'),
-      emit: vi.fn((event: string, ...args: any[]) => {
+      emit: vi.fn((event: string, ...args: unknown[]) => {
         const handler = eventHandlers.get(event);
         if (handler) {
           handler(...args);
@@ -229,7 +242,9 @@ describe('Redis Client', () => {
 
       await import('@/utils/redis');
 
-      const call = (Redis as any).mock.calls[0][0];
+      const call = (Redis as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0] as {
+        retryStrategy: (times: number) => number;
+      };
       const retryStrategy = call.retryStrategy;
 
       // Test retry strategy with different times
@@ -277,9 +292,9 @@ describe('Redis Client', () => {
       const warnCalls = mockLogger.warn.mock.calls;
 
       expect(warnCalls[0][0]).toBe('Redis connection closed');
-      expect(infoCalls.some((call: any[]) => call[0] === 'Redis reconnecting...')).toBe(true);
-      expect(infoCalls.some((call: any[]) => call[0] === 'Redis connected')).toBe(true);
-      expect(infoCalls.some((call: any[]) => call[0] === 'Redis ready')).toBe(true);
+      expect(infoCalls.some((call: unknown[]) => call[0] === 'Redis reconnecting...')).toBe(true);
+      expect(infoCalls.some((call: unknown[]) => call[0] === 'Redis connected')).toBe(true);
+      expect(infoCalls.some((call: unknown[]) => call[0] === 'Redis ready')).toBe(true);
     });
   });
 });

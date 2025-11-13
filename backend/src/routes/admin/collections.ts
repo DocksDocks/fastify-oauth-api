@@ -8,6 +8,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { sql, type SQL } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
+import type { PgTable } from 'drizzle-orm/pg-core';
 import { db } from '@/db/client';
 import { requireAdmin } from '@/middleware/authorize';
 import {
@@ -26,6 +27,24 @@ function hasRequiredRole(userRole: string, requiredRole?: 'admin' | 'superadmin'
   if (requiredRole === 'admin') return userRole === 'admin' || userRole === 'superadmin';
   if (requiredRole === 'superadmin') return userRole === 'superadmin';
   return false;
+}
+
+/**
+ * Validate table name format to prevent SQL injection (defense-in-depth)
+ * This adds an extra layer of security on top of the whitelist validation
+ * @throws Error if table name format is invalid
+ */
+function validateTableNameFormat(tableName: string): void {
+  // PostgreSQL identifier rules: lowercase letters, digits, and underscores only
+  // Must start with a letter or underscore
+  if (!/^[a-z_][a-z0-9_]*$/.test(tableName)) {
+    throw new Error(`Invalid table name format: "${tableName}"`);
+  }
+
+  // PostgreSQL identifier length limit
+  if (tableName.length > 63) {
+    throw new Error(`Table name exceeds maximum length of 63 characters: "${tableName}"`);
+  }
 }
 
 /**
@@ -201,7 +220,7 @@ async function enrichRowsWithForeignKeys(
               // Fetch the related record
               const relatedRecords = await db
                 .select()
-                .from(relatedTable as any)
+                .from(relatedTable as PgTable)
                 .where(sql`id = ${fkValue}`)
                 .limit(1);
 
@@ -470,6 +489,19 @@ async function updateCollectionRecord(
     const userRole = request.user?.role || 'user';
     const updates = request.body;
 
+    // Defense-in-depth: Validate table name format before whitelist check
+    try {
+      validateTableNameFormat(table);
+    } catch (error) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_TABLE_NAME',
+          message: error instanceof Error ? error.message : 'Invalid table name format',
+        },
+      });
+    }
+
     const collection = await getCollectionByTableAsync(table);
 
     if (!collection) {
@@ -653,6 +685,19 @@ async function deleteCollectionRecord(
   try {
     const { table, id } = request.params;
     const userRole = request.user?.role || 'user';
+
+    // Defense-in-depth: Validate table name format before whitelist check
+    try {
+      validateTableNameFormat(table);
+    } catch (error) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_TABLE_NAME',
+          message: error instanceof Error ? error.message : 'Invalid table name format',
+        },
+      });
+    }
 
     const collection = await getCollectionByTableAsync(table);
 

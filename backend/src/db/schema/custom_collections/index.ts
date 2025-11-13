@@ -3,6 +3,6 @@
  * Auto-generated collections are exported here
  */
 
-export * from './test-products';
-
-// Add new collections here as they are created
+// Empty export to make this a valid module
+export {};
+export * from './blog-posts';

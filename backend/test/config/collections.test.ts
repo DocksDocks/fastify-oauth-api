@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { PgTable } from 'drizzle-orm/pg-core';
 import {
   collections,
   getCollectionByTable,
@@ -250,7 +251,7 @@ describe('Collections Configuration', () => {
         Object.values(tableMap).forEach((table) => {
           // Drizzle tables have getSQL method
           expect(table).toHaveProperty('getSQL');
-          expect(typeof (table as any).getSQL).toBe('function');
+          expect(typeof (table as PgTable).getSQL).toBe('function');
         });
       });
 

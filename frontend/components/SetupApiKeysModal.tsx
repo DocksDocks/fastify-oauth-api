@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { CheckCircle2, AlertTriangle, Smartphone, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,7 @@ interface SetupApiKeysModalProps {
 }
 
 export function SetupApiKeysModal({ apiKeys, onComplete }: SetupApiKeysModalProps) {
+  const t = useTranslations('setupApiKeys');
   const [keySaved, setKeySaved] = useState(false);
 
   return (
@@ -40,8 +42,8 @@ export function SetupApiKeysModal({ apiKeys, onComplete }: SetupApiKeysModalProp
               <CheckCircle2 className="w-6 h-6 text-green-500" />
             </div>
             <div>
-              <DialogTitle className="text-2xl">Setup Complete!</DialogTitle>
-              <DialogDescription>Your API keys have been generated</DialogDescription>
+              <DialogTitle className="text-2xl">{t('title')}</DialogTitle>
+              <DialogDescription>{t('subtitle')}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -51,32 +53,32 @@ export function SetupApiKeysModal({ apiKeys, onComplete }: SetupApiKeysModalProp
           <Alert variant="default" className="border-yellow-500 bg-yellow-500/10">
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
             <AlertTitle className="text-yellow-600 dark:text-yellow-500">
-              Important: Save These Keys Now
+              {t('warning.title')}
             </AlertTitle>
             <AlertDescription className="text-yellow-600/90 dark:text-yellow-500/90">
-              These keys are shown only once. Copy and save them before closing this window.
+              {t('warning.description')}
             </AlertDescription>
           </Alert>
 
           <ApiKeyCard
-            title="Web API Key"
-            description="Store this key in your website configuration (frontend or backend)."
+            title={t('keys.web.title')}
+            description={t('keys.web.description')}
             apiKey={apiKeys.web}
             icon={Globe}
             keyName="web"
           />
 
           <ApiKeyCard
-            title="iOS API Key"
-            description="Store this key in your iOS mobile app configuration."
+            title={t('keys.ios.title')}
+            description={t('keys.ios.description')}
             apiKey={apiKeys.ios}
             icon={Smartphone}
             keyName="ios"
           />
 
           <ApiKeyCard
-            title="Android API Key"
-            description="Store this key in your Android mobile app configuration."
+            title={t('keys.android.title')}
+            description={t('keys.android.description')}
             apiKey={apiKeys.android}
             icon={Smartphone}
             keyName="android"
@@ -86,26 +88,26 @@ export function SetupApiKeysModal({ apiKeys, onComplete }: SetupApiKeysModalProp
           <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border">
             <Switch id="keys-saved" checked={keySaved} onCheckedChange={setKeySaved} />
             <Label htmlFor="keys-saved" className="text-sm cursor-pointer leading-relaxed">
-              I have saved all API keys (Web, iOS, Android). I understand these keys won&apos;t be shown again.
+              {t('confirmation')}
             </Label>
           </div>
 
           {/* Complete Button */}
           <Button onClick={onComplete} disabled={!keySaved} className="w-full" size="lg">
-            Complete Setup
+            {t('completeSetup')}
           </Button>
 
           {/* Next Steps */}
           <Card className="bg-muted/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Next steps:</CardTitle>
+              <CardTitle className="text-sm">{t('nextSteps.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• Login with your OAuth account to access the dashboard</li>
-                <li>• Add more authorized admins from the admin panel</li>
-                <li>• Configure your website with the Web API key</li>
-                <li>• Configure your mobile apps with the iOS/Android keys</li>
+                <li>• {t('nextSteps.loginOAuth')}</li>
+                <li>• {t('nextSteps.addAdmins')}</li>
+                <li>• {t('nextSteps.configureWeb')}</li>
+                <li>• {t('nextSteps.configureMobile')}</li>
               </ul>
             </CardContent>
           </Card>

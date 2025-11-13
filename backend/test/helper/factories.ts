@@ -15,7 +15,7 @@ export async function createUser(
     provider?: 'google' | 'apple';
     providerId?: string;
   } = {}
-) {
+): Promise<typeof users.$inferSelect> {
   const provider = overrides.provider || 'google';
   const providerId = overrides.providerId || `${provider}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const email = overrides.email || `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;

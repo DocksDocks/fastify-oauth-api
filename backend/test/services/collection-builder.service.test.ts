@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import {
   validateCollectionDefinition,
   generateCreateTableSQL,
@@ -11,6 +11,7 @@ import {
   type CollectionDefinitionInput,
 } from '@/builder/services/collection-builder.service';
 import { db } from '@/db/client';
+import { sql } from 'drizzle-orm';
 import { collectionDefinitions } from '@/db/schema/collection-definitions';
 import { users } from '@/db/schema/users';
 import '../helper/setup';
@@ -40,6 +41,24 @@ describe('Collection Builder Service', () => {
       .returning();
 
     testUserId = user.id;
+
+    // Clean up test tables before each test
+    try {
+      await db.execute(sql`DROP TABLE IF EXISTS blog_posts CASCADE`);
+      await db.execute(sql`DROP TABLE IF EXISTS articles CASCADE`);
+    } catch {
+      // Ignore errors
+    }
+  });
+
+  afterAll(async () => {
+    // Final cleanup of any test tables
+    try {
+      await db.execute(sql`DROP TABLE IF EXISTS blog_posts CASCADE`);
+      await db.execute(sql`DROP TABLE IF EXISTS articles CASCADE`);
+    } catch {
+      // Ignore errors
+    }
   });
 
   describe('validateCollectionDefinition', () => {

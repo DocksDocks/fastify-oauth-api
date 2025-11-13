@@ -6,7 +6,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { collectionDefinitions } from '@/db/schema';
 import type { JWTPayload } from '@/modules/auth/auth.types';
@@ -18,6 +18,7 @@ import {
   generateBasicTests,
   writeMigrationFile,
   writeDrizzleSchemaFile,
+  updateCustomCollectionsIndex,
   writeTestFile,
   type FieldType,
   type CollectionField,
@@ -196,6 +197,25 @@ async function createCollectionDefinition(
       });
     }
 
+    // Check if table already exists in database
+    const existingTables = await db.execute<{ table_name: string }>(
+      sql`SELECT table_name
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+          AND table_type = 'BASE TABLE'
+          AND LOWER(table_name) = LOWER(${name})`
+    );
+
+    if (existingTables && existingTables.length > 0) {
+      return reply.status(409).send({
+        success: false,
+        error: {
+          code: 'TABLE_EXISTS',
+          message: `A database table named "${name}" already exists. Please choose a different name.`,
+        },
+      });
+    }
+
     // Create collection definition
     const [newCollection] = await db
       .insert(collectionDefinitions)
@@ -238,16 +258,17 @@ async function createCollectionDefinition(
       'media',
     ];
 
-    const validatedFields: CollectionField[] = fields.map((field: any) => {
+    const validatedFields: CollectionField[] = fields.map((field: unknown) => {
       // Runtime validation of field type
-      if (!validFieldTypes.includes(field.type as FieldType)) {
-        throw new Error(`Invalid field type: ${field.type}. Must be one of: ${validFieldTypes.join(', ')}`);
+      const fieldObj = field as Record<string, unknown>;
+      if (!validFieldTypes.includes(fieldObj.type as FieldType)) {
+        throw new Error(`Invalid field type: ${fieldObj.type}. Must be one of: ${validFieldTypes.join(', ')}`);
       }
 
       return {
-        ...field,
-        type: field.type as FieldType,
-      };
+        ...fieldObj,
+        type: fieldObj.type as FieldType,
+      } as CollectionField;
     });
 
     // Build collection definition for generators
@@ -274,6 +295,7 @@ async function createCollectionDefinition(
     // Write all files
     const migrationFilename = await writeMigrationFile(name, createTableSQL);
     const schemaFilename = await writeDrizzleSchemaFile(name, drizzleSchema);
+    await updateCustomCollectionsIndex(name); // Auto-export the new schema
     const testFilename = await writeTestFile(name, testCode);
 
     // Run migrations immediately to apply the new table

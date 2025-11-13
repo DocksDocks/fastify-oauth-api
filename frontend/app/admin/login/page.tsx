@@ -35,7 +35,7 @@ export default function LoginPage() {
       const authUrl = response.data?.authUrl;
 
       if (!authUrl) {
-        setError('No authorization URL received from server');
+        setError(t('error.noAuthUrl'));
         setLoading(false);
         return;
       }
@@ -43,9 +43,9 @@ export default function LoginPage() {
       window.location.href = authUrl;
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to initiate Google login');
+        setError(err.response.data.error.message || t('error.failedGoogleLogin'));
       } else {
-        setError('Failed to initiate Google login');
+        setError(t('error.failedGoogleLogin'));
       }
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function LoginPage() {
       const authUrl = response.data?.authUrl;
 
       if (!authUrl) {
-        setError('No authorization URL received from server');
+        setError(t('error.noAuthUrl'));
         setLoading(false);
         return;
       }
@@ -67,9 +67,9 @@ export default function LoginPage() {
       window.location.href = authUrl;
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to initiate Apple login');
+        setError(err.response.data.error.message || t('error.failedAppleLogin'));
       } else {
-        setError('Failed to initiate Apple login');
+        setError(t('error.failedAppleLogin'));
       }
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Checking setup status...</p>
+          <p className="text-muted-foreground">{t('checkingStatus')}</p>
         </div>
       </div>
     );

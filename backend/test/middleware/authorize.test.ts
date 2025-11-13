@@ -16,6 +16,12 @@ import {
  * Covers all RBAC functions and role hierarchy logic
  */
 
+// Mock reply interface with tracking properties
+interface MockReply extends FastifyReply {
+  statusCode?: number;
+  payload?: unknown;
+}
+
 describe('Authorization Middleware', () => {
   // Helper to create mock request
   const createMockRequest = (user?: {
@@ -24,11 +30,11 @@ describe('Authorization Middleware', () => {
     role: UserRole;
   }, params?: Record<string, string>): AuthenticatedRequest => {
     const request: Partial<AuthenticatedRequest> = {
-      user: user as any,
+      user: user ?? undefined,
       params: params || {},
       jwtVerify: async () => {
         if (user) {
-          (request as any).user = user;
+          (request as Partial<AuthenticatedRequest>).user = user;
         } else {
           throw new Error('Invalid token');
         }
@@ -38,18 +44,18 @@ describe('Authorization Middleware', () => {
   };
 
   // Helper to create mock reply
-  const createMockReply = () => {
-    const reply: Partial<FastifyReply> = {
+  const createMockReply = (): MockReply => {
+    const reply: Partial<MockReply> = {
       code: function (statusCode: number) {
-        (this as any).statusCode = statusCode;
+        (this as MockReply).statusCode = statusCode;
         return this as FastifyReply;
       },
       send: function (payload: unknown) {
-        (this as any).payload = payload;
+        (this as MockReply).payload = payload;
         return this as FastifyReply;
       },
     };
-    return reply as FastifyReply;
+    return reply as MockReply;
   };
 
   describe('requireRole', () => {
@@ -64,8 +70,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireRole('admin');
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should allow user with higher role (superadmin accessing admin route)', async () => {
@@ -79,8 +85,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireRole('admin');
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should deny user with lower role', async () => {
@@ -94,8 +100,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireRole('admin');
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBe(403);
-      expect((reply as any).payload).toEqual({
+      expect(reply.statusCode).toBe(403);
+      expect(reply.payload).toEqual({
         success: false,
         error: {
           code: 'FORBIDDEN',
@@ -115,8 +121,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireRole('user');
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBe(401);
-      expect((reply as any).payload).toEqual({
+      expect(reply.statusCode).toBe(401);
+      expect(reply.payload).toEqual({
         success: false,
         error: {
           code: 'UNAUTHORIZED',
@@ -137,8 +143,8 @@ describe('Authorization Middleware', () => {
 
       await requireAdmin(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should allow superadmin access', async () => {
@@ -151,8 +157,8 @@ describe('Authorization Middleware', () => {
 
       await requireAdmin(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should deny regular user access', async () => {
@@ -165,8 +171,8 @@ describe('Authorization Middleware', () => {
 
       await requireAdmin(request, reply);
 
-      expect((reply as any).statusCode).toBe(403);
-      expect((reply as any).payload).toMatchObject({
+      expect(reply.statusCode).toBe(403);
+      expect(reply.payload).toMatchObject({
         success: false,
         error: {
           code: 'FORBIDDEN',
@@ -187,8 +193,8 @@ describe('Authorization Middleware', () => {
 
       await requireSuperadmin(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should deny admin access', async () => {
@@ -201,8 +207,8 @@ describe('Authorization Middleware', () => {
 
       await requireSuperadmin(request, reply);
 
-      expect((reply as any).statusCode).toBe(403);
-      expect((reply as any).payload).toMatchObject({
+      expect(reply.statusCode).toBe(403);
+      expect(reply.payload).toMatchObject({
         success: false,
         error: {
           code: 'FORBIDDEN',
@@ -221,7 +227,7 @@ describe('Authorization Middleware', () => {
 
       await requireSuperadmin(request, reply);
 
-      expect((reply as any).statusCode).toBe(403);
+      expect(reply.statusCode).toBe(403);
     });
   });
 
@@ -240,8 +246,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireSelfOrAdmin();
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should allow admin to access other user data', async () => {
@@ -258,8 +264,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireSelfOrAdmin();
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should allow superadmin to access other user data', async () => {
@@ -276,8 +282,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireSelfOrAdmin();
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should deny user accessing other user data', async () => {
@@ -294,8 +300,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireSelfOrAdmin();
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBe(403);
-      expect((reply as any).payload).toEqual({
+      expect(reply.statusCode).toBe(403);
+      expect(reply.payload).toEqual({
         success: false,
         error: {
           code: 'FORBIDDEN',
@@ -311,8 +317,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireSelfOrAdmin();
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBe(401);
-      expect((reply as any).payload).toEqual({
+      expect(reply.statusCode).toBe(401);
+      expect(reply.payload).toEqual({
         success: false,
         error: {
           code: 'UNAUTHORIZED',
@@ -344,7 +350,7 @@ describe('Authorization Middleware', () => {
       await optionalAuth(request, reply);
 
       expect(request.user).toBeUndefined();
-      expect((reply as any).statusCode).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
     });
 
     it('should not throw error when invalid token provided', async () => {
@@ -359,7 +365,7 @@ describe('Authorization Middleware', () => {
       await optionalAuth(request, reply);
 
       expect(request.user).toBeUndefined();
-      expect((reply as any).statusCode).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
     });
   });
 
@@ -375,8 +381,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireAnyRole(['admin', 'superadmin']);
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should allow user with higher role than minimum allowed', async () => {
@@ -390,8 +396,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireAnyRole(['user', 'admin']);
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBeUndefined();
-      expect((reply as any).payload).toBeUndefined();
+      expect(reply.statusCode).toBeUndefined();
+      expect(reply.payload).toBeUndefined();
     });
 
     it('should deny user without any allowed role', async () => {
@@ -405,8 +411,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireAnyRole(['admin', 'superadmin']);
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBe(403);
-      expect((reply as any).payload).toEqual({
+      expect(reply.statusCode).toBe(403);
+      expect(reply.payload).toEqual({
         success: false,
         error: {
           code: 'FORBIDDEN',
@@ -426,8 +432,8 @@ describe('Authorization Middleware', () => {
       const middleware = requireAnyRole(['admin', 'superadmin']);
       await middleware(request, reply);
 
-      expect((reply as any).statusCode).toBe(401);
-      expect((reply as any).payload).toEqual({
+      expect(reply.statusCode).toBe(401);
+      expect(reply.payload).toEqual({
         success: false,
         error: {
           code: 'UNAUTHORIZED',

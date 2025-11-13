@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -33,6 +34,7 @@ interface LinkingData {
 export default function OAuthCallbackPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations('oauthCallback');
   const { setAuth } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [linkingData, setLinkingData] = useState<LinkingData | null>(null);
@@ -62,7 +64,7 @@ export default function OAuthCallbackPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to link accounts');
+        throw new Error(data.error || t('errors.failedLinkAccounts'));
       }
 
       const { user, tokens } = data;
@@ -70,7 +72,7 @@ export default function OAuthCallbackPage() {
 
       // Check if user is admin or superadmin
       if (user.role !== 'admin' && user.role !== 'superadmin') {
-        setError('Access denied. Only administrators can access this panel.');
+        setError(t('errors.accessDenied'));
         return;
       }
 
@@ -84,7 +86,7 @@ export default function OAuthCallbackPage() {
       router.replace('/admin');
     } catch (err: unknown) {
       const error = err as Error;
-      throw new Error(error.message || 'Failed to link accounts');
+      throw new Error(error.message || t('errors.failedLinkAccounts'));
     }
   };
 
@@ -106,7 +108,7 @@ export default function OAuthCallbackPage() {
       // Check for error in query params
       const errorParam = searchParams?.get('error');
       if (errorParam) {
-        setError(`Authentication failed: ${errorParam.replace(/_/g, ' ')}`);
+        setError(t('errors.authenticationFailed', { error: errorParam.replace(/_/g, ' ') }));
         return;
       }
 
@@ -124,14 +126,14 @@ export default function OAuthCallbackPage() {
           setShowLinkingModal(true);
         } catch (err: unknown) {
           console.error('Failed to parse linking data:', err);
-          setError('Failed to process account linking request');
+          setError(t('errors.failedProcessLinking'));
         }
         return;
       }
 
       // Handle normal authentication flow
       if (!dataParam) {
-        setError('No authentication data received');
+        setError(t('errors.noAuthData'));
         return;
       }
 
@@ -164,18 +166,18 @@ export default function OAuthCallbackPage() {
               setSetupApiKeys(response.data.data.apiKeys);
               setShowSetupModal(true);
             } else {
-              setError('Setup initialization failed');
+              setError(t('errors.setupInitFailed'));
             }
           } catch (err: unknown) {
             console.error('Setup initialization failed:', err);
-            setError('Failed to initialize setup');
+            setError(t('errors.failedInitSetup'));
           }
           return;
         }
 
         // Check if user is admin or superadmin
         if (user.role !== 'admin' && user.role !== 'superadmin') {
-          setError('Access denied. Only administrators can access this panel.');
+          setError(t('errors.accessDenied'));
           return;
         }
 
@@ -188,12 +190,12 @@ export default function OAuthCallbackPage() {
         router.replace('/admin');
       } catch (err: unknown) {
         console.error('Failed to parse auth data:', err);
-        setError('Failed to process authentication data');
+        setError(t('errors.failedProcessAuth'));
       }
     };
 
     handleCallback();
-  }, [searchParams, router, setAuth]);
+  }, [searchParams, router, setAuth, t]);
 
   if (error) {
     return (
@@ -201,11 +203,11 @@ export default function OAuthCallbackPage() {
         <div className="w-full max-w-md space-y-4">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertTitle>{t('authenticationError')}</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <Button onClick={() => router.push('/admin/login')} className="w-full">
-            Back to Login
+            {t('backToLogin')}
           </Button>
         </div>
       </div>
@@ -222,7 +224,7 @@ export default function OAuthCallbackPage() {
             <Skeleton className="h-12 w-full" />
           </div>
           <p className="text-center text-sm text-muted-foreground">
-            Completing authentication...
+            {t('authenticating')}
           </p>
         </div>
       </div>

@@ -172,7 +172,7 @@ describe('JWT Plugin', () => {
         role: 'user',
       };
 
-      const token = app.jwt.sign(incompletePayload as any);
+      const token = app.jwt.sign(incompletePayload as Record<string, unknown>);
 
       const response = await app.inject({
         method: 'GET',
@@ -193,7 +193,7 @@ describe('JWT Plugin', () => {
         role: 'user',
       };
 
-      const token = app.jwt.sign(incompletePayload as any);
+      const token = app.jwt.sign(incompletePayload as Record<string, unknown>);
 
       const response = await app.inject({
         method: 'GET',
@@ -214,7 +214,7 @@ describe('JWT Plugin', () => {
         email: 'test@example.com',
       };
 
-      const token = app.jwt.sign(incompletePayload as any);
+      const token = app.jwt.sign(incompletePayload as Record<string, unknown>);
 
       const response = await app.inject({
         method: 'GET',

@@ -73,12 +73,23 @@ describe('Admin Collection Builder Routes', () => {
     try {
       await db.execute(sql`DROP TABLE IF EXISTS test_posts CASCADE`);
       await db.execute(sql`DROP TYPE IF EXISTS test_posts_status_enum CASCADE`);
+      await db.execute(sql`DROP TABLE IF EXISTS blog_posts CASCADE`);
+      await db.execute(sql`DROP TABLE IF EXISTS test_collection_valid CASCADE`);
     } catch {
       // Ignore errors
     }
   });
 
   afterAll(async () => {
+    // Final cleanup of any test tables
+    try {
+      await db.execute(sql`DROP TABLE IF EXISTS test_posts CASCADE`);
+      await db.execute(sql`DROP TYPE IF EXISTS test_posts_status_enum CASCADE`);
+      await db.execute(sql`DROP TABLE IF EXISTS blog_posts CASCADE`);
+      await db.execute(sql`DROP TABLE IF EXISTS test_collection_valid CASCADE`);
+    } catch {
+      // Ignore errors
+    }
     await app.close();
   });
 
@@ -294,6 +305,90 @@ describe('Admin Collection Builder Routes', () => {
       expect(response.statusCode).toBe(409);
       const body = JSON.parse(response.body);
       expect(body.error.message).toContain('already exists');
+    });
+
+    it('should reject collection name that conflicts with existing database table (users)', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/admin/collection-builder/definitions',
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+        },
+        payload: {
+          ...validPayload,
+          name: 'users',
+          apiName: 'users',
+          displayName: 'Users',
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+      const body = JSON.parse(response.body);
+      expect(body.error.code).toBe('TABLE_EXISTS');
+      expect(body.error.message).toContain('database table named "users" already exists');
+    });
+
+    it('should reject collection name that conflicts with existing database table (provider_accounts)', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/admin/collection-builder/definitions',
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+        },
+        payload: {
+          ...validPayload,
+          name: 'provider_accounts',
+          apiName: 'provider_accounts',
+          displayName: 'Provider Accounts',
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+      const body = JSON.parse(response.body);
+      expect(body.error.code).toBe('TABLE_EXISTS');
+      expect(body.error.message).toContain('database table named "provider_accounts" already exists');
+    });
+
+    it('should reject collection name that conflicts with existing database table (api_keys)', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/admin/collection-builder/definitions',
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+        },
+        payload: {
+          ...validPayload,
+          name: 'api_keys',
+          apiName: 'api_keys',
+          displayName: 'API Keys',
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+      const body = JSON.parse(response.body);
+      expect(body.error.code).toBe('TABLE_EXISTS');
+      expect(body.error.message).toContain('database table named "api_keys" already exists');
+    });
+
+    it('should reject collection name with case-insensitive matching (Users vs users)', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/admin/collection-builder/definitions',
+        headers: {
+          authorization: `Bearer ${superadminToken}`,
+        },
+        payload: {
+          ...validPayload,
+          name: 'Users', // Capital U
+          apiName: 'Users',
+          displayName: 'Users',
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+      const body = JSON.parse(response.body);
+      expect(body.error.code).toBe('TABLE_EXISTS');
+      expect(body.error.message).toContain('database table named "Users" already exists');
     });
 
     it('should reject missing required fields', async () => {

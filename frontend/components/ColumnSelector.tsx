@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,6 +22,7 @@ interface ColumnSelectorProps {
 }
 
 export function ColumnSelector({ columns, visibleColumns, onSave }: ColumnSelectorProps) {
+  const t = useTranslations('components.columnSelector');
   const [open, setOpen] = useState(false);
   const [selectedColumns, setSelectedColumns] = useState<string[]>(visibleColumns);
   const [isSaving, setIsSaving] = useState(false);
@@ -65,15 +67,15 @@ export function ColumnSelector({ columns, visibleColumns, onSave }: ColumnSelect
     <>
       <Button variant="outline" size="sm" onClick={handleOpen}>
         <Settings className="h-4 w-4 mr-2" />
-        Columns
+        {t('buttonLabel')}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Select Visible Columns</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
             <DialogDescription>
-              Choose which columns to display in the table. Changes apply globally for all admins.
+              {t('description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -99,7 +101,7 @@ export function ColumnSelector({ columns, visibleColumns, onSave }: ColumnSelect
                   >
                     {column.label}
                     {isId && (
-                      <span className="ml-2 text-xs text-muted-foreground">(required)</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{t('required')}</span>
                     )}
                   </label>
                   <span className="text-xs text-muted-foreground capitalize">
@@ -112,13 +114,13 @@ export function ColumnSelector({ columns, visibleColumns, onSave }: ColumnSelect
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={selectedColumns.length === 0 || isSaving}
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? t('saving') : t('save')}
             </Button>
           </DialogFooter>
         </DialogContent>
