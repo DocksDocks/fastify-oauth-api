@@ -107,10 +107,10 @@ function SortableRow({
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onEdit} title="Edit field">
+          <Button variant="ghost" size="sm" onClick={onEdit} title={t('collectionDetail.editFieldTitle')}>
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete} title="Delete field">
+          <Button variant="ghost" size="sm" onClick={onDelete} title={t('collectionDetail.deleteFieldTitle')}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
@@ -170,9 +170,9 @@ export default function EditCollectionPage({
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <div className="max-w-md text-center">
           <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Development Only Feature</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('devMode.title')}</h1>
           <p className="text-muted-foreground">
-            The Collection Builder is only available in development mode. This feature is not accessible in production environments.
+            {t('devMode.description')}
           </p>
         </div>
       </div>
@@ -429,7 +429,7 @@ export default function EditCollectionPage({
         </Button>
         <h1 className="text-3xl font-bold">{collection.displayName}</h1>
         {collection.isSystem && (
-          <Badge variant="outline">System Collection</Badge>
+          <Badge variant="outline">{t('collectionDetail.systemCollection')}</Badge>
         )}
       </div>
 
@@ -440,12 +440,12 @@ export default function EditCollectionPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Collection Details</CardTitle>
-                <CardDescription>View and manage collection configuration</CardDescription>
+                <CardTitle>{t('collectionDetail.collectionDetails')}</CardTitle>
+                <CardDescription>{t('collectionDetail.collectionDetailsDescription')}</CardDescription>
               </div>
               <Button size="sm" variant="outline" onClick={() => setShowEditModal(true)}>
                 <Edit className="h-4 w-4 mr-2" />
-                Edit Collection
+                {t('collectionDetail.editCollection')}
               </Button>
             </div>
           </CardHeader>
@@ -453,26 +453,26 @@ export default function EditCollectionPage({
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground">Collection Name</span>
+                <span className="text-xs font-semibold text-muted-foreground">{t('collectionDetail.collectionName')}</span>
                 <div className="font-mono text-sm">{collection.name}</div>
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground">API Name</span>
+                <span className="text-xs font-semibold text-muted-foreground">{t('collectionDetail.apiName')}</span>
                 <div className="font-mono text-sm">{collection.apiName}</div>
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground">Display Name</span>
+                <span className="text-xs font-semibold text-muted-foreground">{t('collectionDetail.displayName')}</span>
                 <div className="text-sm">{collection.displayName}</div>
               </div>
               {collection.description && (
                 <div className="space-y-1 md:col-span-2">
-                  <span className="text-xs font-semibold text-muted-foreground">Description</span>
+                  <span className="text-xs font-semibold text-muted-foreground">{t('collectionDetail.description')}</span>
                   <div className="text-sm">{collection.description}</div>
                 </div>
               )}
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-muted-foreground">Icon</span>
-                <div className="font-mono text-sm">{collection.icon || 'Database'}</div>
+                <span className="text-xs font-semibold text-muted-foreground">{t('collectionDetail.icon')}</span>
+                <div className="font-mono text-sm">{collection.icon || t('collectionDetail.defaultIcon')}</div>
               </div>
             </div>
 
@@ -481,12 +481,12 @@ export default function EditCollectionPage({
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <div className="text-sm font-semibold">Indexes ({collection.indexes.length})</div>
+                  <div className="text-sm font-semibold">{t('collectionDetail.indexes')} ({collection.indexes.length})</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {collection.indexes.map((index) => (
                       <div key={index.name} className="text-sm font-mono flex items-center gap-2">
                         <span>{index.name}</span>
-                        {index.unique && <Badge variant="outline" className="text-xs">UNIQUE</Badge>}
+                        {index.unique && <Badge variant="outline" className="text-xs">{t('collectionDetail.unique')}</Badge>}
                       </div>
                     ))}
                   </div>
@@ -498,8 +498,8 @@ export default function EditCollectionPage({
 
             {/* Metadata */}
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <div>Created: {new Date(collection.createdAt).toLocaleString()}</div>
-              <div>Updated: {new Date(collection.updatedAt).toLocaleString()}</div>
+              <div>{t('collectionDetail.created')} {new Date(collection.createdAt).toLocaleString()}</div>
+              <div>{t('collectionDetail.updated')} {new Date(collection.updatedAt).toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
@@ -509,12 +509,12 @@ export default function EditCollectionPage({
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle>Fields ({collection.fields.length})</CardTitle>
-                <CardDescription>Manage collection fields and their configuration</CardDescription>
+                <CardTitle>{t('collectionDetail.fields')} ({collection.fields.length})</CardTitle>
+                <CardDescription>{t('collectionDetail.fieldsDescription')}</CardDescription>
               </div>
               <Button onClick={openAddFieldModal} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Field
+                {t('collectionDetail.addField')}
               </Button>
             </div>
           </CardHeader>
@@ -535,18 +535,18 @@ export default function EditCollectionPage({
               {/* Bulk Actions */}
               {selectedFields.size > 0 && (
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{selectedFields.size} selected</Badge>
+                  <Badge variant="secondary">{selectedFields.size} {t('collectionDetail.selected')}</Badge>
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => {
-                      if (confirm(`Delete ${selectedFields.size} field(s)?`)) {
+                      if (confirm(t('collectionDetail.deleteSelectedConfirm', { count: selectedFields.size }))) {
                         handleBulkDelete();
                       }
                     }}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Selected
+                    {t('collectionDetail.deleteSelected')}
                   </Button>
                 </div>
               )}
@@ -557,10 +557,10 @@ export default function EditCollectionPage({
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Database className="h-12 w-12 text-muted-foreground mb-3" />
                 <p className="text-muted-foreground">
-                  {searchQuery ? 'No fields match your search' : t('fieldsTable.emptyState.title')}
+                  {searchQuery ? t('collectionDetail.noFieldsMatch') : t('fieldsTable.emptyState.title')}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {searchQuery ? 'Try a different search term' : t('fieldsTable.emptyState.description')}
+                  {searchQuery ? t('collectionDetail.tryDifferentSearch') : t('fieldsTable.emptyState.description')}
                 </p>
               </div>
             ) : (
@@ -658,17 +658,15 @@ export default function EditCollectionPage({
       <AlertDialog open={fieldToDelete !== null} onOpenChange={() => setFieldToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Field</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteFieldDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the field{' '}
-              <span className="font-mono font-semibold">
-                {fieldToDelete !== null && collection ? collection.fields[fieldToDelete]?.name : ''}
-              </span>
-              ? This action cannot be undone.
+              {t('deleteFieldDialog.description', {
+                fieldName: fieldToDelete !== null && collection ? collection.fields[fieldToDelete]?.name : ''
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('deleteFieldDialog.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (fieldToDelete !== null) {
@@ -677,7 +675,7 @@ export default function EditCollectionPage({
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t('deleteFieldDialog.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

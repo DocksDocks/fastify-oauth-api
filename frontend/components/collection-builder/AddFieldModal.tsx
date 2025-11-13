@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,6 +54,26 @@ export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFi
   );
 
   const [selectedType, setSelectedType] = useState<FieldType>(editField?.type || 'text');
+
+  // Sync state with editField prop when it changes or modal opens
+  useEffect(() => {
+    if (open) {
+      if (editField) {
+        // Edit mode: populate with field data
+        setField(editField);
+        setSelectedType(editField.type);
+      } else {
+        // New field mode: reset to empty state
+        setField({
+          name: '',
+          label: '',
+          type: 'text' as FieldType,
+          required: false,
+        });
+        setSelectedType('text');
+      }
+    }
+  }, [editField, open]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);

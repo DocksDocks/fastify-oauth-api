@@ -79,3 +79,36 @@ export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
 }
+
+/**
+ * Schema comparison and migration types
+ */
+
+export interface FieldChange {
+  oldField: CollectionField;
+  newField: CollectionField;
+  changes: Array<'type' | 'required' | 'unique' | 'defaultValue' | 'validation' | 'max' | 'precision' | 'scale' | 'enumValues'>;
+}
+
+export interface IndexChange {
+  oldIndex: CollectionIndex;
+  newIndex: CollectionIndex;
+}
+
+export interface MigrationWarning {
+  type: 'data_loss' | 'breaking_change' | 'performance' | 'info';
+  message: string;
+  fieldName?: string;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface SchemaChanges {
+  hasChanges: boolean;
+  addedFields: CollectionField[];
+  removedFields: CollectionField[];
+  modifiedFields: FieldChange[];
+  addedIndexes: CollectionIndex[];
+  removedIndexes: CollectionIndex[];
+  modifiedIndexes: IndexChange[];
+  warnings: MigrationWarning[];
+}

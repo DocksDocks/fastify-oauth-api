@@ -362,10 +362,14 @@
       "date": "Data",
       "datetime": "Data e Hora",
       "boolean": "Booleano",
-      "enum": "Enum",
+      "enum": "Enum (Opções)",
       "json": "JSON",
       "relation": "Relação",
       "media": "Mídia"
+    },
+    "fieldTypeSelector": {
+      "label": "Tipo de Campo",
+      "placeholder": "Selecione o tipo de campo"
     },
     "indexes": {
       "emptyState": "Nenhum índice adicionado. Índices podem melhorar o desempenho de consulta.",
@@ -419,6 +423,75 @@
     "devMode": {
       "title": "Recurso Somente para Desenvolvimento",
       "description": "O Construtor de Coleções está disponível apenas no modo de desenvolvimento. Este recurso não está acessível em ambientes de produção."
+    },
+    "collectionDetail": {
+      "systemCollection": "Coleção do Sistema",
+      "collectionDetails": "Detalhes da Coleção",
+      "collectionDetailsDescription": "Visualizar e gerenciar configuração da coleção",
+      "editCollection": "Editar Coleção",
+      "collectionName": "Nome da Coleção",
+      "apiName": "Nome da API",
+      "displayName": "Nome de Exibição",
+      "description": "Descrição",
+      "icon": "Ícone",
+      "defaultIcon": "Database",
+      "indexes": "Índices",
+      "unique": "ÚNICO",
+      "created": "Criado:",
+      "updated": "Atualizado:",
+      "fields": "Campos",
+      "fieldsDescription": "Gerenciar campos da coleção e sua configuração",
+      "addField": "Adicionar Campo",
+      "selected": "selecionado(s)",
+      "deleteSelectedConfirm": "Excluir {count} campo(s)?",
+      "deleteSelected": "Excluir Selecionados",
+      "noFieldsMatch": "Nenhum campo corresponde à sua pesquisa",
+      "tryDifferentSearch": "Tente um termo de pesquisa diferente",
+      "editFieldTitle": "Editar campo",
+      "deleteFieldTitle": "Excluir campo"
+    },
+    "deleteFieldDialog": {
+      "title": "Excluir Campo",
+      "description": "Tem certeza de que deseja excluir \"{fieldName}\"? Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "delete": "Excluir"
+    },
+    "filters": {
+      "searchPlaceholder": "Pesquisar coleções...",
+      "allCollections": "Todas as Coleções",
+      "systemOnly": "Apenas Sistema",
+      "customOnly": "Apenas Personalizadas",
+      "noMatch": "Nenhuma coleção corresponde aos seus filtros",
+      "noCollections": "Nenhuma coleção encontrada",
+      "cancel": "Cancelar"
+    },
+    "editCollectionModal": {
+      "title": "Editar Coleção: {name}",
+      "description": "Atualizar metadados da coleção e gerenciar índices.",
+      "errorMessage": "Por favor, corrija os erros de validação",
+      "basicInfo": "Informações Básicas",
+      "advanced": "Avançado (Índices)",
+      "collectionInfoReadOnly": "Informações da Coleção (Somente Leitura)",
+      "collectionNameLabel": "Nome da Coleção (Nome da Tabela)",
+      "collectionNameHelp": "Não pode ser alterado (nome da tabela do banco de dados)",
+      "apiNameLabel": "Nome da API (Endpoint)",
+      "apiNameHelp": "Não pode ser alterado (nome do endpoint da API)",
+      "metadataEditable": "Metadados (Editável)",
+      "displayNameLabel": "Nome de Exibição",
+      "displayNamePlaceholder": "Minha Coleção",
+      "descriptionLabel": "Descrição",
+      "descriptionPlaceholder": "Descrição opcional",
+      "iconLabel": "Ícone",
+      "iconPlaceholder": "Database",
+      "iconHelp": "Nome do ícone Lucide (ex: Database, User, FileText)",
+      "indexesOptional": "Índices (Opcional)",
+      "indexesDescription": "Criar índices compostos para melhorar o desempenho de consulta",
+      "indexChangesAlert": "Mudanças de Índice Requerem Migração",
+      "indexChangesDescription": "Adicionar ou modificar índices gerará uma nova migração. Revise e aplique cuidadosamente.",
+      "cancel": "Cancelar",
+      "saving": "Salvando...",
+      "saveChanges": "Salvar Alterações",
+      "successMessage": "Coleção atualizada com sucesso!"
     },
     "addFieldModal": {
       "title": {

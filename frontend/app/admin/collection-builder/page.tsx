@@ -47,24 +47,24 @@ import { useAuthStore } from '@/store/auth';
 import axios from 'axios';
 
 export default function CollectionBuilderPage() {
+  const t = useTranslations('collectionBuilder');
+  const tCommon = useTranslations('common');
+  const { user } = useAuthStore();
+
   // Only allow access in development mode
   if (process.env.NODE_ENV !== 'development') {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <div className="max-w-md text-center">
           <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Development Only Feature</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('devMode.title')}</h1>
           <p className="text-muted-foreground">
-            The Collection Builder is only available in development mode. This feature is not accessible in production environments.
+            {t('devMode.description')}
           </p>
         </div>
       </div>
     );
   }
-
-  const t = useTranslations('collectionBuilder');
-  const tCommon = useTranslations('common');
-  const { user } = useAuthStore();
   const [collections, setCollections] = useState<CollectionDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -222,7 +222,7 @@ export default function CollectionBuilderPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search collections..."
+            placeholder={t('filters.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -235,9 +235,9 @@ export default function CollectionBuilderPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Collections</SelectItem>
-              <SelectItem value="system">System Only</SelectItem>
-              <SelectItem value="custom">Custom Only</SelectItem>
+              <SelectItem value="all">{t('filters.allCollections')}</SelectItem>
+              <SelectItem value="system">{t('filters.systemOnly')}</SelectItem>
+              <SelectItem value="custom">{t('filters.customOnly')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -261,8 +261,8 @@ export default function CollectionBuilderPage() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   {searchQuery || filterType !== 'all'
-                    ? 'No collections match your filters'
-                    : 'No collections found'}
+                    ? t('filters.noMatch')
+                    : t('filters.noCollections')}
                 </TableCell>
               </TableRow>
             ) : (

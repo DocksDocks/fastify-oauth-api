@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle } from 'lucide-react';
 import {
   Dialog,
@@ -30,6 +31,8 @@ interface EditCollectionModalProps {
 }
 
 export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: EditCollectionModalProps) {
+  const t = useTranslations('collectionBuilder.editCollectionModal');
+
   // Form state
   const {
     register,
@@ -113,7 +116,7 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
 
       await adminApi.updateCollectionDefinition(collection.id, updatePayload);
 
-      setSuccessMessage('Collection updated successfully!');
+      setSuccessMessage(t('successMessage'));
 
       // Wait a bit to show success message, then call onSuccess
       setTimeout(() => {
@@ -130,9 +133,9 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Collection: {collection.displayName}</DialogTitle>
+          <DialogTitle>{t('title', { name: collection.displayName })}</DialogTitle>
           <DialogDescription>
-            Update collection metadata and manage indexes.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -155,7 +158,7 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
           {errors.indexes && (
             <Alert variant="destructive">
               <AlertDescription>
-                <div className="font-semibold mb-2">Please fix validation errors</div>
+                <div className="font-semibold mb-2">{t('errorMessage')}</div>
                 <p className="text-sm">{errors.indexes.message}</p>
               </AlertDescription>
             </Alert>
@@ -164,8 +167,8 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
           {/* Tabs for Basic and Advanced Settings */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced (Indexes)</TabsTrigger>
+              <TabsTrigger value="basic">{t('basicInfo')}</TabsTrigger>
+              <TabsTrigger value="advanced">{t('advanced')}</TabsTrigger>
             </TabsList>
 
             {/* Basic Tab */}
@@ -173,23 +176,23 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
               {/* Read-Only Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Collection Info (Read-Only)</CardTitle>
+                  <CardTitle>{t('collectionInfoReadOnly')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Collection Name (Table Name)</Label>
+                      <Label>{t('collectionNameLabel')}</Label>
                       <Input value={collection.name} disabled className="font-mono bg-muted" />
                       <p className="text-xs text-muted-foreground">
-                        Cannot be changed (database table name)
+                        {t('collectionNameHelp')}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>API Name (Endpoint)</Label>
+                      <Label>{t('apiNameLabel')}</Label>
                       <Input value={collection.apiName} disabled className="font-mono bg-muted" />
                       <p className="text-xs text-muted-foreground">
-                        Cannot be changed (API endpoint name)
+                        {t('apiNameHelp')}
                       </p>
                     </div>
                   </div>
@@ -199,17 +202,17 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
               {/* Editable Metadata */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Metadata (Editable)</CardTitle>
+                  <CardTitle>{t('metadataEditable')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-display-name">
-                      Display Name <span className="text-destructive">*</span>
+                      {t('displayNameLabel')} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="edit-display-name"
                       {...register('displayName')}
-                      placeholder="My Collection"
+                      placeholder={t('displayNamePlaceholder')}
                     />
                     {errors.displayName && (
                       <p className="text-xs text-destructive">{errors.displayName.message}</p>
@@ -217,11 +220,11 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-description">Description</Label>
+                    <Label htmlFor="edit-description">{t('descriptionLabel')}</Label>
                     <Input
                       id="edit-description"
                       {...register('description')}
-                      placeholder="Optional description"
+                      placeholder={t('descriptionPlaceholder')}
                     />
                     {errors.description && (
                       <p className="text-xs text-destructive">{errors.description.message}</p>
@@ -229,11 +232,11 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-icon">Icon</Label>
-                    <Input id="edit-icon" {...register('icon')} placeholder="Database" />
+                    <Label htmlFor="edit-icon">{t('iconLabel')}</Label>
+                    <Input id="edit-icon" {...register('icon')} placeholder={t('iconPlaceholder')} />
                     {errors.icon && <p className="text-xs text-destructive">{errors.icon.message}</p>}
                     <p className="text-xs text-muted-foreground">
-                      Lucide icon name (e.g., Database, User, FileText)
+                      {t('iconHelp')}
                     </p>
                   </div>
                 </CardContent>
@@ -246,9 +249,9 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Indexes (Optional)</CardTitle>
+                      <CardTitle>{t('indexesOptional')}</CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Create composite indexes to improve query performance
+                        {t('indexesDescription')}
                       </p>
                     </div>
                   </div>
@@ -257,10 +260,9 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
                   <Alert className="mb-4">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      <div className="font-semibold mb-1">Index Changes Require Migration</div>
+                      <div className="font-semibold mb-1">{t('indexChangesAlert')}</div>
                       <p className="text-sm">
-                        Adding or modifying indexes will generate a new migration. Review and apply
-                        carefully.
+                        {t('indexChangesDescription')}
                       </p>
                     </AlertDescription>
                   </Alert>
@@ -280,10 +282,10 @@ export function EditCollectionModal({ collection, isOpen, onClose, onSuccess }: 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? t('saving') : t('saveChanges')}
             </Button>
           </div>
         </div>

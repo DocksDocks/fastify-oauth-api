@@ -362,10 +362,14 @@
       "date": "Date",
       "datetime": "Date & Time",
       "boolean": "Boolean",
-      "enum": "Enum",
+      "enum": "Enum (Options)",
       "json": "JSON",
       "relation": "Relation",
       "media": "Media"
+    },
+    "fieldTypeSelector": {
+      "label": "Field Type",
+      "placeholder": "Select field type"
     },
     "indexes": {
       "emptyState": "No indexes added. Indexes can improve query performance.",
@@ -419,6 +423,75 @@
     "devMode": {
       "title": "Development Only Feature",
       "description": "The Collection Builder is only available in development mode. This feature is not accessible in production environments."
+    },
+    "collectionDetail": {
+      "systemCollection": "System Collection",
+      "collectionDetails": "Collection Details",
+      "collectionDetailsDescription": "View and manage collection configuration",
+      "editCollection": "Edit Collection",
+      "collectionName": "Collection Name",
+      "apiName": "API Name",
+      "displayName": "Display Name",
+      "description": "Description",
+      "icon": "Icon",
+      "defaultIcon": "Database",
+      "indexes": "Indexes",
+      "unique": "UNIQUE",
+      "created": "Created:",
+      "updated": "Updated:",
+      "fields": "Fields",
+      "fieldsDescription": "Manage collection fields and their configuration",
+      "addField": "Add Field",
+      "selected": "selected",
+      "deleteSelectedConfirm": "Delete {count} field(s)?",
+      "deleteSelected": "Delete Selected",
+      "noFieldsMatch": "No fields match your search",
+      "tryDifferentSearch": "Try a different search term",
+      "editFieldTitle": "Edit field",
+      "deleteFieldTitle": "Delete field"
+    },
+    "deleteFieldDialog": {
+      "title": "Delete Field",
+      "description": "Are you sure you want to delete \"{fieldName}\"? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "filters": {
+      "searchPlaceholder": "Search collections...",
+      "allCollections": "All Collections",
+      "systemOnly": "System Only",
+      "customOnly": "Custom Only",
+      "noMatch": "No collections match your filters",
+      "noCollections": "No collections found",
+      "cancel": "Cancel"
+    },
+    "editCollectionModal": {
+      "title": "Edit Collection: {name}",
+      "description": "Update collection metadata and manage indexes.",
+      "errorMessage": "Please fix validation errors",
+      "basicInfo": "Basic Info",
+      "advanced": "Advanced (Indexes)",
+      "collectionInfoReadOnly": "Collection Info (Read-Only)",
+      "collectionNameLabel": "Collection Name (Table Name)",
+      "collectionNameHelp": "Cannot be changed (database table name)",
+      "apiNameLabel": "API Name (Endpoint)",
+      "apiNameHelp": "Cannot be changed (API endpoint name)",
+      "metadataEditable": "Metadata (Editable)",
+      "displayNameLabel": "Display Name",
+      "displayNamePlaceholder": "My Collection",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "iconLabel": "Icon",
+      "iconPlaceholder": "Database",
+      "iconHelp": "Lucide icon name (e.g., Database, User, FileText)",
+      "indexesOptional": "Indexes (Optional)",
+      "indexesDescription": "Create composite indexes to improve query performance",
+      "indexChangesAlert": "Index Changes Require Migration",
+      "indexChangesDescription": "Adding or modifying indexes will generate a new migration. Review and apply carefully.",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes",
+      "successMessage": "Collection updated successfully!"
     },
     "addFieldModal": {
       "title": {

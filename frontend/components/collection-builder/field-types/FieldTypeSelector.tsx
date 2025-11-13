@@ -20,20 +20,21 @@ import {
   Link,
   Image as ImageIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-const FIELD_TYPE_OPTIONS: { value: FieldType; label: string; icon: React.ReactNode }[] = [
-  { value: 'text', label: 'Text', icon: <Type className="h-4 w-4" /> },
-  { value: 'longtext', label: 'Long Text', icon: <FileText className="h-4 w-4" /> },
-  { value: 'richtext', label: 'Rich Text', icon: <Edit3 className="h-4 w-4" /> },
-  { value: 'number', label: 'Number', icon: <Hash className="h-4 w-4" /> },
-  { value: 'date', label: 'Date', icon: <Calendar className="h-4 w-4" /> },
-  { value: 'datetime', label: 'Date & Time', icon: <Clock className="h-4 w-4" /> },
-  { value: 'boolean', label: 'Boolean', icon: <ToggleLeft className="h-4 w-4" /> },
-  { value: 'enum', label: 'Enum (Options)', icon: <List className="h-4 w-4" /> },
-  { value: 'json', label: 'JSON', icon: <Braces className="h-4 w-4" /> },
-  { value: 'relation', label: 'Relation', icon: <Link className="h-4 w-4" /> },
-  { value: 'media', label: 'Media', icon: <ImageIcon className="h-4 w-4" /> },
-];
+const FIELD_TYPE_ICONS: Record<FieldType, React.ReactNode> = {
+  text: <Type className="h-4 w-4" />,
+  longtext: <FileText className="h-4 w-4" />,
+  richtext: <Edit3 className="h-4 w-4" />,
+  number: <Hash className="h-4 w-4" />,
+  date: <Calendar className="h-4 w-4" />,
+  datetime: <Clock className="h-4 w-4" />,
+  boolean: <ToggleLeft className="h-4 w-4" />,
+  enum: <List className="h-4 w-4" />,
+  json: <Braces className="h-4 w-4" />,
+  relation: <Link className="h-4 w-4" />,
+  media: <ImageIcon className="h-4 w-4" />,
+};
 
 interface FieldTypeSelectorProps {
   value: FieldType;
@@ -42,15 +43,31 @@ interface FieldTypeSelectorProps {
 }
 
 export function FieldTypeSelector({ value, onChange, disabled }: FieldTypeSelectorProps) {
+  const t = useTranslations('collectionBuilder');
+
+  const fieldTypeOptions: { value: FieldType; label: string; icon: React.ReactNode }[] = [
+    { value: 'text', label: t('fieldTypes.text'), icon: FIELD_TYPE_ICONS.text },
+    { value: 'longtext', label: t('fieldTypes.longtext'), icon: FIELD_TYPE_ICONS.longtext },
+    { value: 'richtext', label: t('fieldTypes.richtext'), icon: FIELD_TYPE_ICONS.richtext },
+    { value: 'number', label: t('fieldTypes.number'), icon: FIELD_TYPE_ICONS.number },
+    { value: 'date', label: t('fieldTypes.date'), icon: FIELD_TYPE_ICONS.date },
+    { value: 'datetime', label: t('fieldTypes.datetime'), icon: FIELD_TYPE_ICONS.datetime },
+    { value: 'boolean', label: t('fieldTypes.boolean'), icon: FIELD_TYPE_ICONS.boolean },
+    { value: 'enum', label: t('fieldTypes.enum'), icon: FIELD_TYPE_ICONS.enum },
+    { value: 'json', label: t('fieldTypes.json'), icon: FIELD_TYPE_ICONS.json },
+    { value: 'relation', label: t('fieldTypes.relation'), icon: FIELD_TYPE_ICONS.relation },
+    { value: 'media', label: t('fieldTypes.media'), icon: FIELD_TYPE_ICONS.media },
+  ];
+
   return (
     <div className="space-y-2">
-      <Label htmlFor="field-type">Field Type</Label>
+      <Label htmlFor="field-type">{t('fieldTypeSelector.label')}</Label>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger id="field-type">
-          <SelectValue placeholder="Select field type" />
+          <SelectValue placeholder={t('fieldTypeSelector.placeholder')} />
         </SelectTrigger>
         <SelectContent>
-          {FIELD_TYPE_OPTIONS.map((option) => (
+          {fieldTypeOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               <div className="flex items-center gap-2">
                 {option.icon}
@@ -65,16 +82,4 @@ export function FieldTypeSelector({ value, onChange, disabled }: FieldTypeSelect
 }
 
 // Export field type icons for use in other components
-export const FIELD_TYPE_ICONS: Record<FieldType, React.ReactNode> = {
-  text: <Type className="h-4 w-4" />,
-  longtext: <FileText className="h-4 w-4" />,
-  richtext: <Edit3 className="h-4 w-4" />,
-  number: <Hash className="h-4 w-4" />,
-  date: <Calendar className="h-4 w-4" />,
-  datetime: <Clock className="h-4 w-4" />,
-  boolean: <ToggleLeft className="h-4 w-4" />,
-  enum: <List className="h-4 w-4" />,
-  json: <Braces className="h-4 w-4" />,
-  relation: <Link className="h-4 w-4" />,
-  media: <ImageIcon className="h-4 w-4" />,
-};
+export { FIELD_TYPE_ICONS };
