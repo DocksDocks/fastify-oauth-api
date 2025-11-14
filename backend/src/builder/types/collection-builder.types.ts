@@ -95,6 +95,12 @@ export interface IndexChange {
   newIndex: CollectionIndex;
 }
 
+export interface FieldRename {
+  oldName: string;
+  newName: string;
+  field: CollectionField; // The field with the new name
+}
+
 export interface MigrationWarning {
   type: 'data_loss' | 'breaking_change' | 'performance' | 'info';
   message: string;
@@ -106,6 +112,7 @@ export interface SchemaChanges {
   hasChanges: boolean;
   addedFields: CollectionField[];
   removedFields: CollectionField[];
+  renamedFields: FieldRename[];
   modifiedFields: FieldChange[];
   addedIndexes: CollectionIndex[];
   removedIndexes: CollectionIndex[];

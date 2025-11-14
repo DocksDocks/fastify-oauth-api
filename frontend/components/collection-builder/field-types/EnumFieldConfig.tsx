@@ -9,6 +9,7 @@ import { Trash2, Plus, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { validateFieldName } from '@/lib/field-validation';
 
 interface FieldConfigProps {
   field: CollectionField;
@@ -19,10 +20,16 @@ interface FieldConfigProps {
 
 export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
   const t = useTranslations('collectionBuilder.fieldConfig');
+  const tFieldTypes = useTranslations('collectionBuilder.fieldTypes');
   const [newEnumValue, setNewEnumValue] = useState('');
 
   const updateField = (updates: Partial<CollectionField>) => {
-    onChange({ ...field, ...updates });
+    // Keep label in sync with name for backend compatibility
+    if (updates.name !== undefined) {
+      onChange({ ...field, ...updates, label: updates.name });
+    } else {
+      onChange({ ...field, ...updates });
+    }
   };
 
   const addEnumValue = () => {
@@ -30,7 +37,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
 
     const currentValues = field.enumValues || [];
     if (currentValues.includes(newEnumValue.trim())) {
-      alert('This value already exists!');
+      alert(t('enumValueExists'));
       return;
     }
 
@@ -50,19 +57,26 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
     }
   };
 
+  // Validate field name
+  const fieldNameValidation = validateFieldName(field.name || '');
+
   const content = (
     <div className="space-y-4">
-        {/* Field Label */}
+        {/* Field Name */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-label`}>
-            {t('displayLabel')} <span className="text-destructive">{t('required')}</span>
+          <Label htmlFor={`${field.name}-name`}>
+            {t('fieldName')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Input
-            id={`${field.name}-label`}
-            value={field.label}
-            onChange={(e) => updateField({ label: e.target.value })}
-            placeholder={t('placeholder.label')}
+            id={`${field.name}-name`}
+            value={field.name}
+            onChange={(e) => updateField({ name: e.target.value })}
+            placeholder={t('placeholder.fieldName')}
+            className={!fieldNameValidation.valid ? 'border-destructive' : ''}
           />
+          {!fieldNameValidation.valid && fieldNameValidation.error && (
+            <p className="text-sm text-destructive">{fieldNameValidation.error}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -100,7 +114,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No values added yet</p>
+            <p className="text-sm text-muted-foreground">{t('noEnumValues')}</p>
           )}
 
           {/* Add New Value */}
@@ -122,7 +136,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Press Enter or click + to add a value
+            {t('addEnumHint')}
           </p>
         </div>
 
@@ -161,7 +175,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
                 updateField({ defaultValue: e.target.value || undefined })
               }
             >
-              <option value="">No default</option>
+              <option value="">{t('noDefault')}</option>
               {field.enumValues.map((value) => (
                 <option key={value} value={value}>
                   {value}
@@ -170,7 +184,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
             </select>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Add enum values first
+              {t('addEnumFirst')}
             </p>
           )}
         </div>
@@ -185,7 +199,7 @@ export function EnumFieldConfig({ field, onChange, onRemove, showHeader = true }
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{field.label || 'Enum Field'}</CardTitle>
+          <CardTitle className="text-base">{field.name || tFieldTypes('enumFieldFallback')}</CardTitle>
           <Button
             variant="ghost"
             size="sm"

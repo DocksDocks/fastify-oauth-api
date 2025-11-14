@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { validateFieldName } from '@/lib/field-validation';
 
 interface FieldConfigProps {
   field: CollectionField;
@@ -25,9 +26,15 @@ interface FieldConfigProps {
 
 export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
   const t = useTranslations('collectionBuilder.fieldConfig');
+  const tFieldTypes = useTranslations('collectionBuilder.fieldTypes');
 
   const updateField = (updates: Partial<CollectionField>) => {
-    onChange({ ...field, ...updates });
+    // Keep label in sync with name for backend compatibility
+    if (updates.name !== undefined) {
+      onChange({ ...field, ...updates, label: updates.name });
+    } else {
+      onChange({ ...field, ...updates });
+    }
   };
 
   const isDateTime = field.type === 'datetime';
@@ -54,19 +61,26 @@ export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }
     prevTypeRef.current = currentType;
   }, [field, onChange]);
 
+  // Validate field name
+  const fieldNameValidation = validateFieldName(field.name || '');
+
   const content = (
     <div className="space-y-4">
-        {/* Field Label */}
+        {/* Field Name */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-label`}>
-            {t('displayLabel')} <span className="text-destructive">{t('required')}</span>
+          <Label htmlFor={`${field.name}-name`}>
+            {t('fieldName')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Input
-            id={`${field.name}-label`}
-            value={field.label}
-            onChange={(e) => updateField({ label: e.target.value })}
-            placeholder={t('placeholder.label')}
+            id={`${field.name}-name`}
+            value={field.name}
+            onChange={(e) => updateField({ name: e.target.value })}
+            placeholder={t('placeholder.fieldName')}
+            className={!fieldNameValidation.valid ? 'border-destructive' : ''}
           />
+          {!fieldNameValidation.valid && fieldNameValidation.error && (
+            <p className="text-sm text-destructive">{fieldNameValidation.error}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -113,21 +127,19 @@ export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }
             }
           >
             <SelectTrigger id={`${field.name}-default`}>
-              <SelectValue placeholder="No default value" />
+              <SelectValue placeholder={t('noDefaultValue')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">No default value</SelectItem>
+              <SelectItem value="none">{t('noDefaultValue')}</SelectItem>
               {isDateTime ? (
-                <SelectItem value="NOW">NOW (Current timestamp)</SelectItem>
+                <SelectItem value="NOW">{t('nowTimestamp')}</SelectItem>
               ) : (
-                <SelectItem value="CURRENT_DATE">CURRENT_DATE (Today)</SelectItem>
+                <SelectItem value="CURRENT_DATE">{t('currentDate')}</SelectItem>
               )}
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            {isDateTime
-              ? 'Special values will be automatically set when creating records'
-              : 'Special values will be automatically set when creating records'}
+            {t('specialValueHelp')}
           </p>
         </div>
 
@@ -136,14 +148,10 @@ export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }
         {/* Info */}
         <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
           <p className="mb-2">
-            {isDateTime
-              ? 'Stores date and time with timezone support (e.g., 2024-11-12 14:30:00)'
-              : 'Stores date only without time (e.g., 2024-11-12)'}
+            {isDateTime ? t('dateTimeInfo') : t('dateInfo')}
           </p>
           <p className="text-xs">
-            <strong>Special default value:</strong>
-            <br />
-            • {isDateTime ? 'NOW' : 'CURRENT_DATE'}: Automatically uses current {isDateTime ? 'timestamp' : 'date'}
+            {t('specialDefaultHelp')}
           </p>
         </div>
     </div>
@@ -158,7 +166,7 @@ export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">
-            {field.label || (isDateTime ? 'Date & Time Field' : 'Date Field')}
+            {field.name || (isDateTime ? tFieldTypes('dateTimeFieldFallback') : tFieldTypes('dateFieldFallback'))}
           </CardTitle>
           <Button
             variant="ghost"

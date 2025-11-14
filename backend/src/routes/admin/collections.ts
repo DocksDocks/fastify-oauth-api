@@ -198,6 +198,7 @@ async function enrichRowsWithForeignKeys(
   rows: Record<string, unknown>[],
   collection: Collection,
   tableMap: Record<string, unknown>,
+  logger?: FastifyRequest['log'],
 ): Promise<Record<string, unknown>[]> {
   if (rows.length === 0) return rows;
 
@@ -205,49 +206,92 @@ async function enrichRowsWithForeignKeys(
   const fkColumns = collection.columns.filter((col) => col.foreignKey);
   if (fkColumns.length === 0) return rows;
 
-  // Enrich each row
-  const enrichedRows = await Promise.all(
-    rows.map(async (row) => {
-      const enrichedRow = { ...row };
+  // Step 1: Collect all foreign key IDs that need to be fetched (grouped by table)
+  const fkIdsByTable = new Map<string, Set<unknown>>();
+  const fkColumnsByTable = new Map<string, typeof fkColumns>();
 
-      for (const fkColumn of fkColumns) {
-        const fkValue = row[fkColumn.name];
-        if (fkValue && fkColumn.foreignKey) {
-          try {
-            // Get the related table schema
-            const relatedTable = tableMap[fkColumn.foreignKey.table];
-            if (relatedTable) {
-              // Fetch the related record
-              const relatedRecords = await db
-                .select()
-                .from(relatedTable as PgTable)
-                .where(sql`id = ${fkValue}`)
-                .limit(1);
+  for (const fkColumn of fkColumns) {
+    if (!fkColumn.foreignKey) continue;
+    const tableName = fkColumn.foreignKey.table;
 
-              if (relatedRecords.length > 0) {
-                const relatedRecord = relatedRecords[0] as Record<string, unknown>;
-                // Add foreign key data with _fk_ prefix
-                enrichedRow[`_fk_${fkColumn.name}`] = {
-                  id: fkValue,
-                  displayValue: relatedRecord[fkColumn.foreignKey.displayField] || fkValue,
-                  labelValue: fkColumn.foreignKey.labelField
-                    ? relatedRecord[fkColumn.foreignKey.labelField]
-                    : null,
-                  table: fkColumn.foreignKey.table,
-                  record: relatedRecord, // Include full related record
-                };
-              }
-            }
-          } catch (error) {
-            // If foreign key fetch fails, just skip it
-            console.error(`Failed to fetch foreign key for ${fkColumn.name}:`, error);
-          }
-        }
+    if (!fkIdsByTable.has(tableName)) {
+      fkIdsByTable.set(tableName, new Set());
+      fkColumnsByTable.set(tableName, []);
+    }
+
+    fkColumnsByTable.get(tableName)!.push(fkColumn);
+
+    // Collect all unique IDs for this foreign key column
+    for (const row of rows) {
+      const fkValue = row[fkColumn.name];
+      if (fkValue) {
+        fkIdsByTable.get(tableName)!.add(fkValue);
+      }
+    }
+  }
+
+  // Step 2: Fetch all related records in bulk (one query per table)
+  const relatedRecordsByTable = new Map<string, Map<unknown, Record<string, unknown>>>();
+
+  for (const [tableName, ids] of fkIdsByTable.entries()) {
+    if (ids.size === 0) continue;
+
+    try {
+      const relatedTable = tableMap[tableName];
+      if (!relatedTable) continue;
+
+      // Fetch all related records for this table in one query
+      const idsArray = Array.from(ids);
+      const relatedRecords = await db
+        .select()
+        .from(relatedTable as PgTable)
+        .where(sql`id = ANY(${idsArray})`);
+
+      // Create lookup map: id -> record
+      const recordMap = new Map<unknown, Record<string, unknown>>();
+      for (const record of relatedRecords) {
+        const typedRecord = record as Record<string, unknown>;
+        recordMap.set(typedRecord.id, typedRecord);
       }
 
-      return enrichedRow;
-    })
-  );
+      relatedRecordsByTable.set(tableName, recordMap);
+    } catch (error) {
+      // If bulk fetch fails, log and continue
+      if (logger) {
+        logger.error({ error, table: tableName }, 'Failed to bulk fetch foreign keys');
+      }
+    }
+  }
+
+  // Step 3: Enrich rows using pre-fetched data
+  const enrichedRows = rows.map((row) => {
+    const enrichedRow = { ...row };
+
+    for (const fkColumn of fkColumns) {
+      const fkValue = row[fkColumn.name];
+      if (!fkValue || !fkColumn.foreignKey) continue;
+
+      const tableName = fkColumn.foreignKey.table;
+      const recordMap = relatedRecordsByTable.get(tableName);
+      if (!recordMap) continue;
+
+      const relatedRecord = recordMap.get(fkValue);
+      if (relatedRecord) {
+        // Add foreign key data with _fk_ prefix
+        enrichedRow[`_fk_${fkColumn.name}`] = {
+          id: fkValue,
+          displayValue: relatedRecord[fkColumn.foreignKey.displayField] || fkValue,
+          labelValue: fkColumn.foreignKey.labelField
+            ? relatedRecord[fkColumn.foreignKey.labelField]
+            : null,
+          table: tableName,
+          record: relatedRecord, // Include full related record
+        };
+      }
+    }
+
+    return enrichedRow;
+  });
 
   return enrichedRows;
 }
@@ -338,7 +382,7 @@ async function getCollectionData(
     const data = await queryWithPagination;
 
     // Enrich rows with foreign key data
-    const enrichedData = await enrichRowsWithForeignKeys(data, collection, tableMap);
+    const enrichedData = await enrichRowsWithForeignKeys(data, collection, tableMap, request.log);
 
     // Get total count
     const baseCountQuery = db

@@ -20,6 +20,11 @@ import type {
   CollectionDefinitionInput,
   ValidationError,
   ValidationResult,
+  SchemaChanges,
+  FieldChange,
+  FieldRename,
+  IndexChange,
+  MigrationWarning,
 } from '../types/collection-builder.types';
 
 // Re-export types for convenience
@@ -33,6 +38,11 @@ export type {
   CollectionDefinitionInput,
   ValidationError,
   ValidationResult,
+  SchemaChanges,
+  FieldChange,
+  FieldRename,
+  IndexChange,
+  MigrationWarning,
 } from '../types/collection-builder.types';
 
 // ============================================================================
@@ -234,6 +244,550 @@ export async function checkNamingConflicts(name: string, apiName: string): Promi
     .limit(1);
 
   return existing.length > 0;
+}
+
+// ============================================================================
+// Schema Comparison Functions
+// ============================================================================
+
+/**
+ * Compare two collection definitions and identify schema changes
+ * Used to generate migration warnings and ALTER TABLE statements
+ */
+export function compareCollectionSchemas(
+  oldDefinition: CollectionDefinitionInput,
+  newDefinition: CollectionDefinitionInput,
+): SchemaChanges {
+  const warnings: MigrationWarning[] = [];
+  const addedFields: CollectionField[] = [];
+  const removedFields: CollectionField[] = [];
+  const renamedFields: FieldRename[] = [];
+  const modifiedFields: FieldChange[] = [];
+
+  // Create maps for easier lookup
+  const oldFieldsMap = new Map(oldDefinition.fields.map((f) => [f.name, f]));
+  const newFieldsMap = new Map(newDefinition.fields.map((f) => [f.name, f]));
+
+  // Find added fields
+  newDefinition.fields.forEach((newField) => {
+    if (!oldFieldsMap.has(newField.name)) {
+      addedFields.push(newField);
+
+      // Warning if added field is required without default
+      if (newField.required && newField.defaultValue === undefined) {
+        warnings.push({
+          type: 'breaking_change',
+          message: `Adding required field "${newField.name}" without a default value will fail if table has existing data`,
+          fieldName: newField.name,
+          severity: 'high',
+        });
+      }
+    }
+  });
+
+  // Find removed and modified fields
+  oldDefinition.fields.forEach((oldField) => {
+    const newField = newFieldsMap.get(oldField.name);
+
+    if (!newField) {
+      // Field was removed (might be a rename, checked later)
+      removedFields.push(oldField);
+    } else {
+      // Field exists in both - check for modifications
+      const changes: Array<'type' | 'required' | 'unique' | 'defaultValue' | 'validation' | 'max' | 'precision' | 'scale' | 'enumValues'> = [];
+
+      // Check type changes
+      if (oldField.type !== newField.type) {
+        changes.push('type');
+        warnings.push({
+          type: 'breaking_change',
+          message: `Changing field "${oldField.name}" from ${oldField.type} to ${newField.type} may cause data loss or type conversion errors`,
+          fieldName: oldField.name,
+          severity: 'high',
+        });
+      }
+
+      // Check required constraint
+      if (oldField.required !== newField.required) {
+        changes.push('required');
+        if (newField.required && !oldField.required) {
+          warnings.push({
+            type: 'breaking_change',
+            message: `Making field "${oldField.name}" required may fail if existing rows have NULL values`,
+            fieldName: oldField.name,
+            severity: 'high',
+          });
+        }
+      }
+
+      // Check unique constraint
+      if (oldField.unique !== newField.unique) {
+        changes.push('unique');
+        if (newField.unique && !oldField.unique) {
+          warnings.push({
+            type: 'breaking_change',
+            message: `Adding UNIQUE constraint to field "${oldField.name}" may fail if duplicate values exist`,
+            fieldName: oldField.name,
+            severity: 'medium',
+          });
+        }
+      }
+
+      // Check default value changes
+      if (JSON.stringify(oldField.defaultValue) !== JSON.stringify(newField.defaultValue)) {
+        changes.push('defaultValue');
+        warnings.push({
+          type: 'info',
+          message: `Default value for field "${oldField.name}" changed. This only affects new rows.`,
+          fieldName: oldField.name,
+          severity: 'low',
+        });
+      }
+
+      // Check validation changes
+      if (JSON.stringify(oldField.validation) !== JSON.stringify(newField.validation)) {
+        changes.push('validation');
+      }
+
+      // Check max length for text fields
+      if (oldField.max !== newField.max) {
+        changes.push('max');
+        if (newField.max && oldField.max && newField.max < oldField.max) {
+          warnings.push({
+            type: 'data_loss',
+            message: `Reducing max length of field "${oldField.name}" from ${oldField.max} to ${newField.max} may truncate existing data`,
+            fieldName: oldField.name,
+            severity: 'high',
+          });
+        }
+      }
+
+      // Check precision/scale for decimal fields
+      if (oldField.precision !== newField.precision || oldField.scale !== newField.scale) {
+        if (oldField.precision !== newField.precision) changes.push('precision');
+        if (oldField.scale !== newField.scale) changes.push('scale');
+
+        warnings.push({
+          type: 'breaking_change',
+          message: `Changing precision/scale of field "${oldField.name}" may cause data loss or rounding`,
+          fieldName: oldField.name,
+          severity: 'medium',
+        });
+      }
+
+      // Check enum values changes
+      if (JSON.stringify(oldField.enumValues) !== JSON.stringify(newField.enumValues)) {
+        changes.push('enumValues');
+
+        const oldEnums = new Set(oldField.enumValues || []);
+        const newEnums = new Set(newField.enumValues || []);
+        const removedEnums = Array.from(oldEnums).filter((e) => !newEnums.has(e));
+
+        if (removedEnums.length > 0) {
+          warnings.push({
+            type: 'breaking_change',
+            message: `Removing enum values [${removedEnums.join(', ')}] from field "${oldField.name}" may cause errors if these values exist in the database`,
+            fieldName: oldField.name,
+            severity: 'high',
+          });
+        }
+      }
+
+      if (changes.length > 0) {
+        modifiedFields.push({
+          oldField,
+          newField,
+          changes,
+        });
+      }
+    }
+  });
+
+  // Detect field renames
+  // A rename is detected when a removed field and an added field have:
+  // - Same type
+  // - Same required/unique/default properties
+  // This is a heuristic - we can't be 100% certain it's a rename vs remove+add
+  const processedAdded = new Set<number>();
+  const processedRemoved = new Set<number>();
+
+  removedFields.forEach((removedField, removedIndex) => {
+    if (processedRemoved.has(removedIndex)) return;
+
+    // Look for a matching added field
+    addedFields.forEach((addedField, addedIndex) => {
+      if (processedAdded.has(addedIndex)) return;
+
+      // Check if fields match (same type and core properties)
+      const isSameType = removedField.type === addedField.type;
+      const isSameRequired = removedField.required === addedField.required;
+      const isSameUnique = removedField.unique === addedField.unique;
+      const isSameDefault = JSON.stringify(removedField.defaultValue) === JSON.stringify(addedField.defaultValue);
+
+      // For enum fields, also check if enum values match
+      let enumMatches = true;
+      if (removedField.type === 'enum' && addedField.type === 'enum') {
+        enumMatches = JSON.stringify(removedField.enumValues) === JSON.stringify(addedField.enumValues);
+      }
+
+      // For number fields, check if decimal settings match
+      let numberMatches = true;
+      if (removedField.type === 'number' && addedField.type === 'number') {
+        numberMatches =
+          removedField.numberType === addedField.numberType &&
+          removedField.precision === addedField.precision &&
+          removedField.scale === addedField.scale;
+      }
+
+      // If all properties match, this is likely a rename
+      if (isSameType && isSameRequired && isSameUnique && isSameDefault && enumMatches && numberMatches) {
+        // Mark as rename
+        renamedFields.push({
+          oldName: removedField.name,
+          newName: addedField.name,
+          field: addedField,
+        });
+
+        // Mark as processed so they're not included in added/removed
+        processedAdded.add(addedIndex);
+        processedRemoved.add(removedIndex);
+
+        // Add warning about rename
+        warnings.push({
+          type: 'info',
+          message: `Field "${removedField.name}" appears to have been renamed to "${addedField.name}". The column will be renamed preserving all existing data.`,
+          fieldName: removedField.name,
+          severity: 'low',
+        });
+      }
+    });
+  });
+
+  // Filter out renamed fields from added and removed arrays
+  const finalAddedFields = addedFields.filter((_, index) => !processedAdded.has(index));
+  const finalRemovedFields = removedFields.filter((_, index) => !processedRemoved.has(index));
+
+  // Add warnings for actual removals (after filtering out renames)
+  finalRemovedFields.forEach((field) => {
+    warnings.push({
+      type: 'data_loss',
+      message: `Removing field "${field.name}" will permanently delete all data in this column`,
+      fieldName: field.name,
+      severity: 'high',
+    });
+  });
+
+  // Compare indexes
+  const oldIndexesMap = new Map((oldDefinition.indexes || []).map((idx) => [idx.name, idx]));
+  const newIndexesMap = new Map((newDefinition.indexes || []).map((idx) => [idx.name, idx]));
+
+  const addedIndexes: CollectionIndex[] = [];
+  const removedIndexes: CollectionIndex[] = [];
+  const modifiedIndexes: IndexChange[] = [];
+
+  // Find added indexes
+  (newDefinition.indexes || []).forEach((newIndex) => {
+    if (!oldIndexesMap.has(newIndex.name)) {
+      addedIndexes.push(newIndex);
+      warnings.push({
+        type: 'performance',
+        message: `Adding index "${newIndex.name}" may take time on large tables`,
+        severity: 'low',
+      });
+    }
+  });
+
+  // Find removed and modified indexes
+  (oldDefinition.indexes || []).forEach((oldIndex) => {
+    const newIndex = newIndexesMap.get(oldIndex.name);
+
+    if (!newIndex) {
+      removedIndexes.push(oldIndex);
+      warnings.push({
+        type: 'performance',
+        message: `Removing index "${oldIndex.name}" may slow down queries that use it`,
+        severity: 'medium',
+      });
+    } else {
+      // Check if index was modified
+      const fieldsChanged = JSON.stringify(oldIndex.fields) !== JSON.stringify(newIndex.fields);
+      const uniqueChanged = oldIndex.unique !== newIndex.unique;
+
+      if (fieldsChanged || uniqueChanged) {
+        modifiedIndexes.push({
+          oldIndex,
+          newIndex,
+        });
+        warnings.push({
+          type: 'breaking_change',
+          message: `Index "${oldIndex.name}" will be recreated with new configuration`,
+          severity: 'medium',
+        });
+      }
+    }
+  });
+
+  const hasChanges =
+    finalAddedFields.length > 0 ||
+    finalRemovedFields.length > 0 ||
+    renamedFields.length > 0 ||
+    modifiedFields.length > 0 ||
+    addedIndexes.length > 0 ||
+    removedIndexes.length > 0 ||
+    modifiedIndexes.length > 0;
+
+  return {
+    hasChanges,
+    addedFields: finalAddedFields,
+    removedFields: finalRemovedFields,
+    renamedFields,
+    modifiedFields,
+    addedIndexes,
+    removedIndexes,
+    modifiedIndexes,
+    warnings,
+  };
+}
+
+/**
+ * Generate ALTER TABLE SQL statements from schema changes
+ * Returns SQL migration statements to transform old schema to new schema
+ */
+export function generateAlterTableSQL(
+  tableName: string,
+  changes: SchemaChanges,
+): string {
+  if (!changes.hasChanges) {
+    return '-- No schema changes detected';
+  }
+
+  const statements: string[] = [];
+
+  // 1. Rename columns (must be done before other operations)
+  changes.renamedFields.forEach((rename) => {
+    const oldColumnName = toSnakeCase(rename.oldName);
+    const newColumnName = toSnakeCase(rename.newName);
+    statements.push(`ALTER TABLE ${tableName} RENAME COLUMN ${oldColumnName} TO ${newColumnName};`);
+  });
+
+  // 2. Add new columns
+  changes.addedFields.forEach((field) => {
+    const columnName = toSnakeCase(field.name);
+    const dataType = getPostgresType(field);
+    const constraints: string[] = [];
+
+    if (field.required) {
+      constraints.push('NOT NULL');
+    }
+
+    if (field.unique) {
+      constraints.push('UNIQUE');
+    }
+
+    if (field.defaultValue !== undefined) {
+      if (typeof field.defaultValue === 'string') {
+        const specialFunctions = ['NOW', 'CURRENT_DATE', 'CURRENT_TIMESTAMP', 'CURRENT_TIME'];
+        const defaultValueUpper = field.defaultValue.toUpperCase();
+
+        if (specialFunctions.includes(defaultValueUpper)) {
+          const sqlFunction = defaultValueUpper === 'NOW' ? 'NOW()' : defaultValueUpper;
+          constraints.push(`DEFAULT ${sqlFunction}`);
+        } else {
+          constraints.push(`DEFAULT '${field.defaultValue}'`);
+        }
+      } else if (typeof field.defaultValue === 'boolean') {
+        constraints.push(`DEFAULT ${field.defaultValue}`);
+      } else {
+        constraints.push(`DEFAULT ${field.defaultValue}`);
+      }
+    }
+
+    const constraintStr = constraints.length > 0 ? ` ${constraints.join(' ')}` : '';
+    statements.push(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${dataType}${constraintStr};`);
+
+    // Handle enum types - create type first if needed
+    if (field.type === 'enum' && field.enumValues) {
+      const enumTypeName = `${toSnakeCase(field.name)}_enum`;
+      const values = field.enumValues.map((v) => `'${v}'`).join(', ');
+      statements.unshift(`CREATE TYPE ${enumTypeName} AS ENUM (${values});`);
+    }
+
+    // Handle foreign key constraints
+    if (field.type === 'relation' && field.relationConfig) {
+      const targetTable = field.relationConfig.targetCollection;
+      const onDelete = field.relationConfig.cascadeDelete ? 'CASCADE' : 'RESTRICT';
+      const fkName = field.relationConfig.foreignKeyName || `fk_${tableName}_${columnName}`;
+      statements.push(`ALTER TABLE ${tableName} ADD CONSTRAINT ${fkName} FOREIGN KEY (${columnName}) REFERENCES ${targetTable}(id) ON DELETE ${onDelete};`);
+    }
+  });
+
+  // 3. Remove columns
+  changes.removedFields.forEach((field) => {
+    const columnName = toSnakeCase(field.name);
+    statements.push(`ALTER TABLE ${tableName} DROP COLUMN ${columnName} CASCADE;`);
+
+    // Drop enum type if it was used
+    if (field.type === 'enum') {
+      const enumTypeName = `${toSnakeCase(field.name)}_enum`;
+      statements.push(`DROP TYPE IF EXISTS ${enumTypeName};`);
+    }
+  });
+
+  // 4. Modify columns
+  changes.modifiedFields.forEach((fieldChange) => {
+    const columnName = toSnakeCase(fieldChange.newField.name);
+    const { changes: changeTypes } = fieldChange;
+
+    // Handle type changes
+    if (changeTypes.includes('type')) {
+      const newDataType = getPostgresType(fieldChange.newField);
+      statements.push(`ALTER TABLE ${tableName} ALTER COLUMN ${columnName} TYPE ${newDataType} USING ${columnName}::${newDataType};`);
+    }
+
+    // Handle required constraint changes
+    if (changeTypes.includes('required')) {
+      if (fieldChange.newField.required) {
+        statements.push(`ALTER TABLE ${tableName} ALTER COLUMN ${columnName} SET NOT NULL;`);
+      } else {
+        statements.push(`ALTER TABLE ${tableName} ALTER COLUMN ${columnName} DROP NOT NULL;`);
+      }
+    }
+
+    // Handle unique constraint changes
+    if (changeTypes.includes('unique')) {
+      if (fieldChange.newField.unique) {
+        const constraintName = `${tableName}_${columnName}_unique`;
+        statements.push(`ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} UNIQUE (${columnName});`);
+      } else {
+        const constraintName = `${tableName}_${columnName}_unique`;
+        statements.push(`ALTER TABLE ${tableName} DROP CONSTRAINT IF EXISTS ${constraintName};`);
+      }
+    }
+
+    // Handle default value changes
+    if (changeTypes.includes('defaultValue')) {
+      if (fieldChange.newField.defaultValue !== undefined) {
+        let defaultValue = '';
+        if (typeof fieldChange.newField.defaultValue === 'string') {
+          const specialFunctions = ['NOW', 'CURRENT_DATE', 'CURRENT_TIMESTAMP', 'CURRENT_TIME'];
+          const defaultValueUpper = fieldChange.newField.defaultValue.toUpperCase();
+
+          if (specialFunctions.includes(defaultValueUpper)) {
+            defaultValue = defaultValueUpper === 'NOW' ? 'NOW()' : defaultValueUpper;
+          } else {
+            defaultValue = `'${fieldChange.newField.defaultValue}'`;
+          }
+        } else {
+          defaultValue = String(fieldChange.newField.defaultValue);
+        }
+        statements.push(`ALTER TABLE ${tableName} ALTER COLUMN ${columnName} SET DEFAULT ${defaultValue};`);
+      } else {
+        statements.push(`ALTER TABLE ${tableName} ALTER COLUMN ${columnName} DROP DEFAULT;`);
+      }
+    }
+  });
+
+  // 5. Remove indexes
+  changes.removedIndexes.forEach((index) => {
+    statements.push(`DROP INDEX IF EXISTS ${index.name};`);
+  });
+
+  // 6. Modify indexes (drop and recreate)
+  changes.modifiedIndexes.forEach((indexChange) => {
+    statements.push(`DROP INDEX IF EXISTS ${indexChange.oldIndex.name};`);
+
+    const indexType = indexChange.newIndex.unique ? 'UNIQUE INDEX' : 'INDEX';
+    const columns = indexChange.newIndex.fields.map(toSnakeCase).join(', ');
+    statements.push(`CREATE ${indexType} ${indexChange.newIndex.name} ON ${tableName}(${columns});`);
+  });
+
+  // 7. Add new indexes
+  changes.addedIndexes.forEach((index) => {
+    const indexType = index.unique ? 'UNIQUE INDEX' : 'INDEX';
+    const columns = index.fields.map(toSnakeCase).join(', ');
+    statements.push(`CREATE ${indexType} ${index.name} ON ${tableName}(${columns});`);
+  });
+
+  return statements.join('\n');
+}
+
+/**
+ * Update an existing Drizzle schema file for a collection
+ * Overwrites the existing file with new schema code
+ */
+export async function updateDrizzleSchemaFile(
+  collectionName: string,
+  schemaCode: string,
+): Promise<string> {
+  // Skip file writing in test environment
+  if (env.NODE_ENV === 'test') {
+    return `test-schema-${collectionName}.ts`;
+  }
+
+  // Get the custom_collections directory
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const customCollectionsDir = path.join(__dirname, '../../db/schema/custom_collections');
+
+  // Create schema filename (e.g., test_products -> test-products.ts)
+  const kebabName = collectionName.toLowerCase().replace(/_/g, '-');
+  const schemaFilename = `${kebabName}.ts`;
+  const schemaPath = path.join(customCollectionsDir, schemaFilename);
+
+  // Check if file exists
+  if (!fs.existsSync(schemaPath)) {
+    throw new Error(`Schema file for collection "${collectionName}" not found at ${schemaPath}`);
+  }
+
+  // Write the updated schema file with a header comment
+  const schemaContent = `/**
+ * ${collectionName} Collection Schema
+ * Generated by Collection Builder
+ * Last updated: ${new Date().toISOString()}
+ *
+ * This file is auto-generated. Manual modifications may be overwritten.
+ */
+
+${schemaCode}
+`;
+
+  fs.writeFileSync(schemaPath, schemaContent, 'utf-8');
+
+  return schemaFilename;
+}
+
+/**
+ * Update an existing test file for a collection
+ * Overwrites the existing file with new test code
+ */
+export async function updateTestFile(
+  collectionName: string,
+  testCode: string,
+): Promise<string> {
+  // Skip file writing in test environment
+  if (env.NODE_ENV === 'test') {
+    return `test-file-${collectionName}.test.ts`;
+  }
+
+  // Get the test directory
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const testDir = path.join(__dirname, '../../../test/custom_collections');
+
+  // Create test filename (e.g., test_products -> test-products.test.ts)
+  const kebabName = collectionName.toLowerCase().replace(/_/g, '-');
+  const testFilename = `${kebabName}.test.ts`;
+  const testPath = path.join(testDir, testFilename);
+
+  // Check if file exists
+  if (!fs.existsSync(testPath)) {
+    throw new Error(`Test file for collection "${collectionName}" not found at ${testPath}`);
+  }
+
+  // Write the updated test file
+  fs.writeFileSync(testPath, testCode, 'utf-8');
+
+  return testFilename;
 }
 
 // ============================================================================
@@ -630,12 +1184,17 @@ export async function createCollectionDefinition(
 
 /**
  * Update an existing collection definition
+ * Enhanced to handle schema migrations, file updates, and test regeneration
  */
 export async function updateCollectionDefinition(
   id: number,
   updates: Partial<CollectionDefinitionInput>,
   _userId: number,
-): Promise<typeof collectionDefinitions.$inferSelect> {
+): Promise<{
+  collection: typeof collectionDefinitions.$inferSelect;
+  schemaChanges?: SchemaChanges;
+  migrationFile?: string;
+}> {
   // Get existing definition
   const existing = await getCollectionDefinitionById(id);
   if (!existing) {
@@ -646,6 +1205,18 @@ export async function updateCollectionDefinition(
   if (existing.isSystem) {
     throw new Error('Cannot update system collections');
   }
+
+  // Create old definition for comparison
+  const oldDefinition: CollectionDefinitionInput = {
+    name: existing.name,
+    apiName: existing.apiName,
+    displayName: existing.displayName,
+    description: existing.description ?? undefined,
+    icon: existing.icon ?? undefined,
+    fields: existing.fields as unknown as CollectionField[],
+    indexes: existing.indexes as unknown as CollectionIndex[],
+    relationships: existing.relationships as unknown as CollectionRelationship[],
+  };
 
   // Merge updates with existing definition for validation
   const mergedDefinition: CollectionDefinitionInput = {
@@ -664,6 +1235,29 @@ export async function updateCollectionDefinition(
   const validation = validateCollectionDefinition(mergedDefinition);
   if (!validation.valid) {
     throw new Error(`Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`);
+  }
+
+  // Compare schemas to detect changes
+  const schemaChanges = compareCollectionSchemas(oldDefinition, mergedDefinition);
+
+  // If there are schema changes (field or index changes), generate migration
+  let migrationFile: string | undefined;
+  if (schemaChanges.hasChanges) {
+    // Generate ALTER TABLE SQL
+    const alterTableSQL = generateAlterTableSQL(existing.name, schemaChanges);
+
+    // Write migration file
+    const timestamp = Date.now();
+    const migrationName = `${String(timestamp).slice(-8)}_update_${existing.name}_table`;
+    migrationFile = await writeMigrationFile(migrationName, alterTableSQL);
+
+    // Generate and update Drizzle schema
+    const schemaCode = generateDrizzleSchema(mergedDefinition);
+    await updateDrizzleSchemaFile(existing.name, schemaCode);
+
+    // Generate and update test file
+    const testCode = generateBasicTests(mergedDefinition);
+    await updateTestFile(existing.name, testCode);
   }
 
   // Build update data
@@ -691,7 +1285,11 @@ export async function updateCollectionDefinition(
     throw new Error('Failed to update collection definition');
   }
 
-  return updated;
+  return {
+    collection: updated,
+    schemaChanges: schemaChanges.hasChanges ? schemaChanges : undefined,
+    migrationFile,
+  };
 }
 
 /**

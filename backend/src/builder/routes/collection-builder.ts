@@ -20,6 +20,7 @@ import {
   writeDrizzleSchemaFile,
   updateCustomCollectionsIndex,
   writeTestFile,
+  updateCollectionDefinition as updateCollectionDefinitionService,
   type FieldType,
   type CollectionField,
   type CollectionIndex,
@@ -334,7 +335,7 @@ async function createCollectionDefinition(
     // Trigger server restart by touching a watched file
     // tsx watch will detect the file change and restart the server
     // predev hook will run migrations on restart
-    setTimeout(async () => {
+    setImmediate(async () => {
       request.log.info('Triggering server restart to apply collection migration...');
       try {
         // Touch the server file to trigger tsx watch restart
@@ -347,7 +348,7 @@ async function createCollectionDefinition(
       } catch (error) {
         request.log.error({ error }, 'Failed to trigger server restart');
       }
-    }, 100);
+    });
 
     return;
   } catch (error) {
@@ -365,6 +366,7 @@ async function createCollectionDefinition(
 /**
  * Update collection definition
  * PATCH /api/admin/collection-builder/definitions/:id
+ * Enhanced to handle schema migrations and file updates
  */
 async function updateCollectionDefinition(
   request: FastifyRequest<{
@@ -383,6 +385,7 @@ async function updateCollectionDefinition(
   reply: FastifyReply,
 ): Promise<void> {
   try {
+    const user = request.user as JWTPayload;
     const { id } = request.params;
     const { displayName, description, icon, fields, indexes, relationships } = request.body;
 
@@ -426,38 +429,97 @@ async function updateCollectionDefinition(
       });
     }
 
-    // Build update object (only include provided fields)
-    const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
+    // Build update object
+    const updates: {
+      displayName?: string;
+      description?: string;
+      icon?: string;
+      fields?: CollectionField[];
+      indexes?: CollectionIndex[];
+      relationships?: CollectionRelationship[];
+    } = {};
+
+    if (displayName !== undefined) updates.displayName = displayName;
+    if (description !== undefined) updates.description = description;
+    if (icon !== undefined) updates.icon = icon;
+    if (fields !== undefined) updates.fields = fields as CollectionField[];
+    if (indexes !== undefined) updates.indexes = indexes as CollectionIndex[];
+    if (relationships !== undefined) updates.relationships = relationships as CollectionRelationship[];
+
+    // Use enhanced service function to handle migrations
+    const result = await updateCollectionDefinitionService(collectionId, updates, user.id);
+
+    const responseData: {
+      collection: typeof result.collection;
+      schemaChanges?: typeof result.schemaChanges;
+      migrationFile?: string;
+      needsRestart?: boolean;
+    } = {
+      collection: result.collection,
     };
 
-    if (displayName !== undefined) updateData.displayName = displayName;
-    if (description !== undefined) updateData.description = description;
-    if (icon !== undefined) updateData.icon = icon;
-    if (fields !== undefined) updateData.fields = fields;
-    if (indexes !== undefined) updateData.indexes = indexes;
-    if (relationships !== undefined) updateData.relationships = relationships;
+    // Include schema changes and warnings if present
+    if (result.schemaChanges) {
+      responseData.schemaChanges = result.schemaChanges;
+      responseData.migrationFile = result.migrationFile;
+      responseData.needsRestart = true;
 
-    // Update collection definition
-    const [updated] = await db
-      .update(collectionDefinitions)
-      .set(updateData)
-      .where(eq(collectionDefinitions.id, collectionId))
-      .returning();
+      request.log.info(
+        {
+          collectionId,
+          name: existing.name,
+          migrationFile: result.migrationFile,
+          warnings: result.schemaChanges.warnings.length,
+        },
+        'Updated collection with schema changes - server will restart',
+      );
 
-    request.log.info({ collectionId, updates: Object.keys(updateData) }, 'Updated collection definition');
+      // Run migrations immediately to apply schema changes
+      try {
+        const { runMigrations } = await import('@/db/migrate');
+        await runMigrations();
+        request.log.info({ migrationFile: result.migrationFile }, 'Migration applied successfully');
+      } catch (error) {
+        request.log.error({ error, migrationFile: result.migrationFile }, 'Failed to apply migration');
+        // Continue anyway - migration can be applied manually
+      }
 
-    return reply.send({
-      success: true,
-      data: updated,
-    });
+      // Send response first
+      reply.send({
+        success: true,
+        data: responseData,
+      });
+
+      // Trigger server restart by touching a watched file
+      setImmediate(async () => {
+        request.log.info('Triggering server restart to reload schema...');
+        try {
+          const { utimes } = await import('node:fs/promises');
+          const { fileURLToPath } = await import('node:url');
+          const __filename = fileURLToPath(import.meta.url);
+          const now = new Date();
+          await utimes(__filename, now, now);
+          request.log.info('Server restart triggered successfully');
+        } catch (error) {
+          request.log.error({ error }, 'Failed to trigger server restart');
+        }
+      });
+    } else {
+      // No schema changes, just metadata update
+      request.log.info({ collectionId, updates: Object.keys(updates) }, 'Updated collection metadata (no schema changes)');
+
+      return reply.send({
+        success: true,
+        data: responseData,
+      });
+    }
   } catch (error) {
     request.log.error({ error }, 'Failed to update collection definition');
     return reply.status(500).send({
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to update collection definition',
+        message: error instanceof Error ? error.message : 'Failed to update collection definition',
       },
     });
   }

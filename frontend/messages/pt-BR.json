@@ -277,7 +277,10 @@
       "errorLoading": "Erro ao Carregar Coleções",
       "collectionNotFound": "Coleção Não Encontrada",
       "collectionNotFoundDescription": "A coleção que você está procurando não existe.",
-      "backToCollections": "Voltar para Coleções"
+      "backToCollections": "Voltar para Coleções",
+      "failedToLoad": "Falha ao carregar coleções",
+      "failedToLoadCollection": "Falha ao carregar coleção",
+      "failedToDelete": "Falha ao excluir coleção"
     },
     "breadcrumbs": {
       "admin": "Admin",
@@ -365,11 +368,77 @@
       "enum": "Enum (Opções)",
       "json": "JSON",
       "relation": "Relação",
-      "media": "Mídia"
+      "media": "Mídia",
+      "textFieldFallback": "Campo de Texto",
+      "numberFieldFallback": "Campo Numérico",
+      "booleanFieldFallback": "Campo Booleano",
+      "dateFieldFallback": "Campo de Data",
+      "dateTimeFieldFallback": "Campo de Data e Hora",
+      "enumFieldFallback": "Campo Enum",
+      "jsonFieldFallback": "Campo JSON",
+      "mediaFieldFallback": "Campo de Mídia",
+      "relationFieldFallback": "Campo de Relação"
     },
     "fieldTypeSelector": {
       "label": "Tipo de Campo",
       "placeholder": "Selecione o tipo de campo"
+    },
+    "icons": {
+      "database": "Banco de Dados",
+      "user": "Usuário",
+      "users": "Usuários",
+      "fileText": "Arquivo de Texto",
+      "image": "Imagem",
+      "shoppingCart": "Carrinho de Compras",
+      "tag": "Etiqueta",
+      "calendar": "Calendário",
+      "mail": "Email",
+      "phone": "Telefone",
+      "mapPin": "Marcador de Mapa",
+      "settings": "Configurações",
+      "folder": "Pasta",
+      "file": "Arquivo",
+      "upload": "Enviar",
+      "download": "Baixar",
+      "link": "Link",
+      "bell": "Sino",
+      "clock": "Relógio",
+      "hash": "Hashtag",
+      "list": "Lista",
+      "grid": "Grade",
+      "building": "Edifício",
+      "package": "Pacote",
+      "book": "Livro",
+      "newspaper": "Jornal",
+      "video": "Vídeo",
+      "music": "Música",
+      "heart": "Coração",
+      "star": "Estrela",
+      "flag": "Bandeira",
+      "check": "Verificar",
+      "x": "X",
+      "plus": "Mais",
+      "minus": "Menos",
+      "messageSquare": "Quadrado de Mensagem",
+      "bookmark": "Marcador",
+      "globe": "Globo",
+      "briefcase": "Pasta de Trabalho",
+      "creditCard": "Cartão de Crédito",
+      "dollarSign": "Cifrão",
+      "trendingUp": "Tendência Crescente",
+      "barChart": "Gráfico de Barras",
+      "activity": "Atividade",
+      "wifi": "WiFi",
+      "zap": "Raio",
+      "cpu": "CPU",
+      "server": "Servidor",
+      "code": "Código",
+      "gitBranch": "Ramificação Git",
+      "award": "Prêmio",
+      "shield": "Escudo",
+      "searchPlaceholder": "Buscar ícones...",
+      "noIconsFound": "Nenhum ícone encontrado",
+      "chooseIcon": "Escolha um ícone para representar esta coleção"
     },
     "indexes": {
       "emptyState": "Nenhum índice adicionado. Índices podem melhorar o desempenho de consulta.",
@@ -409,7 +478,15 @@
       }
     },
     "validation": {
-      "fixErrors": "Por favor, corrija os erros de validação"
+      "fixErrors": "Por favor, corrija os erros de validação",
+      "fieldNameRequired": "Nome do campo é obrigatório",
+      "fieldNameTooLong": "O nome do campo deve ter 63 caracteres ou menos",
+      "fieldNameStartLowercase": "O nome do campo deve começar com uma letra minúscula (a-z)",
+      "fieldNameNoEndUnderscore": "O nome do campo não pode terminar com um sublinhado",
+      "fieldNameInvalidChars": "O nome do campo pode conter apenas letras minúsculas, números e sublinhados",
+      "fieldNameReservedKeyword": "\"{name}\" é uma palavra-chave SQL reservada e não pode ser usada como nome de campo",
+      "fieldNameNoConsecutiveUnderscores": "O nome do campo não pode conter sublinhados consecutivos",
+      "fieldNameInUse": "Este nome de campo já está em uso"
     },
     "success": {
       "created": "Coleção criada com sucesso! O servidor está reiniciando para aplicar as migrações..."
@@ -512,8 +589,23 @@
         "update": "Atualizar Campo"
       }
     },
+    "editFieldModal": {
+      "title": "Editar Campo",
+      "description": "Atualize a configuração do campo abaixo.",
+      "warnings": {
+        "rename": "Aviso: Renomear este campo gerará uma migração de banco de dados para renomear a coluna.",
+        "renameConfirm": "Tem certeza de que deseja renomear o campo \"{oldName}\" para \"{newName}\"? Isso atualizará o esquema do banco de dados e gerará uma migração."
+      },
+      "validation": {
+        "duplicateName": "Nome do campo \"{name}\" já existe. Por favor, use um nome único."
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "save": "Salvar Alterações"
+      }
+    },
     "fieldConfig": {
-      "displayLabel": "Rótulo de Exibição",
+      "fieldName": "Nome do Campo",
       "required": "*",
       "description": "Descrição",
       "requiredField": "Obrigatório",
@@ -532,7 +624,7 @@
       "allowedFormats": "Formatos Permitidos",
       "maxFileSize": "Tamanho Máximo do Arquivo (MB)",
       "placeholder": {
-        "label": "Nome do Meu Campo",
+        "fieldName": "meu_nome_campo",
         "description": "Descrição opcional",
         "defaultValue": "Valor padrão opcional",
         "minLength": "0",
@@ -541,7 +633,49 @@
         "maxValue": "100",
         "decimalPlaces": "2",
         "enumValue": "valor1, valor2, valor3"
-      }
+      },
+      "invalidFieldName": "Nome do campo inválido",
+      "enumValueExists": "Este valor já existe!",
+      "noEnumValues": "Nenhum valor adicionado ainda",
+      "addEnumHint": "Pressione Enter ou clique + para adicionar um valor",
+      "noDefault": "Sem padrão",
+      "addEnumFirst": "Adicione valores enum primeiro",
+      "numberTypeInteger": "Inteiro (números inteiros)",
+      "numberTypeDecimal": "Decimal (ponto flutuante)",
+      "decimalPlacesHelp": "Número de dígitos após o ponto decimal (padrão: 2)",
+      "booleanTrue": "Verdadeiro",
+      "booleanFalse": "Falso",
+      "noDefaultValue": "Sem valor padrão",
+      "nowTimestamp": "AGORA (Timestamp atual)",
+      "currentDate": "DATA_ATUAL (Hoje)",
+      "specialValueHelp": "Valores especiais serão definidos automaticamente ao criar registros",
+      "dateInfo": "Campos somente de data armazenam datas sem informações de hora (formato AAAA-MM-DD).",
+      "dateTimeInfo": "Campos de Data e Hora armazenam data e hora com suporte a fuso horário.",
+      "specialDefaultHelp": "Valores padrão especiais como AGORA e DATA_ATUAL são definidos automaticamente ao criar novos registros.",
+      "jsonInfo": "Armazena dados JSON estruturados. Útil para objetos aninhados, arrays e configurações complexas.",
+      "jsonExample": "Exemplo: {\"chave\": \"valor\", \"aninhado\": {\"dados\": true}}",
+      "mediaInfo": "Armazena uma URL ou caminho de arquivo para arquivos de mídia (imagens, vídeos, áudio). Este campo não faz upload de arquivos - apenas armazena a referência.",
+      "mediaExample": "Exemplo: https://exemplo.com/imagem.jpg ou /uploads/arquivo.mp4",
+      "failedLoadCollections": "Falha ao carregar coleções",
+      "loadingCollections": "Carregando coleções...",
+      "noCollectionsAvailable": "Nenhuma coleção disponível. Crie uma coleção primeiro ou apenas a tabela do sistema \"Usuários\" está disponível para relações.",
+      "selectCollection": "Selecione uma coleção",
+      "targetCollectionHelp": "A coleção que este campo referencia (apenas coleções permitidas são mostradas)",
+      "oneToOne": "Um para Um",
+      "oneToMany": "Um para Muitos",
+      "manyToMany": "Muitos para Muitos",
+      "relationTypeHelp": "Tipo de relacionamento entre coleções",
+      "autoGenerated": "gerado automaticamente",
+      "foreignKeyHelp": "Nome personalizado da restrição de chave estrangeira (opcional, gerado automaticamente se vazio)",
+      "cascadeDeleteHelp": "Excluir registros relacionados quando o registro pai for excluído",
+      "relationInfo": "Cria um relacionamento de chave estrangeira para outra coleção. Este campo armazenará o ID do registro relacionado."
+    },
+    "saveChanges": {
+      "unsavedChanges": "Alterações Não Salvas",
+      "save": "Salvar Alterações",
+      "saving": "Salvando...",
+      "discard": "Descartar",
+      "discardConfirm": "Tem certeza de que deseja descartar todas as alterações não salvas? Esta ação não pode ser desfeita."
     }
   },
   "devReset": {

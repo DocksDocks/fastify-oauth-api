@@ -1,6 +1,6 @@
 # Fastify v5 OAuth API - Project Overview
 
-Production-ready OAuth 2.0 API with Fastify v5, PostgreSQL, Redis, and Next.js admin panel. Features multi-provider authentication (Google + Apple), JWT tokens, role-based access control, and comprehensive testing (93.4% coverage, 644 tests).
+Production-ready OAuth 2.0 API with Fastify v5, PostgreSQL, Redis, and Next.js admin panel. Features multi-provider authentication (Google + Apple), JWT tokens, role-based access control, and comprehensive testing (93.4% coverage, 700 tests).
 
 ## Quick Start
 
@@ -38,7 +38,7 @@ pnpm dev
 - Docker 27.0+ with Compose v2.39.4+
 
 **Frontend (Admin Panel):**
-- Next.js 16.0.1 (App Router) | React 19 | TypeScript
+- Next.js 16.0.1 (App Router) | React 19.2 | TypeScript
 - shadcn/ui + Radix UI | TailwindCSS v4 (OKLCH colors)
 - Zustand state management | Axios
 
@@ -54,14 +54,14 @@ pnpm dev
 - **Authentication**: OAuth 2.0 (Google + Apple), multi-provider account linking, JWT tokens (15min access + 7day refresh)
 - **Authorization**: RBAC with 3 roles (user → admin → superadmin), auto-promotion, authorized admins management
 - **API Security**: Global API key authentication, rate limiting (100 req/min), CORS, Helmet, bcrypt hashing
-- **Admin Panel**: Dashboard with stats, API key management, database browser, collections config, setup wizard
+- **Admin Panel**: Dashboard with stats, API key management, database browser, collections config, setup wizard, Collection Builder (dev/test only)
 - **Database**: Drizzle ORM, auto-migrations, provider accounts, refresh tokens, user/collection preferences
 - **Infrastructure**: Docker orchestration, PostgreSQL + Redis with persistence, Caddy reverse proxy, health checks
-- **Testing**: Vitest with V8 coverage (93.4% lines/statements, 100% functions, 84.72% branches), 27 test files, 644 tests, test database management
+- **Testing**: Vitest 3.0+ with V8 coverage (93.4% lines/statements, 100% functions, 84.72% branches), 29 test files, 700 tests, test database management
 - **Code Quality**: TypeScript strict mode, ESLint + Prettier, Husky git hooks, path aliases, structured logging (Pino)
 
 ### ⏳ Pending
-- Swagger/OpenAPI documentation
+- Swagger/OpenAPI documentation (dependencies installed, configuration pending)
 
 ## Essential Commands
 
@@ -113,12 +113,16 @@ fastify-oauth-api/
 ├── backend/             # Backend workspace
 │   ├── package.json     # Backend dependencies
 │   ├── src/             # Backend source code
+│   │   ├── builder/     # Collection Builder service (dev/test only)
 │   │   ├── config/      # Environment validation (Zod)
 │   │   ├── db/          # Drizzle schemas + migrations
 │   │   ├── modules/     # Feature modules (auth)
 │   │   ├── routes/      # API endpoints
 │   │   ├── middleware/  # RBAC, API key validation
 │   │   ├── plugins/     # Fastify plugins (JWT)
+│   │   ├── services/    # Business logic services
+│   │   ├── schemas/     # Validation schemas
+│   │   ├── types/       # Type definitions
 │   │   └── utils/       # Logger, errors, response
 │   ├── test/            # Backend test suite
 │   ├── tsconfig.json    # Backend TS config
@@ -128,7 +132,12 @@ fastify-oauth-api/
 ├── frontend/            # Frontend workspace (Next.js 16)
 │   ├── package.json     # Frontend dependencies
 │   ├── app/             # App Router pages
-│   └── src/             # Components, store, lib
+│   ├── components/      # React components
+│   ├── store/           # Zustand state management
+│   ├── lib/             # Utility libraries
+│   ├── hooks/           # Custom React hooks
+│   ├── types/           # TypeScript types
+│   └── messages/        # i18n translations
 ├── docker/              # Shared Docker configs
 │   ├── database/        # PostgreSQL
 │   ├── redis/           # Redis
@@ -152,6 +161,10 @@ fastify-oauth-api/
 - `authorized_admins` - Pre-authorized admin emails
 - `collection_preferences` - UI table preferences
 - `user_preferences` - User settings
+
+**Collection Builder (Dev/Test Only):**
+- `collection_definitions` - Custom collection schemas (field definitions, indexes, relationships)
+- `seed_status` - Tracks seed execution to prevent duplicates
 
 **System:**
 - `setup_status` - Setup wizard state
@@ -253,6 +266,8 @@ import { users } from '@/db/schema/users';
 
 **Authorized Admins:** Pre-authorize emails for auto-promotion (superadmin only)
 
+**Collection Builder (Dev/Test Only):** Visual schema designer for custom database tables. Features field type configuration (text, number, boolean, json, timestamps, etc.), index management, relationship definitions, real-time validation, SQL/Drizzle code preview, migration warnings for schema changes
+
 **Setup Wizard:** Initial system configuration, generates API keys, creates superadmin
 
 **Dev Reset:** Reset setup status (dev mode only)
@@ -271,7 +286,7 @@ import { users } from '@/db/schema/users';
 - Statements: 93.4% ✅
 - Branches: 84.72%
 
-**Test Suite:** 644 tests across 27 test files
+**Test Suite:** 700 tests across 29 test files
 
 **Test Database:**
 - Separate database: `fastify_oauth_db_test`
@@ -332,6 +347,6 @@ Comprehensive documentation split by topic:
 
 ---
 
-**Version:** 14.0 (Monorepo with pnpm Workspaces + Restructured Documentation + RBAC + 93.4% Test Coverage + 644 Tests)
+**Version:** 15.0 (Collection Builder + Security Fixes + Updated Dependencies + 700 Tests)
 **Last Updated:** November 2025
 **Maintainer:** Infrastructure Team

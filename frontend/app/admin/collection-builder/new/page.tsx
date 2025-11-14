@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { IconSelector } from '@/components/collection-builder/IconSelector';
 import { AddFieldModal } from '@/components/collection-builder/AddFieldModal';
+import { EditFieldModal } from '@/components/collection-builder/EditFieldModal';
 import { IndexesManager, type CollectionIndex } from '@/components/collection-builder/IndexesManager';
 import { CollectionField, FieldType, CollectionDefinition } from '@/types';
 import { adminApi, getErrorMessage } from '@/lib/api';
@@ -89,6 +90,7 @@ export default function NewCollectionPage() {
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
+  const [isEditFieldModalOpen, setIsEditFieldModalOpen] = useState(false);
   const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
   const [fieldToRemove, setFieldToRemove] = useState<number | null>(null);
   const [modalKey, setModalKey] = useState(0);
@@ -173,19 +175,21 @@ export default function NewCollectionPage() {
   const openEditFieldModal = (index: number) => {
     setEditingFieldIndex(index);
     setModalKey((prev) => prev + 1); // Increment to force remount
-    setIsAddFieldModalOpen(true);
+    setIsEditFieldModalOpen(true);
   };
 
-  // Handle add/update field from modal
-  const handleFieldModalSubmit = (field: CollectionField) => {
+  // Handle add field from modal
+  const handleAddField = (field: CollectionField) => {
+    setValue('fields', [...fields, field]);
+  };
+
+  // Handle update field from modal
+  const handleUpdateField = (field: CollectionField) => {
     if (editingFieldIndex !== null) {
-      // Update existing field
       const newFields = [...fields];
       newFields[editingFieldIndex] = field;
       setValue('fields', newFields);
-    } else {
-      // Add new field
-      setValue('fields', [...fields, field]);
+      setEditingFieldIndex(null);
     }
   };
 
@@ -664,13 +668,31 @@ export default function NewCollectionPage() {
 
       {/* Add Field Modal */}
       <AddFieldModal
-        key={modalKey}
+        key={`add-${modalKey}`}
         open={isAddFieldModalOpen}
         onOpenChange={setIsAddFieldModalOpen}
-        onAdd={handleFieldModalSubmit}
-        editField={editingFieldIndex !== null ? fields[editingFieldIndex] : undefined}
+        onAdd={handleAddField}
         existingFieldNames={fields.map((f) => f.name)}
       />
+
+      {/* Edit Field Modal */}
+      {editingFieldIndex !== null && (
+        <EditFieldModal
+          key={`edit-${modalKey}`}
+          open={isEditFieldModalOpen}
+          onOpenChange={(open) => {
+            setIsEditFieldModalOpen(open);
+            if (!open) {
+              setEditingFieldIndex(null);
+            }
+          }}
+          onSave={handleUpdateField}
+          field={fields[editingFieldIndex]}
+          existingFieldNames={fields
+            .filter((_, idx) => idx !== editingFieldIndex)
+            .map((f) => f.name)}
+        />
+      )}
 
       {/* Remove Field Confirmation Dialog */}
       <AlertDialog open={fieldToRemove !== null} onOpenChange={(open) => !open && setFieldToRemove(null)}>

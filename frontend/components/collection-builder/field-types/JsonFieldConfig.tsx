@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { validateFieldName } from '@/lib/field-validation';
 
 interface FieldConfigProps {
   field: CollectionField;
@@ -17,24 +18,37 @@ interface FieldConfigProps {
 
 export function JsonFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
   const t = useTranslations('collectionBuilder.fieldConfig');
+  const tFieldTypes = useTranslations('collectionBuilder.fieldTypes');
 
   const updateField = (updates: Partial<CollectionField>) => {
-    onChange({ ...field, ...updates });
+    // Keep label in sync with name for backend compatibility
+    if (updates.name !== undefined) {
+      onChange({ ...field, ...updates, label: updates.name });
+    } else {
+      onChange({ ...field, ...updates });
+    }
   };
+
+  // Validate field name
+  const fieldNameValidation = validateFieldName(field.name || '');
 
   const content = (
     <div className="space-y-4">
-        {/* Field Label */}
+        {/* Field Name */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-label`}>
-            {t('displayLabel')} <span className="text-destructive">{t('required')}</span>
+          <Label htmlFor={`${field.name}-name`}>
+            {t('fieldName')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Input
-            id={`${field.name}-label`}
-            value={field.label}
-            onChange={(e) => updateField({ label: e.target.value })}
-            placeholder={t('placeholder.label')}
+            id={`${field.name}-name`}
+            value={field.name}
+            onChange={(e) => updateField({ name: e.target.value })}
+            placeholder={t('placeholder.fieldName')}
+            className={!fieldNameValidation.valid ? 'border-destructive' : ''}
           />
+          {!fieldNameValidation.valid && fieldNameValidation.error && (
+            <p className="text-sm text-destructive">{fieldNameValidation.error}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -74,11 +88,10 @@ export function JsonFieldConfig({ field, onChange, onRemove, showHeader = true }
         {/* Info */}
         <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
           <p>
-            Stores structured JSON data. Perfect for flexible data like settings, metadata, or
-            nested objects.
+            {t('jsonInfo')}
           </p>
           <p className="mt-2">
-            <strong>Example:</strong> {`{ "color": "blue", "size": "large" }`}
+            {t('jsonExample')}
           </p>
         </div>
     </div>
@@ -92,7 +105,7 @@ export function JsonFieldConfig({ field, onChange, onRemove, showHeader = true }
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{field.label || 'JSON Field'}</CardTitle>
+          <CardTitle className="text-base">{field.name || tFieldTypes('jsonFieldFallback')}</CardTitle>
           <Button
             variant="ghost"
             size="sm"

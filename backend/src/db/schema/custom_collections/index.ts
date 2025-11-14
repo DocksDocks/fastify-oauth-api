@@ -5,4 +5,3 @@
 
 // Empty export to make this a valid module
 export {};
-export * from './blog-posts';

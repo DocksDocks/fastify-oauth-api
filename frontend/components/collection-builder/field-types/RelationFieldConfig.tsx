@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { adminApi } from '@/lib/api';
+import { validateFieldName } from '@/lib/field-validation';
 
 interface FieldConfigProps {
   field: CollectionField;
@@ -47,12 +48,18 @@ const DISALLOWED_RELATIONS = new Set([
 
 export function RelationFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
   const t = useTranslations('collectionBuilder.fieldConfig');
+  const tFieldTypes = useTranslations('collectionBuilder.fieldTypes');
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const updateField = (updates: Partial<CollectionField>) => {
-    onChange({ ...field, ...updates });
+    // Keep label in sync with name for backend compatibility
+    if (updates.name !== undefined) {
+      onChange({ ...field, ...updates, label: updates.name });
+    } else {
+      onChange({ ...field, ...updates });
+    }
   };
 
   const updateRelationConfig = (updates: Partial<typeof field.relationConfig>) => {
@@ -84,28 +91,35 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
         setCollections(allowedCollections);
       } catch (err) {
         console.error('Failed to fetch collections:', err);
-        setError('Failed to load collections');
+        setError(t('failedLoadCollections'));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchCollections();
-  }, []);
+  }, [t]);
+
+  // Validate field name
+  const fieldNameValidation = validateFieldName(field.name || '');
 
   const content = (
     <div className="space-y-4">
-        {/* Field Label */}
+        {/* Field Name */}
         <div className="space-y-2">
-          <Label htmlFor={`${field.name}-label`}>
-            {t('displayLabel')} <span className="text-destructive">{t('required')}</span>
+          <Label htmlFor={`${field.name}-name`}>
+            {t('fieldName')} <span className="text-destructive">{t('required')}</span>
           </Label>
           <Input
-            id={`${field.name}-label`}
-            value={field.label}
-            onChange={(e) => updateField({ label: e.target.value })}
-            placeholder={t('placeholder.label')}
+            id={`${field.name}-name`}
+            value={field.name}
+            onChange={(e) => updateField({ name: e.target.value })}
+            placeholder={t('placeholder.fieldName')}
+            className={!fieldNameValidation.valid ? 'border-destructive' : ''}
           />
+          {!fieldNameValidation.valid && fieldNameValidation.error && (
+            <p className="text-sm text-destructive">{fieldNameValidation.error}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -130,7 +144,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
           {isLoading ? (
             <div className="flex items-center justify-center py-4 border rounded-md bg-muted/50">
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              <span className="text-sm text-muted-foreground">Loading collections...</span>
+              <span className="text-sm text-muted-foreground">{t('loadingCollections')}</span>
             </div>
           ) : error ? (
             <Alert variant="destructive">
@@ -139,7 +153,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
           ) : collections.length === 0 ? (
             <Alert>
               <AlertDescription>
-                No collections available. Create a collection first or only system &quot;Users&quot; table is available for relations.
+                {t('noCollectionsAvailable')}
               </AlertDescription>
             </Alert>
           ) : (
@@ -148,7 +162,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
               onValueChange={(value) => updateRelationConfig({ targetCollection: value })}
             >
               <SelectTrigger id={`${field.name}-target`}>
-                <SelectValue placeholder="Select a collection" />
+                <SelectValue placeholder={t('selectCollection')} />
               </SelectTrigger>
               <SelectContent>
                 {collections.map((collection) => (
@@ -166,7 +180,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
           )}
 
           <p className="text-xs text-muted-foreground">
-            The collection this field references (only allowed collections are shown)
+            {t('targetCollectionHelp')}
           </p>
         </div>
 
@@ -187,13 +201,13 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="one-to-one">One to One</SelectItem>
-              <SelectItem value="one-to-many">One to Many</SelectItem>
-              <SelectItem value="many-to-many">Many to Many</SelectItem>
+              <SelectItem value="one-to-one">{t('oneToOne')}</SelectItem>
+              <SelectItem value="one-to-many">{t('oneToMany')}</SelectItem>
+              <SelectItem value="many-to-many">{t('manyToMany')}</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Relationship type between collections
+            {t('relationTypeHelp')}
           </p>
         </div>
 
@@ -206,11 +220,11 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
             onChange={(e) =>
               updateRelationConfig({ foreignKeyName: e.target.value || undefined })
             }
-            placeholder="auto-generated"
+            placeholder={t('autoGenerated')}
             className="font-mono"
           />
           <p className="text-xs text-muted-foreground">
-            Custom foreign key constraint name (optional, auto-generated if empty)
+            {t('foreignKeyHelp')}
           </p>
         </div>
 
@@ -232,7 +246,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Delete related records when the parent record is deleted
+            {t('cascadeDeleteHelp')}
           </p>
         </div>
 
@@ -262,8 +276,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
         {/* Info */}
         <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
           <p>
-            Creates a foreign key relationship to another collection. This field will store the ID
-            of the related record.
+            {t('relationInfo')}
           </p>
         </div>
     </div>
@@ -277,7 +290,7 @@ export function RelationFieldConfig({ field, onChange, onRemove, showHeader = tr
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{field.label || 'Relation Field'}</CardTitle>
+          <CardTitle className="text-base">{field.name || tFieldTypes('relationFieldFallback')}</CardTitle>
           <Button
             variant="ghost"
             size="sm"

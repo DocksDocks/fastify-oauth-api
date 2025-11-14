@@ -24,13 +24,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -39,8 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { adminApi, getErrorMessage } from '@/lib/api';
+import { adminApi } from '@/lib/api';
 import { CollectionDefinition } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuthStore } from '@/store/auth';
@@ -51,20 +43,7 @@ export default function CollectionBuilderPage() {
   const tCommon = useTranslations('common');
   const { user } = useAuthStore();
 
-  // Only allow access in development mode
-  if (process.env.NODE_ENV !== 'development') {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="max-w-md text-center">
-          <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-2">{t('devMode.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('devMode.description')}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // State
   const [collections, setCollections] = useState<CollectionDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -105,6 +84,21 @@ export default function CollectionBuilderPage() {
     });
   }, [collections, searchQuery, filterType]);
 
+  // Only allow access in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="max-w-md text-center">
+          <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-bold mb-2">{t('devMode.title')}</h1>
+          <p className="text-muted-foreground">
+            {t('devMode.description')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const loadCollections = async () => {
     try {
       setLoading(true);
@@ -114,9 +108,9 @@ export default function CollectionBuilderPage() {
     } catch (err: unknown) {
       console.error('Failed to load collections:', err);
       if (axios.isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to load collections');
+        setError(err.response.data.error.message || t('messages.failedToLoad'));
       } else {
-        setError('Failed to load collections');
+        setError(t('messages.failedToLoad'));
       }
     } finally {
       setLoading(false);
@@ -133,9 +127,9 @@ export default function CollectionBuilderPage() {
     } catch (err: unknown) {
       console.error('Failed to delete collection:', err);
       if (axios.isAxiosError(err) && err.response?.data?.error) {
-        alert(err.response.data.error.message || 'Failed to delete collection');
+        alert(err.response.data.error.message || t('messages.failedToDelete'));
       } else {
-        alert('Failed to delete collection');
+        alert(t('messages.failedToDelete'));
       }
     } finally {
       setIsDeleting(false);

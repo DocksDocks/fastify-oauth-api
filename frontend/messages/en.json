@@ -277,7 +277,10 @@
       "errorLoading": "Error Loading Collections",
       "collectionNotFound": "Collection Not Found",
       "collectionNotFoundDescription": "The collection you are looking for does not exist.",
-      "backToCollections": "Back to Collections"
+      "backToCollections": "Back to Collections",
+      "failedToLoad": "Failed to load collections",
+      "failedToLoadCollection": "Failed to load collection",
+      "failedToDelete": "Failed to delete collection"
     },
     "breadcrumbs": {
       "admin": "Admin",
@@ -365,11 +368,77 @@
       "enum": "Enum (Options)",
       "json": "JSON",
       "relation": "Relation",
-      "media": "Media"
+      "media": "Media",
+      "textFieldFallback": "Text Field",
+      "numberFieldFallback": "Number Field",
+      "booleanFieldFallback": "Boolean Field",
+      "dateFieldFallback": "Date Field",
+      "dateTimeFieldFallback": "Date & Time Field",
+      "enumFieldFallback": "Enum Field",
+      "jsonFieldFallback": "JSON Field",
+      "mediaFieldFallback": "Media Field",
+      "relationFieldFallback": "Relation Field"
     },
     "fieldTypeSelector": {
       "label": "Field Type",
       "placeholder": "Select field type"
+    },
+    "icons": {
+      "database": "Database",
+      "user": "User",
+      "users": "Users",
+      "fileText": "File Text",
+      "image": "Image",
+      "shoppingCart": "Shopping Cart",
+      "tag": "Tag",
+      "calendar": "Calendar",
+      "mail": "Mail",
+      "phone": "Phone",
+      "mapPin": "Map Pin",
+      "settings": "Settings",
+      "folder": "Folder",
+      "file": "File",
+      "upload": "Upload",
+      "download": "Download",
+      "link": "Link",
+      "bell": "Bell",
+      "clock": "Clock",
+      "hash": "Hash",
+      "list": "List",
+      "grid": "Grid",
+      "building": "Building",
+      "package": "Package",
+      "book": "Book",
+      "newspaper": "Newspaper",
+      "video": "Video",
+      "music": "Music",
+      "heart": "Heart",
+      "star": "Star",
+      "flag": "Flag",
+      "check": "Check",
+      "x": "X",
+      "plus": "Plus",
+      "minus": "Minus",
+      "messageSquare": "Message Square",
+      "bookmark": "Bookmark",
+      "globe": "Globe",
+      "briefcase": "Briefcase",
+      "creditCard": "Credit Card",
+      "dollarSign": "Dollar Sign",
+      "trendingUp": "Trending Up",
+      "barChart": "Bar Chart",
+      "activity": "Activity",
+      "wifi": "WiFi",
+      "zap": "Zap",
+      "cpu": "CPU",
+      "server": "Server",
+      "code": "Code",
+      "gitBranch": "Git Branch",
+      "award": "Award",
+      "shield": "Shield",
+      "searchPlaceholder": "Search icons...",
+      "noIconsFound": "No icons found",
+      "chooseIcon": "Choose an icon to represent this collection"
     },
     "indexes": {
       "emptyState": "No indexes added. Indexes can improve query performance.",
@@ -409,7 +478,15 @@
       }
     },
     "validation": {
-      "fixErrors": "Please fix validation errors"
+      "fixErrors": "Please fix validation errors",
+      "fieldNameRequired": "Field name is required",
+      "fieldNameTooLong": "Field name must be 63 characters or less",
+      "fieldNameStartLowercase": "Field name must start with a lowercase letter (a-z)",
+      "fieldNameNoEndUnderscore": "Field name cannot end with an underscore",
+      "fieldNameInvalidChars": "Field name can only contain lowercase letters, numbers, and underscores",
+      "fieldNameReservedKeyword": "\"{name}\" is a reserved SQL keyword and cannot be used as a field name",
+      "fieldNameNoConsecutiveUnderscores": "Field name cannot contain consecutive underscores",
+      "fieldNameInUse": "This field name is already in use"
     },
     "success": {
       "created": "Collection created successfully! Server is restarting to apply migrations..."
@@ -512,8 +589,23 @@
         "update": "Update Field"
       }
     },
+    "editFieldModal": {
+      "title": "Edit Field",
+      "description": "Update the field configuration below.",
+      "warnings": {
+        "rename": "Warning: Renaming this field will generate a database migration to rename the column.",
+        "renameConfirm": "Are you sure you want to rename field \"{oldName}\" to \"{newName}\"? This will update the database schema and generate a migration."
+      },
+      "validation": {
+        "duplicateName": "Field name \"{name}\" already exists. Please use a unique name."
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "save": "Save Changes"
+      }
+    },
     "fieldConfig": {
-      "displayLabel": "Display Label",
+      "fieldName": "Field Name",
       "required": "*",
       "description": "Description",
       "requiredField": "Required",
@@ -532,7 +624,7 @@
       "allowedFormats": "Allowed Formats",
       "maxFileSize": "Max File Size (MB)",
       "placeholder": {
-        "label": "My Field Name",
+        "fieldName": "my_field_name",
         "description": "Optional description",
         "defaultValue": "Optional default value",
         "minLength": "0",
@@ -541,7 +633,49 @@
         "maxValue": "100",
         "decimalPlaces": "2",
         "enumValue": "value1, value2, value3"
-      }
+      },
+      "invalidFieldName": "Invalid field name",
+      "enumValueExists": "This value already exists!",
+      "noEnumValues": "No values added yet",
+      "addEnumHint": "Press Enter or click + to add a value",
+      "noDefault": "No default",
+      "addEnumFirst": "Add enum values first",
+      "numberTypeInteger": "Integer (whole numbers)",
+      "numberTypeDecimal": "Decimal (floating point)",
+      "decimalPlacesHelp": "Number of digits after decimal point (default: 2)",
+      "booleanTrue": "True",
+      "booleanFalse": "False",
+      "noDefaultValue": "No default value",
+      "nowTimestamp": "NOW (Current timestamp)",
+      "currentDate": "CURRENT_DATE (Today)",
+      "specialValueHelp": "Special values will be automatically set when creating records",
+      "dateInfo": "Date-only fields store dates without time information (YYYY-MM-DD format).",
+      "dateTimeInfo": "Date & Time fields store both date and time with timezone support.",
+      "specialDefaultHelp": "Special default values like NOW and CURRENT_DATE are set automatically when creating new records.",
+      "jsonInfo": "Stores structured JSON data. Useful for nested objects, arrays, and complex configurations.",
+      "jsonExample": "Example: {\"key\": \"value\", \"nested\": {\"data\": true}}",
+      "mediaInfo": "Stores a URL or file path to media files (images, videos, audio). This field does not upload files - it only stores the reference.",
+      "mediaExample": "Example: https://example.com/image.jpg or /uploads/file.mp4",
+      "failedLoadCollections": "Failed to load collections",
+      "loadingCollections": "Loading collections...",
+      "noCollectionsAvailable": "No collections available. Create a collection first or only system \"Users\" table is available for relations.",
+      "selectCollection": "Select a collection",
+      "targetCollectionHelp": "The collection this field references (only allowed collections are shown)",
+      "oneToOne": "One to One",
+      "oneToMany": "One to Many",
+      "manyToMany": "Many to Many",
+      "relationTypeHelp": "Relationship type between collections",
+      "autoGenerated": "auto-generated",
+      "foreignKeyHelp": "Custom foreign key constraint name (optional, auto-generated if empty)",
+      "cascadeDeleteHelp": "Delete related records when the parent record is deleted",
+      "relationInfo": "Creates a foreign key relationship to another collection. This field will store the ID of the related record."
+    },
+    "saveChanges": {
+      "unsavedChanges": "Unsaved Changes",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "discard": "Discard",
+      "discardConfirm": "Are you sure you want to discard all unsaved changes? This action cannot be undone."
     }
   },
   "devReset": {

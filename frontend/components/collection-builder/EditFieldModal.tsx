@@ -11,6 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import {
   FieldTypeSelector,
   TextFieldConfig,
@@ -25,40 +27,38 @@ import {
 import { CollectionField, FieldType } from '@/types';
 import { validateFieldName, isFieldNameUnique } from '@/lib/field-validation';
 
-interface AddFieldModalProps {
+interface EditFieldModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (field: CollectionField) => void;
-  editField?: CollectionField;
+  onSave: (field: CollectionField) => void;
+  field: CollectionField;
   existingFieldNames?: string[];
 }
 
-export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFieldNames = [] }: AddFieldModalProps) {
-  const t = useTranslations('collectionBuilder.addFieldModal');
+export function EditFieldModal({ open, onOpenChange, onSave, field, existingFieldNames = [] }: EditFieldModalProps) {
+  const t = useTranslations('collectionBuilder.editFieldModal');
+  const tCommon = useTranslations('common');
 
-  const [field, setField] = useState<CollectionField>(
-    editField || {
-      name: '',
-      label: '',
-      type: 'text' as FieldType,
-      required: false,
-    }
-  );
-
-  const [selectedType, setSelectedType] = useState<FieldType>(editField?.type || 'text');
+  const [editedField, setEditedField] = useState<CollectionField>(field);
+  const [selectedType, setSelectedType] = useState<FieldType>(field.type);
+  const [nameChanged, setNameChanged] = useState(false);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
   };
 
   const handleFieldChange = (updatedField: CollectionField) => {
-    setField(updatedField);
+    // Track if field name was changed
+    if (updatedField.name !== field.name) {
+      setNameChanged(true);
+    }
+    setEditedField(updatedField);
   };
 
   const handleTypeChange = (type: FieldType) => {
     setSelectedType(type);
-    setField({
-      ...field,
+    setEditedField({
+      ...editedField,
       type,
       // Clear type-specific configs when changing type
       numberType: undefined,
@@ -70,28 +70,40 @@ export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFi
     });
   };
 
-  const handleAdd = () => {
+  const handleSave = () => {
     // Validate field name
-    const nameValidation = validateFieldName(field.name || '');
+    const nameValidation = validateFieldName(editedField.name || '');
     if (!nameValidation.valid) {
       alert(nameValidation.error || 'Invalid field name');
       return;
     }
 
-    // Check for duplicate field names (only for new fields, not edits)
-    const currentName = editField?.name;
-    if (!isFieldNameUnique(field.name, existingFieldNames, currentName)) {
-      alert(t('validation.duplicateName', { name: field.name }));
+    // Check for duplicate field names (excluding current field)
+    if (!isFieldNameUnique(editedField.name, existingFieldNames, field.name)) {
+      alert(t('validation.duplicateName', { name: editedField.name }));
       return;
     }
 
-    onAdd(field);
+    // Warn about field name changes
+    if (nameChanged) {
+      const confirmed = confirm(
+        t('warnings.renameConfirm', {
+          oldName: field.name,
+          newName: editedField.name
+        })
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    onSave(editedField);
     handleOpenChange(false);
   };
 
   const renderFieldConfig = () => {
     const commonProps = {
-      field,
+      field: editedField,
       onChange: handleFieldChange,
       onRemove: () => {}, // Not used in modal
       showHeader: false, // Hide header in modal
@@ -124,15 +136,25 @@ export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFi
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent key={editField ? `edit-${editField.name}` : 'new'} className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editField ? t('title.edit') : t('title.add')}</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            {editField ? t('description.edit') : t('description.add')}
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Warning for field name changes */}
+          {nameChanged && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {t('warnings.rename')}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Field Type Selector */}
           <div>
             <FieldTypeSelector
@@ -147,10 +169,10 @@ export function AddFieldModal({ open, onOpenChange, onAdd, editField, existingFi
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            {t('actions.cancel')}
+            {tCommon('actions.cancel')}
           </Button>
-          <Button onClick={handleAdd}>
-            {editField ? t('actions.update') : t('actions.add')}
+          <Button onClick={handleSave}>
+            {t('actions.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

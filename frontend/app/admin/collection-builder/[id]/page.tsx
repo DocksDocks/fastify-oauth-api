@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/table';
 import { EditCollectionModal } from '@/components/collection-builder/EditCollectionModal';
 import { AddFieldModal } from '@/components/collection-builder/AddFieldModal';
+import { EditFieldModal } from '@/components/collection-builder/EditFieldModal';
 import { adminApi, getErrorMessage } from '@/lib/api';
 import { CollectionDefinition, CollectionField, FieldType } from '@/types';
 import axios from 'axios';
@@ -135,9 +136,14 @@ export default function EditCollectionPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pending changes state - tracks local modifications before saving
+  const [pendingFields, setPendingFields] = useState<CollectionField[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
   // UI state
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddFieldModal, setShowAddFieldModal] = useState(false);
+  const [showEditFieldModal, setShowEditFieldModal] = useState(false);
   const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
   const [fieldToDelete, setFieldToDelete] = useState<number | null>(null);
 
@@ -146,6 +152,11 @@ export default function EditCollectionPage({
 
   // Bulk selection state
   const [selectedFields, setSelectedFields] = useState<Set<number>>(new Set());
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges =
+    collection &&
+    JSON.stringify(pendingFields) !== JSON.stringify(collection.fields);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -163,6 +174,26 @@ export default function EditCollectionPage({
     loadCollection();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Sync pendingFields when collection loads
+  useEffect(() => {
+    if (collection) {
+      setPendingFields(collection.fields);
+    }
+  }, [collection]);
+
+  // Warn about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Only allow access in development mode
   if (process.env.NODE_ENV !== 'development') {
@@ -188,9 +219,9 @@ export default function EditCollectionPage({
     } catch (err: unknown) {
       console.error('Failed to load collection:', err);
       if (axios.isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error.message || 'Failed to load collection');
+        setError(err.response.data.error.message || t('messages.failedToLoadCollection'));
       } else {
-        setError('Failed to load collection');
+        setError(t('messages.failedToLoadCollection'));
       }
     } finally {
       setLoading(false);
@@ -209,79 +240,37 @@ export default function EditCollectionPage({
 
   const openEditFieldModal = (index: number) => {
     setEditingFieldIndex(index);
-    setShowAddFieldModal(true);
+    setShowEditFieldModal(true);
   };
 
-  const handleAddOrUpdateField = async (field: CollectionField) => {
-    if (!collection) return;
-
-    try {
-      const updatedFields = [...collection.fields];
-
-      if (editingFieldIndex !== null) {
-        // Update existing field
-        updatedFields[editingFieldIndex] = field;
-      } else {
-        // Add new field
-        updatedFields.push(field);
-      }
-
-      // Update collection via API
-      await adminApi.updateCollectionDefinition(Number(id), {
-        ...collection,
-        fields: updatedFields,
-      });
-
-      // Reload collection to get fresh data
-      await loadCollection();
-      setShowAddFieldModal(false);
-      setEditingFieldIndex(null);
-    } catch (err: unknown) {
-      console.error('Failed to update field:', err);
-      alert(getErrorMessage(err));
-    }
+  const handleAddField = (field: CollectionField) => {
+    const updatedFields = [...pendingFields, field];
+    setPendingFields(updatedFields);
+    setShowAddFieldModal(false);
   };
 
-  const handleDeleteField = async (index: number) => {
-    if (!collection) return;
+  const handleUpdateField = (field: CollectionField) => {
+    if (editingFieldIndex === null) return;
 
-    try {
-      const updatedFields = collection.fields.filter((_, i) => i !== index);
-
-      // Update collection via API
-      await adminApi.updateCollectionDefinition(Number(id), {
-        ...collection,
-        fields: updatedFields,
-      });
-
-      // Reload collection to get fresh data
-      await loadCollection();
-      setFieldToDelete(null);
-    } catch (err: unknown) {
-      console.error('Failed to delete field:', err);
-      alert(getErrorMessage(err));
-    }
+    const updatedFields = [...pendingFields];
+    updatedFields[editingFieldIndex] = field;
+    setPendingFields(updatedFields);
+    setShowEditFieldModal(false);
+    setEditingFieldIndex(null);
   };
 
-  const handleBulkDelete = async () => {
-    if (!collection || selectedFields.size === 0) return;
+  const handleDeleteField = (index: number) => {
+    const updatedFields = pendingFields.filter((_, i) => i !== index);
+    setPendingFields(updatedFields);
+    setFieldToDelete(null);
+  };
 
-    try {
-      const updatedFields = collection.fields.filter((_, i) => !selectedFields.has(i));
+  const handleBulkDelete = () => {
+    if (selectedFields.size === 0) return;
 
-      // Update collection via API
-      await adminApi.updateCollectionDefinition(Number(id), {
-        ...collection,
-        fields: updatedFields,
-      });
-
-      // Reload collection and clear selection
-      await loadCollection();
-      setSelectedFields(new Set());
-    } catch (err: unknown) {
-      console.error('Failed to delete fields:', err);
-      alert(getErrorMessage(err));
-    }
+    const updatedFields = pendingFields.filter((_, i) => !selectedFields.has(i));
+    setPendingFields(updatedFields);
+    setSelectedFields(new Set());
   };
 
   const toggleFieldSelection = (index: number) => {
@@ -295,10 +284,8 @@ export default function EditCollectionPage({
   };
 
   const toggleSelectAll = () => {
-    if (!collection) return;
-
     const filteredIndices = getFilteredFields().map((field) =>
-      collection.fields.findIndex(f => f === field)
+      pendingFields.findIndex(f => f === field)
     );
 
     if (selectedFields.size === filteredIndices.length) {
@@ -309,14 +296,12 @@ export default function EditCollectionPage({
   };
 
   const getFilteredFields = () => {
-    if (!collection) return [];
-
     if (!searchQuery.trim()) {
-      return collection.fields;
+      return pendingFields;
     }
 
     const query = searchQuery.toLowerCase();
-    return collection.fields.filter(
+    return pendingFields.filter(
       (field) =>
         field.name.toLowerCase().includes(query) ||
         field.label.toLowerCase().includes(query) ||
@@ -324,30 +309,50 @@ export default function EditCollectionPage({
     );
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || !collection) return;
+    if (!over) return;
 
     if (active.id !== over.id) {
       const oldIndex = parseInt(active.id.toString().replace('field-', ''));
       const newIndex = parseInt(over.id.toString().replace('field-', ''));
 
-      const reorderedFields = arrayMove(collection.fields, oldIndex, newIndex);
+      const reorderedFields = arrayMove(pendingFields, oldIndex, newIndex);
+      setPendingFields(reorderedFields);
+    }
+  };
 
-      try {
-        // Update collection via API
-        await adminApi.updateCollectionDefinition(Number(id), {
-          ...collection,
-          fields: reorderedFields,
-        });
+  // Save all pending changes
+  const handleSaveChanges = async () => {
+    if (!collection || !hasUnsavedChanges) return;
 
-        // Reload collection to get fresh data
-        await loadCollection();
-      } catch (err: unknown) {
-        console.error('Failed to reorder fields:', err);
-        alert(getErrorMessage(err));
-      }
+    try {
+      setIsSaving(true);
+
+      // Send update to backend with pending fields
+      await adminApi.updateCollectionDefinition(Number(id), {
+        fields: pendingFields,
+      });
+
+      // Reload collection to get fresh data and reset pending state
+      await loadCollection();
+      setSelectedFields(new Set());
+    } catch (err: unknown) {
+      console.error('Failed to save changes:', err);
+      alert(getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Discard pending changes
+  const handleDiscardChanges = () => {
+    if (!collection) return;
+
+    if (confirm(t('saveChanges.discardConfirm'))) {
+      setPendingFields(collection.fields);
+      setSelectedFields(new Set());
     }
   };
 
@@ -509,13 +514,32 @@ export default function EditCollectionPage({
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle>{t('collectionDetail.fields')} ({collection.fields.length})</CardTitle>
+                <CardTitle>
+                  {t('collectionDetail.fields')} ({pendingFields.length})
+                  {hasUnsavedChanges && (
+                    <Badge variant="secondary" className="ml-2">
+                      {t('saveChanges.unsavedChanges')}
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>{t('collectionDetail.fieldsDescription')}</CardDescription>
               </div>
-              <Button onClick={openAddFieldModal} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                {t('collectionDetail.addField')}
-              </Button>
+              <div className="flex items-center gap-2">
+                {hasUnsavedChanges && (
+                  <>
+                    <Button onClick={handleDiscardChanges} size="sm" variant="outline" disabled={isSaving}>
+                      {t('saveChanges.discard')}
+                    </Button>
+                    <Button onClick={handleSaveChanges} size="sm" disabled={isSaving}>
+                      {isSaving ? t('saveChanges.saving') : t('saveChanges.save')}
+                    </Button>
+                  </>
+                )}
+                <Button onClick={openAddFieldModal} size="sm" variant={hasUnsavedChanges ? 'outline' : 'default'}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('collectionDetail.addField')}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -590,12 +614,12 @@ export default function EditCollectionPage({
                       </TableRow>
                     </TableHeader>
                     <SortableContext
-                      items={collection.fields.map((_, idx) => `field-${idx}`)}
+                      items={pendingFields.map((_, idx) => `field-${idx}`)}
                       strategy={verticalListSortingStrategy}
                     >
                       <TableBody>
                         {getFilteredFields().map((field) => {
-                          const actualIndex = collection.fields.indexOf(field);
+                          const actualIndex = pendingFields.indexOf(field);
                           return (
                             <SortableRow
                               key={actualIndex}
@@ -632,25 +656,30 @@ export default function EditCollectionPage({
         />
       )}
 
-      {/* Add/Edit Field Modal */}
-      {collection && (
-        <AddFieldModal
-          open={showAddFieldModal}
+      {/* Add Field Modal */}
+      <AddFieldModal
+        open={showAddFieldModal}
+        onOpenChange={setShowAddFieldModal}
+        onAdd={handleAddField}
+        existingFieldNames={pendingFields.map((f) => f.name)}
+      />
+
+      {/* Edit Field Modal */}
+      {editingFieldIndex !== null && (
+        <EditFieldModal
+          key={`edit-field-${editingFieldIndex}`}
+          open={showEditFieldModal}
           onOpenChange={(open) => {
-            setShowAddFieldModal(open);
+            setShowEditFieldModal(open);
             if (!open) {
               setEditingFieldIndex(null);
             }
           }}
-          onAdd={handleAddOrUpdateField}
-          editField={editingFieldIndex !== null ? collection.fields[editingFieldIndex] : undefined}
-          existingFieldNames={
-            editingFieldIndex !== null
-              ? collection.fields
-                  .filter((_, idx) => idx !== editingFieldIndex)
-                  .map((f) => f.name)
-              : collection.fields.map((f) => f.name)
-          }
+          onSave={handleUpdateField}
+          field={pendingFields[editingFieldIndex]}
+          existingFieldNames={pendingFields
+            .filter((_, idx) => idx !== editingFieldIndex)
+            .map((f) => f.name)}
         />
       )}
 
@@ -661,7 +690,7 @@ export default function EditCollectionPage({
             <AlertDialogTitle>{t('deleteFieldDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
               {t('deleteFieldDialog.description', {
-                fieldName: fieldToDelete !== null && collection ? collection.fields[fieldToDelete]?.name : ''
+                fieldName: fieldToDelete !== null ? pendingFields[fieldToDelete]?.name : ''
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
