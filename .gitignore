@@ -147,5 +147,5 @@ temp/
 !**/.gitkeep
 
 
-instructions
-!./instructions/ingresse-api-proxy-usage.md
+instructions/*
+!instructions/ingresse-api-proxy-usage.md
