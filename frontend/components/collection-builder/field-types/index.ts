@@ -1,6 +1,7 @@
 export { FieldTypeSelector, FIELD_TYPE_ICONS } from './FieldTypeSelector';
 export { TextFieldConfig } from './TextFieldConfig';
-export { NumberFieldConfig } from './NumberFieldConfig';
+export { IntegerFieldConfig } from './IntegerFieldConfig';
+export { DecimalFieldConfig } from './DecimalFieldConfig';
 export { DateFieldConfig } from './DateFieldConfig';
 export { BooleanFieldConfig } from './BooleanFieldConfig';
 export { EnumFieldConfig } from './EnumFieldConfig';

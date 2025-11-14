@@ -8,7 +8,8 @@ export type FieldType =
   | 'text'
   | 'longtext'
   | 'richtext'
-  | 'number'
+  | 'integer'
+  | 'decimal'
   | 'date'
   | 'datetime'
   | 'boolean'
@@ -25,8 +26,7 @@ export interface CollectionField {
   unique?: boolean;
   defaultValue?: unknown;
   validation?: FieldValidation;
-  numberType?: 'integer' | 'decimal';
-  decimalPlaces?: number;
+  decimalPlaces?: number; // For decimal type
   max?: number; // For VARCHAR length (text fields)
   precision?: number; // For NUMERIC type (decimal fields)
   scale?: number; // For NUMERIC type (decimal fields)

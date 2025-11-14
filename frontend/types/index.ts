@@ -125,7 +125,8 @@ export type FieldType =
   | 'text' // varchar(255)
   | 'longtext' // text
   | 'richtext' // text (HTML)
-  | 'number' // integer or numeric
+  | 'integer' // integer
+  | 'decimal' // numeric
   | 'date' // date
   | 'datetime' // timestamp
   | 'boolean' // boolean
@@ -144,8 +145,7 @@ export interface CollectionField {
   defaultValue?: unknown;
   validation?: FieldValidation;
 
-  // For number type
-  numberType?: 'integer' | 'decimal';
+  // For decimal type
   decimalPlaces?: number;
 
   // For enum type

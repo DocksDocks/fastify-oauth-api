@@ -7,13 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { validateFieldName } from '@/lib/field-validation';
 
 interface FieldConfigProps {
@@ -23,7 +17,7 @@ interface FieldConfigProps {
   showHeader?: boolean;
 }
 
-export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
+export function IntegerFieldConfig({ field, onChange, onRemove, showHeader = true }: FieldConfigProps) {
   const t = useTranslations('collectionBuilder.fieldConfig');
   const tFieldTypes = useTranslations('collectionBuilder.fieldTypes');
 
@@ -47,7 +41,13 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
   const fieldNameValidation = validateFieldName(field.name || '');
 
   const content = (
-    <div className="space-y-4">
+    <Tabs defaultValue="basic" className="w-full">
+      <TabsList className="w-full">
+        <TabsTrigger value="basic" className="flex-1">{t('basicTab')}</TabsTrigger>
+        <TabsTrigger value="advanced" className="flex-1">{t('advancedTab')}</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="basic" className="space-y-4 mt-4">
         {/* Field Name */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-name`}>
@@ -78,100 +78,36 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
 
         <Separator />
 
-        {/* Number Type */}
-        <div className="space-y-2">
-          <Label htmlFor={`${field.name}-numbertype`}>{t('numberType')}</Label>
-          <Select
-            value={field.numberType || 'integer'}
-            onValueChange={(value) =>
-              updateField({ numberType: value as 'integer' | 'decimal' })
-            }
+        {/* Required Switch */}
+        <div className="flex items-center justify-between">
+          <Label
+            htmlFor={`${field.name}-required`}
+            className="text-sm font-medium cursor-pointer"
           >
-            <SelectTrigger id={`${field.name}-numbertype`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="integer">{t('numberTypeInteger')}</SelectItem>
-              <SelectItem value="decimal">{t('numberTypeDecimal')}</SelectItem>
-            </SelectContent>
-          </Select>
+            {t('requiredField')}
+          </Label>
+          <Switch
+            id={`${field.name}-required`}
+            checked={field.required || false}
+            onCheckedChange={(checked) =>
+              updateField({ required: checked })
+            }
+          />
         </div>
+      </TabsContent>
 
-        {/* Decimal Places (only for decimal type) */}
-        {field.numberType === 'decimal' && (
-          <div className="space-y-2">
-            <Label htmlFor={`${field.name}-decimals`}>{t('decimalPlaces')}</Label>
-            <Input
-              id={`${field.name}-decimals`}
-              type="number"
-              min="1"
-              max="10"
-              value={field.decimalPlaces || 2}
-              onChange={(e) =>
-                updateField({ decimalPlaces: parseInt(e.target.value) || 2 })
-              }
-              placeholder={t('placeholder.decimalPlaces')}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t('decimalPlacesHelp')}
-            </p>
-          </div>
-        )}
-
-        <Separator />
-
-        {/* Switches */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label
-              htmlFor={`${field.name}-required`}
-              className="text-sm font-medium cursor-pointer"
-            >
-              {t('requiredField')}
-            </Label>
-            <Switch
-              id={`${field.name}-required`}
-              checked={field.required || false}
-              onCheckedChange={(checked) =>
-                updateField({ required: checked })
-              }
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label
-              htmlFor={`${field.name}-unique`}
-              className="text-sm font-medium cursor-pointer"
-            >
-              {t('uniqueConstraint')}
-            </Label>
-            <Switch
-              id={`${field.name}-unique`}
-              checked={field.unique || false}
-              onCheckedChange={(checked) =>
-                updateField({ unique: checked })
-              }
-            />
-          </div>
-        </div>
-
-        <Separator />
-
+      <TabsContent value="advanced" className="space-y-4 mt-4">
         {/* Default Value */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-default`}>{t('defaultValue')}</Label>
           <Input
             id={`${field.name}-default`}
             type="number"
-            step={field.numberType === 'decimal' ? '0.01' : '1'}
+            step="1"
             value={(field.defaultValue as number) || ''}
             onChange={(e) =>
               updateField({
-                defaultValue: e.target.value
-                  ? field.numberType === 'decimal'
-                    ? parseFloat(e.target.value)
-                    : parseInt(e.target.value)
-                  : undefined,
+                defaultValue: e.target.value ? parseInt(e.target.value) : undefined,
               })
             }
             placeholder={t('placeholder.defaultValue')}
@@ -185,15 +121,11 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
             <Input
               id={`${field.name}-min`}
               type="number"
-              step={field.numberType === 'decimal' ? '0.01' : '1'}
+              step="1"
               value={field.validation?.min || ''}
               onChange={(e) =>
                 updateValidation({
-                  min: e.target.value
-                    ? field.numberType === 'decimal'
-                      ? parseFloat(e.target.value)
-                      : parseInt(e.target.value)
-                    : undefined,
+                  min: e.target.value ? parseInt(e.target.value) : undefined,
                 })
               }
               placeholder={t('placeholder.minValue')}
@@ -204,22 +136,38 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
             <Input
               id={`${field.name}-max`}
               type="number"
-              step={field.numberType === 'decimal' ? '0.01' : '1'}
+              step="1"
               value={field.validation?.max || ''}
               onChange={(e) =>
                 updateValidation({
-                  max: e.target.value
-                    ? field.numberType === 'decimal'
-                      ? parseFloat(e.target.value)
-                      : parseInt(e.target.value)
-                    : undefined,
+                  max: e.target.value ? parseInt(e.target.value) : undefined,
                 })
               }
               placeholder={t('placeholder.maxValue')}
             />
           </div>
         </div>
-    </div>
+
+        <Separator />
+
+        {/* Unique Constraint */}
+        <div className="flex items-center justify-between">
+          <Label
+            htmlFor={`${field.name}-unique`}
+            className="text-sm font-medium cursor-pointer"
+          >
+            {t('uniqueConstraint')}
+          </Label>
+          <Switch
+            id={`${field.name}-unique`}
+            checked={field.unique || false}
+            onCheckedChange={(checked) =>
+              updateField({ unique: checked })
+            }
+          />
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 
   if (!showHeader) {
@@ -230,7 +178,7 @@ export function NumberFieldConfig({ field, onChange, onRemove, showHeader = true
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{field.name || tFieldTypes('numberFieldFallback')}</CardTitle>
+          <CardTitle className="text-base">{field.name || tFieldTypes('integerFieldFallback')}</CardTitle>
           <Button
             variant="ghost"
             size="sm"

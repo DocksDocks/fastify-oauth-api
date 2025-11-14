@@ -145,3 +145,7 @@ temp/
 
 # Keep .gitkeep files
 !**/.gitkeep
+
+
+instructions
+!./instructions/ingresse-api-proxy-usage.md

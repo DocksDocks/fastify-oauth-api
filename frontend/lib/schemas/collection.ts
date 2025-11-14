@@ -24,7 +24,8 @@ const fieldSchema = z.object({
     'text',
     'longtext',
     'richtext',
-    'number',
+    'integer',
+    'decimal',
     'date',
     'datetime',
     'boolean',
@@ -43,8 +44,7 @@ const fieldSchema = z.object({
   // For text type - VARCHAR length
   max: z.number().int().min(1).max(65535).optional(),
 
-  // For number type
-  numberType: z.enum(['integer', 'decimal']).optional(),
+  // For decimal type
   decimalPlaces: z.number().int().min(1).max(10).optional(),
   precision: z.number().int().min(1).max(65).optional(),
   scale: z.number().int().min(0).max(30).optional(),

@@ -16,7 +16,8 @@ import { AlertCircle } from 'lucide-react';
 import {
   FieldTypeSelector,
   TextFieldConfig,
-  NumberFieldConfig,
+  IntegerFieldConfig,
+  DecimalFieldConfig,
   EnumFieldConfig,
   BooleanFieldConfig,
   DateFieldConfig,
@@ -61,7 +62,6 @@ export function EditFieldModal({ open, onOpenChange, onSave, field, existingFiel
       ...editedField,
       type,
       // Clear type-specific configs when changing type
-      numberType: undefined,
       decimalPlaces: undefined,
       enumValues: undefined,
       relationConfig: undefined,
@@ -114,8 +114,10 @@ export function EditFieldModal({ open, onOpenChange, onSave, field, existingFiel
       case 'longtext':
       case 'richtext':
         return <TextFieldConfig key={selectedType} {...commonProps} />;
-      case 'number':
-        return <NumberFieldConfig key={selectedType} {...commonProps} />;
+      case 'integer':
+        return <IntegerFieldConfig key={selectedType} {...commonProps} />;
+      case 'decimal':
+        return <DecimalFieldConfig key={selectedType} {...commonProps} />;
       case 'enum':
         return <EnumFieldConfig key={selectedType} {...commonProps} />;
       case 'boolean':

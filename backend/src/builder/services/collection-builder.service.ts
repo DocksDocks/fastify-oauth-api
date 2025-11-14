@@ -53,7 +53,8 @@ const FIELD_TYPE_MAP: Record<FieldType, string> = {
   text: 'VARCHAR(255)',
   longtext: 'TEXT',
   richtext: 'TEXT',
-  number: 'INTEGER', // Can be overridden with NUMERIC for decimals
+  integer: 'INTEGER',
+  decimal: 'NUMERIC', // Precision and scale added dynamically
   date: 'DATE',
   datetime: 'TIMESTAMP WITH TIME ZONE',
   boolean: 'BOOLEAN',
@@ -192,8 +193,8 @@ export function validateCollectionDefinition(
         }
       }
 
-      // Validate number fields with decimal
-      if (field.type === 'number' && field.numberType === 'decimal') {
+      // Validate decimal fields
+      if (field.type === 'decimal') {
         if (field.decimalPlaces === undefined || field.decimalPlaces < 0) {
           errors.push({
             field: `fields[${index}].decimalPlaces`,
@@ -430,17 +431,17 @@ export function compareCollectionSchemas(
         enumMatches = JSON.stringify(removedField.enumValues) === JSON.stringify(addedField.enumValues);
       }
 
-      // For number fields, check if decimal settings match
-      let numberMatches = true;
-      if (removedField.type === 'number' && addedField.type === 'number') {
-        numberMatches =
-          removedField.numberType === addedField.numberType &&
+      // For decimal fields, check if precision/scale settings match
+      let decimalMatches = true;
+      if (removedField.type === 'decimal' && addedField.type === 'decimal') {
+        decimalMatches =
           removedField.precision === addedField.precision &&
-          removedField.scale === addedField.scale;
+          removedField.scale === addedField.scale &&
+          removedField.decimalPlaces === addedField.decimalPlaces;
       }
 
       // If all properties match, this is likely a rename
-      if (isSameType && isSameRequired && isSameUnique && isSameDefault && enumMatches && numberMatches) {
+      if (isSameType && isSameRequired && isSameUnique && isSameDefault && enumMatches && decimalMatches) {
         // Mark as rename
         renamedFields.push({
           oldName: removedField.name,
@@ -805,14 +806,16 @@ function toSnakeCase(str: string): string {
  * Generate PostgreSQL data type from field definition
  */
 function getPostgresType(field: CollectionField): string {
-  // Handle number types (including decimals)
-  if (field.type === 'number') {
-    if (field.numberType === 'decimal' || field.precision || field.scale) {
-      const precision = field.precision || 10;
-      const scale = field.scale || field.decimalPlaces || 2;
-      return `NUMERIC(${precision}, ${scale})`;
-    }
+  // Handle integer type
+  if (field.type === 'integer') {
     return 'INTEGER';
+  }
+
+  // Handle decimal type with precision and scale
+  if (field.type === 'decimal') {
+    const precision = field.precision || 10;
+    const scale = field.scale || field.decimalPlaces || 2;
+    return `NUMERIC(${precision}, ${scale})`;
   }
 
   // Handle text types with custom length
@@ -963,12 +966,11 @@ export function generateDrizzleSchema(definition: CollectionDefinitionInput): st
       case 'media':
         usedTypes.add('text');
         break;
-      case 'number':
-        if (field.numberType === 'decimal' || field.precision || field.scale) {
-          usedTypes.add('numeric');
-        } else {
-          usedTypes.add('integer');
-        }
+      case 'integer':
+        usedTypes.add('integer');
+        break;
+      case 'decimal':
+        usedTypes.add('numeric');
         break;
       case 'boolean':
         usedTypes.add('boolean');
@@ -1031,15 +1033,14 @@ export function generateDrizzleSchema(definition: CollectionDefinitionInput): st
       case 'media':
         drizzleType = `text('${columnName}')`;
         break;
-      case 'number':
+      case 'integer':
+        drizzleType = `integer('${columnName}')`;
+        break;
+      case 'decimal':
         // Handle decimals with precision and scale
-        if (field.numberType === 'decimal' || field.precision || field.scale) {
-          const precision = field.precision || 10;
-          const scale = field.scale || field.decimalPlaces || 2;
-          drizzleType = `numeric('${columnName}', { precision: ${precision}, scale: ${scale} })`;
-        } else {
-          drizzleType = `integer('${columnName}')`;
-        }
+        const precision = field.precision || 10;
+        const scale = field.scale || field.decimalPlaces || 2;
+        drizzleType = `numeric('${columnName}', { precision: ${precision}, scale: ${scale} })`;
         break;
       case 'boolean':
         drizzleType = `boolean('${columnName}')`;
@@ -1496,8 +1497,10 @@ export function generateBasicTests(definition: CollectionDefinitionInput): strin
   definition.fields.forEach((field) => {
     if (field.type === 'text' || field.type === 'longtext' || field.type === 'richtext') {
       sampleData[field.name] = `Sample ${field.name}`;
-    } else if (field.type === 'number') {
-      sampleData[field.name] = field.numberType === 'decimal' ? 99.99 : 42;
+    } else if (field.type === 'integer') {
+      sampleData[field.name] = 42;
+    } else if (field.type === 'decimal') {
+      sampleData[field.name] = 99.99;
     } else if (field.type === 'boolean') {
       sampleData[field.name] = true;
     } else if (field.type === 'date' || field.type === 'datetime') {

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -65,7 +66,13 @@ export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }
   const fieldNameValidation = validateFieldName(field.name || '');
 
   const content = (
-    <div className="space-y-4">
+    <Tabs defaultValue="basic" className="w-full">
+      <TabsList className="w-full">
+        <TabsTrigger value="basic" className="flex-1">{t('basicTab')}</TabsTrigger>
+        <TabsTrigger value="advanced" className="flex-1">{t('advancedTab')}</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="basic" className="space-y-4 mt-4">
         {/* Field Name */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-name`}>
@@ -96,27 +103,25 @@ export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }
 
         <Separator />
 
-        {/* Switches */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label
-              htmlFor={`${field.name}-required`}
-              className="text-sm font-medium cursor-pointer"
-            >
-              {t('requiredField')}
-            </Label>
-            <Switch
-              id={`${field.name}-required`}
-              checked={field.required || false}
-              onCheckedChange={(checked) =>
-                updateField({ required: checked })
-              }
-            />
-          </div>
+        {/* Required Switch */}
+        <div className="flex items-center justify-between">
+          <Label
+            htmlFor={`${field.name}-required`}
+            className="text-sm font-medium cursor-pointer"
+          >
+            {t('requiredField')}
+          </Label>
+          <Switch
+            id={`${field.name}-required`}
+            checked={field.required || false}
+            onCheckedChange={(checked) =>
+              updateField({ required: checked })
+            }
+          />
         </div>
+      </TabsContent>
 
-        <Separator />
-
+      <TabsContent value="advanced" className="space-y-4 mt-4">
         {/* Default Value */}
         <div className="space-y-2">
           <Label htmlFor={`${field.name}-default`}>{t('defaultValue')}</Label>
@@ -154,7 +159,8 @@ export function DateFieldConfig({ field, onChange, onRemove, showHeader = true }
             {t('specialDefaultHelp')}
           </p>
         </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 
   if (!showHeader) {

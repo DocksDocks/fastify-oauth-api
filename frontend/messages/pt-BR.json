@@ -362,6 +362,8 @@
       "longtext": "Texto Longo",
       "richtext": "Texto Rico",
       "number": "Número",
+      "integer": "Inteiro",
+      "decimal": "Decimal",
       "date": "Data",
       "datetime": "Data e Hora",
       "boolean": "Booleano",
@@ -371,6 +373,8 @@
       "media": "Mídia",
       "textFieldFallback": "Campo de Texto",
       "numberFieldFallback": "Campo Numérico",
+      "integerFieldFallback": "Campo Inteiro",
+      "decimalFieldFallback": "Campo Decimal",
       "booleanFieldFallback": "Campo Booleano",
       "dateFieldFallback": "Campo de Data",
       "dateTimeFieldFallback": "Campo de Data e Hora",
@@ -579,6 +583,23 @@
         "add": "Configure seu novo campo abaixo.",
         "edit": "Atualize a configuração do campo abaixo."
       },
+      "fieldTypeSelector": {
+        "label": "Tipo de Campo"
+      },
+      "fieldTypes": {
+        "text": "Texto",
+        "longtext": "Texto Longo",
+        "richtext": "Texto Rico",
+        "integer": "Inteiro",
+        "decimal": "Decimal",
+        "date": "Data",
+        "datetime": "Data e Hora",
+        "boolean": "Booleano",
+        "enum": "Enum (Opções)",
+        "json": "JSON",
+        "relation": "Relação",
+        "media": "Mídia"
+      },
       "validation": {
         "nameAndLabelRequired": "Nome e rótulo do campo são obrigatórios",
         "duplicateName": "Nome do campo \"{name}\" já existe. Por favor, use um nome único."
@@ -605,6 +626,8 @@
       }
     },
     "fieldConfig": {
+      "basicTab": "Básico",
+      "advancedTab": "Avançado",
       "fieldName": "Nome do Campo",
       "required": "*",
       "description": "Descrição",

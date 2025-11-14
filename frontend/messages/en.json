@@ -362,6 +362,8 @@
       "longtext": "Long Text",
       "richtext": "Rich Text",
       "number": "Number",
+      "integer": "Integer",
+      "decimal": "Decimal",
       "date": "Date",
       "datetime": "Date & Time",
       "boolean": "Boolean",
@@ -371,6 +373,8 @@
       "media": "Media",
       "textFieldFallback": "Text Field",
       "numberFieldFallback": "Number Field",
+      "integerFieldFallback": "Integer Field",
+      "decimalFieldFallback": "Decimal Field",
       "booleanFieldFallback": "Boolean Field",
       "dateFieldFallback": "Date Field",
       "dateTimeFieldFallback": "Date & Time Field",
@@ -579,6 +583,23 @@
         "add": "Configure your new field below.",
         "edit": "Update the field configuration below."
       },
+      "fieldTypeSelector": {
+        "label": "Field Type"
+      },
+      "fieldTypes": {
+        "text": "Text",
+        "longtext": "Long Text",
+        "richtext": "Rich Text",
+        "integer": "Integer",
+        "decimal": "Decimal",
+        "date": "Date",
+        "datetime": "Date & Time",
+        "boolean": "Boolean",
+        "enum": "Enum (Options)",
+        "json": "JSON",
+        "relation": "Relation",
+        "media": "Media"
+      },
       "validation": {
         "nameAndLabelRequired": "Field name and label are required",
         "duplicateName": "Field name \"{name}\" already exists. Please use a unique name."
@@ -605,6 +626,8 @@
       }
     },
     "fieldConfig": {
+      "basicTab": "Basic",
+      "advancedTab": "Advanced",
       "fieldName": "Field Name",
       "required": "*",
       "description": "Description",
