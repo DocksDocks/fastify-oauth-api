@@ -14,6 +14,7 @@ import env from '@/config/env';
 import { db } from '@/db/client';
 import { refreshTokens } from '@/db/schema/refresh-tokens';
 import { eq, and, lt } from 'drizzle-orm';
+import { checkIfUserLinked } from '@/ingresse/services/ingresse-db.service';
 
 /**
  * Hash refresh token for secure storage using SHA-256
@@ -38,10 +39,14 @@ export async function generateTokens(
   ipAddress?: string,
   userAgent?: string
 ): Promise<TokenPair> {
+  // Check if user has linked Ingresse account
+  const ingresseLinked = await checkIfUserLinked(user.id);
+
   const payload: JWTPayload = {
     id: user.id,
     email: user.email,
     role: user.role,
+    ingresseLinked: ingresseLinked || undefined,
   };
 
   // Generate access token (short-lived)
@@ -152,11 +157,14 @@ export async function refreshAccessToken(
       .set({ isUsed: true, usedAt: new Date() })
       .where(eq(refreshTokens.id, storedToken.id));
 
-    // 7. Generate new access token
+    // 7. Generate new access token with updated Ingresse link status
+    const ingresseLinked = await checkIfUserLinked(decoded.id);
+
     const payload: JWTPayload = {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role,
+      ingresseLinked: ingresseLinked || undefined,
     };
 
     const newAccessToken = fastify.jwt.sign(payload, {

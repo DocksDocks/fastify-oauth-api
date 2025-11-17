@@ -79,6 +79,7 @@ export interface JWTPayload {
   id: number;
   email: string;
   role: 'user' | 'admin' | 'superadmin';
+  ingresseLinked?: boolean; // Flag indicating if user has linked Ingresse account
   jti?: string; // JWT ID (unique identifier for refresh tokens)
   iat?: number;
   exp?: number;

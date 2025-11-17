@@ -14,6 +14,10 @@ import {
   syncUserDataFromApi,
 } from '../services/ingresse-db.service';
 import type { LoginRequest, MfaVerifyRequest, LinkAccountRequest } from '../types/ingresse.types';
+import { generateTokens } from '@/modules/auth/jwt.service';
+import { db } from '@/db/client';
+import { users } from '@/db/schema/users';
+import { eq } from 'drizzle-orm';
 
 /**
  * Handle Ingresse login
@@ -139,11 +143,27 @@ export async function handleLinkAccount(
     // Store encrypted data in database
     await createIngresseProfile(user.id, { token, userId, authToken }, userInfo);
 
+    // Fetch user record to regenerate tokens with updated ingresseLinked flag
+    const [userRecord] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+
+    if (!userRecord) {
+      throw new Error('User not found');
+    }
+
+    // Generate new tokens with ingresseLinked: true
+    const tokens = await generateTokens(
+      request.server,
+      userRecord,
+      request.ip,
+      request.headers['user-agent']
+    );
+
     request.log.info({ userId: user.id, ingresseUserId: userId }, 'Ingresse account linked successfully');
 
     return reply.send({
       success: true,
       message: 'Ingresse account linked successfully',
+      tokens, // Return new tokens with updated ingresseLinked flag
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to link Ingresse account');
@@ -221,11 +241,27 @@ export async function handleUnlink(
 
     await deleteIngresseProfile(user.id);
 
+    // Fetch user record to regenerate tokens with updated ingresseLinked flag
+    const [userRecord] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+
+    if (!userRecord) {
+      throw new Error('User not found');
+    }
+
+    // Generate new tokens with ingresseLinked removed (will be undefined)
+    const tokens = await generateTokens(
+      request.server,
+      userRecord,
+      request.ip,
+      request.headers['user-agent']
+    );
+
     request.log.info({ userId: user.id }, 'Ingresse account unlinked successfully');
 
     return reply.send({
       success: true,
       message: 'Ingresse account unlinked successfully',
+      tokens, // Return new tokens with updated ingresseLinked flag (removed)
     });
   } catch (error) {
     request.log.error({ error }, 'Failed to unlink Ingresse account');

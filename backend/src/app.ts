@@ -25,6 +25,8 @@ import adminApiKeysRoutes from '@/routes/admin/api-keys';
 import adminCollectionsRoutes from '@/routes/admin/collections';
 import { authorizedAdminsRoutes } from '@/routes/admin/authorized-admins';
 import ingresseRoutes from '@/ingresse/routes/ingresse.routes';
+import eventsRoutes from '@/ingresse/routes/events.routes';
+import walletRoutes from '@/ingresse/routes/wallet.routes';
 import { validateApiKey } from '@/middleware/api-key';
 import { decodeRequestToken, hasAnyRole } from '@/utils/jwt';
 
@@ -159,6 +161,12 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   // Ingresse ticketing routes (protected, all authenticated users)
   await app.register(ingresseRoutes, { prefix: '/api/tickets' });
+
+  // Ingresse events routes (public - API key only)
+  await app.register(eventsRoutes, { prefix: '/api/tickets/events' });
+
+  // Ingresse wallet routes (protected - JWT + Ingresse account required)
+  await app.register(walletRoutes, { prefix: '/api/tickets/wallet' });
 
   // Admin routes (admin only)
   await app.register(adminUserRoutes, { prefix: '/api/admin/users' });
