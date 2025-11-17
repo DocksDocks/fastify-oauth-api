@@ -1036,12 +1036,13 @@ export function generateDrizzleSchema(definition: CollectionDefinitionInput): st
       case 'integer':
         drizzleType = `integer('${columnName}')`;
         break;
-      case 'decimal':
+      case 'decimal': {
         // Handle decimals with precision and scale
         const precision = field.precision || 10;
         const scale = field.scale || field.decimalPlaces || 2;
         drizzleType = `numeric('${columnName}', { precision: ${precision}, scale: ${scale} })`;
         break;
+      }
       case 'boolean':
         drizzleType = `boolean('${columnName}')`;
         break;
