@@ -49,6 +49,14 @@ const envSchema = z.object({
   APPLE_REDIRECT_URI_MOBILE: z.string().optional(), // Mobile app OAuth
   APPLE_SCOPES: z.string().default('name email'),
 
+  // Ingresse API Configuration
+  INGRESSE_API_PROXY_URL: z.string().url().default('https://api-proxy.backstagemirante.com'),
+  INGRESSE_API_TIMEOUT: z.coerce.number().default(30000),
+
+  // Encryption (AES-256-CBC)
+  ENCRYPTION_KEY: z.string().min(32, 'Encryption key must be at least 32 characters'),
+  ENCRYPTION_IV_LENGTH: z.coerce.number().default(16),
+
   LOG_LEVEL: z.string().default('info'),
   LOG_PRETTY_PRINT: z.string().default('false'),
 });

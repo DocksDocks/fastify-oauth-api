@@ -24,6 +24,7 @@ import adminUserRoutes from '@/routes/admin/users';
 import adminApiKeysRoutes from '@/routes/admin/api-keys';
 import adminCollectionsRoutes from '@/routes/admin/collections';
 import { authorizedAdminsRoutes } from '@/routes/admin/authorized-admins';
+import ingresseRoutes from '@/ingresse/routes/ingresse.routes';
 import { validateApiKey } from '@/middleware/api-key';
 import { decodeRequestToken, hasAnyRole } from '@/utils/jwt';
 
@@ -156,6 +157,9 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   // User profile routes (protected)
   await app.register(profileRoutes, { prefix: '/api/profile' });
 
+  // Ingresse ticketing routes (protected, all authenticated users)
+  await app.register(ingresseRoutes, { prefix: '/api/tickets' });
+
   // Admin routes (admin only)
   await app.register(adminUserRoutes, { prefix: '/api/admin/users' });
   await app.register(adminApiKeysRoutes, { prefix: '/api/admin/api-keys' });
@@ -226,6 +230,14 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           logout: '/api/auth/logout',
         },
         profile: '/api/profile',
+        tickets: {
+          login: '/api/tickets/login',
+          mfaVerify: '/api/tickets/mfa/verify',
+          link: '/api/tickets/link',
+          profile: '/api/tickets/profile',
+          unlink: '/api/tickets/unlink',
+          sync: '/api/tickets/sync',
+        },
         admin: adminEndpoints,
       },
     };

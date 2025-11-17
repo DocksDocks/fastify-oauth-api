@@ -9,3 +9,6 @@ export * from './setup-status';
 export * from './collection-preferences';
 export * from './collection-definitions';
 export * from './custom_collections';
+
+// Ingresse ticketing platform schemas
+export * from './ingresse';

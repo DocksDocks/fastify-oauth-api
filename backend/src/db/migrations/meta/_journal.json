@@ -15,6 +15,13 @@
       "when": 1763060358467,
       "tag": "0001_create_blog_posts_table",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763154192351,
+      "tag": "0002_bitter_captain_midlands",
+      "breakpoints": true
     }
   ]
 }
